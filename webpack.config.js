@@ -1,5 +1,6 @@
 var path = require('path');
 var webpack = require('webpack');
+const Uglify = require('uglifyjs-webpack-plugin');
 
 module.exports = [{
   entry: './lib/index.js',
@@ -11,7 +12,7 @@ module.exports = [{
     library: 'soundboxing-client',
     libraryTarget: 'umd',
   },
-  plugins: [],
+  plugins: [new Uglify()],
 }, {
   entry: './lib/index.js',
   target: 'node',
