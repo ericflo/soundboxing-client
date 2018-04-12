@@ -1,15 +1,26 @@
 var path = require('path');
+var webpack = require('webpack');
 
-module.exports = {
+module.exports = [{
   entry: './lib/index.js',
-  target: 'node',
+  target: 'web',
+  mode: 'none',
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'index.js',
+    path: path.resolve(__dirname, 'build'),
+    filename: 'lib.web.js',
     library: 'soundboxing-client',
     libraryTarget: 'umd',
   },
-  node: {
-    fs: 'empty',
+  plugins: [],
+}, {
+  entry: './lib/index.js',
+  target: 'node',
+  mode: 'none',
+  output: {
+    path: path.resolve(__dirname, 'build'),
+    filename: 'lib.node.js',
+    library: 'soundboxing-client',
+    libraryTarget: 'umd',
   },
-};
+  plugins: [],
+}];

@@ -1,10 +1,10 @@
 {
   "name": "soundboxing-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Client library for accessing the Soundboxing API.",
-  "main": "dist/index.js",
+  "main": "main.js",
   "scripts": {
-    "build": "./node_modules/.bin/webpack --mode production",
+    "build": "./node_modules/.bin/webpack",
     "protobuf": "rm -f lib/v1/serialization.js && pbjs -t static-module -o lib/v1/serialization.js lib/v1/soundboxing.proto",
     "prettier": "./node_modules/.bin/prettier --single-quote --trailing-comma es5 --write \"lib/**/client.js\" \"*.js\""
   },
