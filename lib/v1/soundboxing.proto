@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+option optimize_for = SPEED;
+
+message SBFrame {
+  float Timestamp = 1;
+
+  float UserPosX = 2;
+  float UserPosY = 3;
+  float UserPosZ = 4;
+  float UserRotX = 5;
+  float UserRotY = 6;
+  float UserRotZ = 7;
+
+  float HeadPosX = 8;
+  float HeadPosY = 9;
+  float HeadPosZ = 10;
+  float HeadRotX = 11;
+  float HeadRotY = 12;
+  float HeadRotZ = 13;
+
+  float LeftHandPosX = 14;
+  float LeftHandPosY = 15;
+  float LeftHandPosZ = 16;
+  float LeftHandRotX = 17;
+  float LeftHandRotY = 18;
+  float LeftHandRotZ = 19;
+
+  float RightHandPosX = 20;
+  float RightHandPosY = 21;
+  float RightHandPosZ = 22;
+  float RightHandRotX = 23;
+  float RightHandRotY = 24;
+  float RightHandRotZ = 25;
+
+  float EyePosX = 26;
+  float EyePosY = 27;
+  float EyePosZ = 28;
+  float EyeRotX = 29;
+  float EyeRotY = 30;
+  float EyeRotZ = 31;
+
+  repeated float AudioSamples = 32;
+}
+
+message SBFrameList {
+  repeated SBFrame frames = 1;
+}
+
+message SBHit {
+  string id = 1;
+  string score_id = 2;
+  string punch_id = 3;
+  double timestamp = 4;
+  float x = 5;
+  float y = 6;
+  float z = 7;
+  float v_x = 8;
+  float v_y = 9;
+  float v_z = 10;
+  int32 multiplier = 11;
+  int32 streak = 12;
+  int32 score = 13;
+  bool trig = 14;
+  bool is_left = 15;
+}
+
+message SBHitList {
+  repeated SBHit hits = 1;
+}
+
+message SBPunch {
+  string id = 1;
+  string performance_id = 2;
+  double timestamp = 3;
+  float x = 4;
+  float y = 5;
+  float z = 6;
+  float v_x = 7;
+  float v_y = 8;
+  float v_z = 9;
+  bool trig = 10;
+  bool is_left = 11;
+}
+
+message SBPunchList {
+  repeated SBPunch punches = 1;
+}
+
+message SBPerformanceUpload {
+  float seconds = 1;
+  string youtube_id = 2;
+  string song_name = 3;
+  float song_length = 4;
+  string song_channel = 5;
+  string song_thumbnail = 6;
+  int32 song_thumbnail_width = 7;
+  int32 song_thumbnail_height = 8;
+
+  bytes legacy = 9;
+
+  repeated SBPunch punches = 10;
+  repeated SBFrame frames = 11;
+}
+
+message SBScoreUpload {
+  string performance_id = 1;
+  int32 score = 2;
+  float offset_x = 6;
+  float offset_y = 7;
+  float scale_x = 8;
+  float scale_y = 9;
+
+  bytes legacy = 3;
+
+  repeated SBHit hits = 4;
+  repeated SBFrame frames = 5;
+}
