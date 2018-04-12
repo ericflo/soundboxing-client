@@ -105,6 +105,7 @@ const StringToStream = __webpack_require__(28);
 
 class SoundboxingClient {
   constructor(ctx) {
+    ctx = ctx || {};
     this.authTokenID = ctx.authTokenID || null;
     this.authAccount = ctx.authAccount || null;
     this.followUsers = ctx.followUsers || null;
