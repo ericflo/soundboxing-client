@@ -127,7 +127,7 @@ class SoundboxingClient {
     };
   }
 
-  async auth(ticket) {
+  async authSteam(ticket) {
     const resp = await this.post(
       '/auth/steam',
       null,

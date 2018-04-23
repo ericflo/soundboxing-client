@@ -1,6 +1,6 @@
 {
   "name": "soundboxing-client",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Client library for accessing the Soundboxing API.",
   "main": "main.js",
   "scripts": {
