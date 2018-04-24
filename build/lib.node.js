@@ -111,7 +111,6 @@ const StringToStream = __webpack_require__(78);
 
 class SoundboxingClient {
   constructor(ctx) {
-    ctx = ctx || {};
     this.authTokenID = ctx.authTokenID || null;
     this.authAccount = ctx.authAccount || null;
     this.followUsers = ctx.followUsers || null;
@@ -132,6 +131,20 @@ class SoundboxingClient {
       '/auth/steam',
       null,
       JSON.stringify({ ticket })
+    );
+    if (!resp.auth_token || !resp.auth_token.id) {
+      throw new Error('Got no token id in response: ' + JSON.stringify(resp));
+    }
+    this.authTokenID = resp.auth_token.id;
+    this.authAccount = resp.auth_user;
+    return { user: resp.auth_user, token: resp.auth_token };
+  }
+
+  async authItch(accessToken) {
+    const resp = await this.post(
+      '/auth/itch',
+      null,
+      JSON.stringify({ access_token: accessToken })
     );
     if (!resp.auth_token || !resp.auth_token.id) {
       throw new Error('Got no token id in response: ' + JSON.stringify(resp));
