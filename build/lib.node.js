@@ -250,7 +250,7 @@ class SoundboxingClient {
     return resp;
   }
 
-  async searchSongs(query, limit) {
+  async searchSongsByYoutube(query, limit) {
     const extra = {
       limit: limit || 10,
       offset: 0,
@@ -272,6 +272,12 @@ class SoundboxingClient {
         return result;
       });
     }
+    return resp;
+  }
+
+  async latestChallengesByYoutube(youtubeId, limit) {
+    const extra = {limit: limit || 10, offset: 0};
+    const resp = await this.get('/performances/youtube/' + youtubeId);
     return resp;
   }
 
