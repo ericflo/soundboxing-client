@@ -1,8 +1,12064 @@
-!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e():"function"==typeof define&&define.amd?define([],e):"object"==typeof exports?exports["soundboxing-client"]=e():t["soundboxing-client"]=e()}(window,function(){return function(t){var e={};function r(n){if(e[n])return e[n].exports;var o=e[n]={i:n,l:!1,exports:{}};return t[n].call(o.exports,o,o.exports,r),o.l=!0,o.exports}return r.m=t,r.c=e,r.d=function(t,e,n){r.o(t,e)||Object.defineProperty(t,e,{configurable:!1,enumerable:!0,get:n})},r.r=function(t){Object.defineProperty(t,"__esModule",{value:!0})},r.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return r.d(e,"a",e),e},r.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},r.p="",r(r.s=0)}([function(t,e,r){var n=r(1).SoundboxingClient;t.exports={v1:n}},function(t,e,r){"use strict";r.r(e),r.d(e,"SoundboxingClient",function(){return l});const n=r(2),o=r(4),{SBPunchList:i,SBFrameList:s}=r(7),a=r(27),u=r(28);class l{constructor(t){this.authTokenID=t.authTokenID||null,this.authAccount=t.authAccount||null,this.followUsers=t.followUsers||null,this.apiBase=t.apiBase||"https://api.soundboxing.co"}serialize(){return{id:this.authTokenID,account:this.authAccount,followUsers:this.followUsers,apiBase:this.apiBase}}async authSteam(t){const e=await this.post("/auth/steam",null,JSON.stringify({ticket:t}));if(!e.auth_token||!e.auth_token.id)throw new Error("Got no token id in response: "+JSON.stringify(e));return this.authTokenID=e.auth_token.id,this.authAccount=e.auth_user,{user:e.auth_user,token:e.auth_token}}async authItch(t){const e=await this.post("/auth/itch",null,JSON.stringify({access_token:t}));if(!e.auth_token||!e.auth_token.id)throw new Error("Got no token id in response: "+JSON.stringify(e));return this.authTokenID=e.auth_token.id,this.authAccount=e.auth_user,{user:e.auth_user,token:e.auth_token}}async authInternal(t){const e=await this.post("/auth/steam/internal",null,JSON.stringify(t));if(!e.auth_token||!e.auth_token.id)throw new Error("Got no token id in response: "+JSON.stringify(e));return{user:e.auth_user,token:e.auth_token}}async getAuthAccount(){if(this.authAccount)return this.authAccount;const t=await this.get("/auth/user");return this.authAccount=t.user,this.authAccount}async authUserFollows(){if(this.followUsers)return this.followUsers;const t={};return((await this.get("/users/followed-by/me")).users||[]).forEach(e=>{t[e.id]=e}),this.followUsers=t,t}async createUserFollow(t){const e=await this.post(`/user/id/${t.id}/follow`,{source:"webwww"},JSON.stringify({}));return this.followUsers[t.id]=t,e}async deleteUserFollow(t){const e=await this.del(`/user/id/${t}/follow`,{source:"webwww"});return delete this.followUsers[t],e}async latestChallenges(t,e){let r={};return e&&(r.limit=e),t&&(r.featured_only="t"),await this.get("/performances/latest",r)}async topChallenges(t,e,r){let n={time_dilation:"t"};return r&&(n.limit=r),await this.get(`/performances/top/by-${t}/${e}`,n)}async searchChallenges(t,e){const r={limit:e||10,offset:0,query:t};return await this.get("/performances/latest",r)}async topPlaylists(t,e,r){let n={};return r&&(n.limit=r),await this.get(`/perfplaylist/top/by-${t}/${e}`,n)}async searchSongsByYoutube(t,e){const r={limit:e||10,offset:0,q:t},n=await this.get("/youtube/search",r);if(n.results&&n.performances){const t={};n.performances.forEach(e=>{t[e.youtube_id]?t[e.youtube_id].push(e.id):t[e.youtube_id]=[e.id]}),n.results=n.results.map(e=>(e.performance_ids=t[e.youtube_id],e))}return n}async latestChallengesByYoutube(t,e){return await this.get("/performances/youtube/"+t)}async playlistById(t){return await this.get(`/perfplaylist/id/${t}`)}async challengeById(t){const e={no_punches:"t"};return await this.get("/performance/id/"+t,e)}async userByForeignIds(t,e,r){let n={};return r&&(n.itch_id=r),e&&(n.oculus_id=e),t&&(n.steam_id=t),await this.get("/user/foreign-ids",n)}async userScores(t,e){return await this.get(`/score/latest/user/${t}`,f(e))}async userFavorites(t,e){return await this.get(`/performances/favorite/user/${t}`,f(e))}async userChallenges(t,e){return await this.get(`/performances/user/${t}`,f(e))}async userPlaylists(t,e){return await this.get(`/perfplaylist/user/${t}`,f(e))}async userFollowing(t,e){return await this.get(`/user/id/${t}/friends`,f(e))}async userFollowers(t,e){return await this.get(`/user/id/${t}/followers`,f(e))}async latestUsers(t){return await this.get("/users/latest",f(t))}async feed(t){return await this.get("/feed",f(t))}async notifications(t){return await this.get("/events",f(t))}async deleteChallenge(t){return await this.del(`/performance/id/${t}`)}async createFavorite(t){return await this.post(`/performance/id/${t}/favorite`,null,JSON.stringify({}))}async deleteFavorite(t){return await this.del(`/performance/id/${t}/favorite`)}async updateChallengeFeatured(t,e){return await this.post("/performance/featured",null,JSON.stringify({performance_id:t,featured:e}))}async createUserLaunch(t,e){return await this.post("/launch",null,JSON.stringify({performance_id:t||"",score_id:e||""}))}async userLaunch(){return await this.get("/launch")}async deleteUserLaunch(){return await this.del("/launch")}async topScores(t,e){return await this.get(`/score/top/${t}`,f(e))}async challengePunches(t){const e=await n(t.punches_url),r=await e.arrayBuffer();return i.decode(new Uint8Array(r)).punches}async challengeFrames(t){const e=await n(t.frames_url),r=await e.arrayBuffer();return s.decode(new Uint8Array(r)).frames}async syncSteamFollows(t){const e=JSON.stringify({steam_ids:t}),r=new a;r.append("data",u(e),{filename:"data",filepath:"data",contentType:"application/octet-stream",knownLength:e.length});const n=await this.post("/follows/steam",null,r),o={};return(n.users||[]).forEach(t=>{o[t.id]=t}),this.followUsers=o,{follows:n.follows,users:n.users}}headers(){const t={"Content-Type":"application/json"};return this.authTokenID&&(t["X-Auth-Token-ID"]=this.authTokenID),t}get(t,e){const r=this.apiBase+t+(e?"?"+o.stringify(e):"");return h(r,{headers:this.headers()})}post(t,e,r){const n=this.apiBase+t+(e?"?"+o.stringify(e):""),i={headers:this.headers(),method:"post"};return r instanceof a&&delete i.headers["Content-Type"],r&&(i.body=r),h(n,i)}del(t,e){const r=this.apiBase+t+(e?"?"+o.stringify(e):""),n={headers:this.headers(),method:"delete"};return h(r,n)}}const f=t=>{let e={};return t&&(e.limit=t),e},h=async(t,e)=>{const r=await n(t,e),o=await r.json();if(o&&o.error)throw new Error(o.error);return o}},function(t,e,r){r(3),t.exports=self.fetch.bind(self)},function(t,e){!function(t){"use strict";if(!t.fetch){var e={searchParams:"URLSearchParams"in t,iterable:"Symbol"in t&&"iterator"in Symbol,blob:"FileReader"in t&&"Blob"in t&&function(){try{return new Blob,!0}catch(t){return!1}}(),formData:"FormData"in t,arrayBuffer:"ArrayBuffer"in t};if(e.arrayBuffer)var r=["[object Int8Array]","[object Uint8Array]","[object Uint8ClampedArray]","[object Int16Array]","[object Uint16Array]","[object Int32Array]","[object Uint32Array]","[object Float32Array]","[object Float64Array]"],n=function(t){return t&&DataView.prototype.isPrototypeOf(t)},o=ArrayBuffer.isView||function(t){return t&&r.indexOf(Object.prototype.toString.call(t))>-1};f.prototype.append=function(t,e){t=a(t),e=u(e);var r=this.map[t];this.map[t]=r?r+","+e:e},f.prototype.delete=function(t){delete this.map[a(t)]},f.prototype.get=function(t){return t=a(t),this.has(t)?this.map[t]:null},f.prototype.has=function(t){return this.map.hasOwnProperty(a(t))},f.prototype.set=function(t,e){this.map[a(t)]=u(e)},f.prototype.forEach=function(t,e){for(var r in this.map)this.map.hasOwnProperty(r)&&t.call(e,this.map[r],r,this)},f.prototype.keys=function(){var t=[];return this.forEach(function(e,r){t.push(r)}),l(t)},f.prototype.values=function(){var t=[];return this.forEach(function(e){t.push(e)}),l(t)},f.prototype.entries=function(){var t=[];return this.forEach(function(e,r){t.push([r,e])}),l(t)},e.iterable&&(f.prototype[Symbol.iterator]=f.prototype.entries);var i=["DELETE","GET","HEAD","OPTIONS","POST","PUT"];g.prototype.clone=function(){return new g(this,{body:this._bodyInit})},y.call(g.prototype),y.call(b.prototype),b.prototype.clone=function(){return new b(this._bodyInit,{status:this.status,statusText:this.statusText,headers:new f(this.headers),url:this.url})},b.error=function(){var t=new b(null,{status:0,statusText:""});return t.type="error",t};var s=[301,302,303,307,308];b.redirect=function(t,e){if(-1===s.indexOf(e))throw new RangeError("Invalid status code");return new b(null,{status:e,headers:{location:t}})},t.Headers=f,t.Request=g,t.Response=b,t.fetch=function(t,r){return new Promise(function(n,o){var i=new g(t,r),s=new XMLHttpRequest;s.onload=function(){var t,e,r={status:s.status,statusText:s.statusText,headers:(t=s.getAllResponseHeaders()||"",e=new f,t.replace(/\r?\n[\t ]+/g," ").split(/\r?\n/).forEach(function(t){var r=t.split(":"),n=r.shift().trim();if(n){var o=r.join(":").trim();e.append(n,o)}}),e)};r.url="responseURL"in s?s.responseURL:r.headers.get("X-Request-URL");var o="response"in s?s.response:s.responseText;n(new b(o,r))},s.onerror=function(){o(new TypeError("Network request failed"))},s.ontimeout=function(){o(new TypeError("Network request failed"))},s.open(i.method,i.url,!0),"include"===i.credentials?s.withCredentials=!0:"omit"===i.credentials&&(s.withCredentials=!1),"responseType"in s&&e.blob&&(s.responseType="blob"),i.headers.forEach(function(t,e){s.setRequestHeader(e,t)}),s.send(void 0===i._bodyInit?null:i._bodyInit)})},t.fetch.polyfill=!0}function a(t){if("string"!=typeof t&&(t=String(t)),/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(t))throw new TypeError("Invalid character in header field name");return t.toLowerCase()}function u(t){return"string"!=typeof t&&(t=String(t)),t}function l(t){var r={next:function(){var e=t.shift();return{done:void 0===e,value:e}}};return e.iterable&&(r[Symbol.iterator]=function(){return r}),r}function f(t){this.map={},t instanceof f?t.forEach(function(t,e){this.append(e,t)},this):Array.isArray(t)?t.forEach(function(t){this.append(t[0],t[1])},this):t&&Object.getOwnPropertyNames(t).forEach(function(e){this.append(e,t[e])},this)}function h(t){if(t.bodyUsed)return Promise.reject(new TypeError("Already read"));t.bodyUsed=!0}function c(t){return new Promise(function(e,r){t.onload=function(){e(t.result)},t.onerror=function(){r(t.error)}})}function p(t){var e=new FileReader,r=c(e);return e.readAsArrayBuffer(t),r}function d(t){if(t.slice)return t.slice(0);var e=new Uint8Array(t.byteLength);return e.set(new Uint8Array(t)),e.buffer}function y(){return this.bodyUsed=!1,this._initBody=function(t){if(this._bodyInit=t,t)if("string"==typeof t)this._bodyText=t;else if(e.blob&&Blob.prototype.isPrototypeOf(t))this._bodyBlob=t;else if(e.formData&&FormData.prototype.isPrototypeOf(t))this._bodyFormData=t;else if(e.searchParams&&URLSearchParams.prototype.isPrototypeOf(t))this._bodyText=t.toString();else if(e.arrayBuffer&&e.blob&&n(t))this._bodyArrayBuffer=d(t.buffer),this._bodyInit=new Blob([this._bodyArrayBuffer]);else{if(!e.arrayBuffer||!ArrayBuffer.prototype.isPrototypeOf(t)&&!o(t))throw new Error("unsupported BodyInit type");this._bodyArrayBuffer=d(t)}else this._bodyText="";this.headers.get("content-type")||("string"==typeof t?this.headers.set("content-type","text/plain;charset=UTF-8"):this._bodyBlob&&this._bodyBlob.type?this.headers.set("content-type",this._bodyBlob.type):e.searchParams&&URLSearchParams.prototype.isPrototypeOf(t)&&this.headers.set("content-type","application/x-www-form-urlencoded;charset=UTF-8"))},e.blob&&(this.blob=function(){var t=h(this);if(t)return t;if(this._bodyBlob)return Promise.resolve(this._bodyBlob);if(this._bodyArrayBuffer)return Promise.resolve(new Blob([this._bodyArrayBuffer]));if(this._bodyFormData)throw new Error("could not read FormData body as blob");return Promise.resolve(new Blob([this._bodyText]))},this.arrayBuffer=function(){return this._bodyArrayBuffer?h(this)||Promise.resolve(this._bodyArrayBuffer):this.blob().then(p)}),this.text=function(){var t,e,r,n=h(this);if(n)return n;if(this._bodyBlob)return t=this._bodyBlob,e=new FileReader,r=c(e),e.readAsText(t),r;if(this._bodyArrayBuffer)return Promise.resolve(function(t){for(var e=new Uint8Array(t),r=new Array(e.length),n=0;n<e.length;n++)r[n]=String.fromCharCode(e[n]);return r.join("")}(this._bodyArrayBuffer));if(this._bodyFormData)throw new Error("could not read FormData body as text");return Promise.resolve(this._bodyText)},e.formData&&(this.formData=function(){return this.text().then(m)}),this.json=function(){return this.text().then(JSON.parse)},this}function g(t,e){var r,n,o=(e=e||{}).body;if(t instanceof g){if(t.bodyUsed)throw new TypeError("Already read");this.url=t.url,this.credentials=t.credentials,e.headers||(this.headers=new f(t.headers)),this.method=t.method,this.mode=t.mode,o||null==t._bodyInit||(o=t._bodyInit,t.bodyUsed=!0)}else this.url=String(t);if(this.credentials=e.credentials||this.credentials||"omit",!e.headers&&this.headers||(this.headers=new f(e.headers)),this.method=(r=e.method||this.method||"GET",n=r.toUpperCase(),i.indexOf(n)>-1?n:r),this.mode=e.mode||this.mode||null,this.referrer=null,("GET"===this.method||"HEAD"===this.method)&&o)throw new TypeError("Body not allowed for GET or HEAD requests");this._initBody(o)}function m(t){var e=new FormData;return t.trim().split("&").forEach(function(t){if(t){var r=t.split("="),n=r.shift().replace(/\+/g," "),o=r.join("=").replace(/\+/g," ");e.append(decodeURIComponent(n),decodeURIComponent(o))}}),e}function b(t,e){e||(e={}),this.type="default",this.status=void 0===e.status?200:e.status,this.ok=this.status>=200&&this.status<300,this.statusText="statusText"in e?e.statusText:"OK",this.headers=new f(e.headers),this.url=e.url||"",this._initBody(t)}}("undefined"!=typeof self?self:this)},function(t,e,r){"use strict";const n=r(5),o=r(6);function i(t,e){return e.encode?e.strict?n(t):encodeURIComponent(t):t}function s(t){const e=t.indexOf("?");return-1===e?"":t.slice(e+1)}function a(t,e){const r=function(t){let e;switch(t.arrayFormat){case"index":return(t,r,n)=>{e=/\[(\d*)\]$/.exec(t),t=t.replace(/\[\d*\]$/,""),e?(void 0===n[t]&&(n[t]={}),n[t][e[1]]=r):n[t]=r};case"bracket":return(t,r,n)=>{e=/(\[\])$/.exec(t),t=t.replace(/\[\]$/,""),e?void 0!==n[t]?n[t]=[].concat(n[t],r):n[t]=[r]:n[t]=r};default:return(t,e,r)=>{void 0!==r[t]?r[t]=[].concat(r[t],e):r[t]=e}}}(e=Object.assign({arrayFormat:"none"},e)),n=Object.create(null);if("string"!=typeof t)return n;if(!(t=t.trim().replace(/^[?#&]/,"")))return n;for(const e of t.split("&")){let[t,i]=e.replace(/\+/g," ").split("=");i=void 0===i?null:o(i),r(o(t),i,n)}return Object.keys(n).sort().reduce((t,e)=>{const r=n[e];return Boolean(r)&&"object"==typeof r&&!Array.isArray(r)?t[e]=function t(e){return Array.isArray(e)?e.sort():"object"==typeof e?t(Object.keys(e)).sort((t,e)=>Number(t)-Number(e)).map(t=>e[t]):e}(r):t[e]=r,t},Object.create(null))}e.extract=s,e.parse=a,e.stringify=((t,e)=>{!1===(e=Object.assign({encode:!0,strict:!0,arrayFormat:"none"},e)).sort&&(e.sort=(()=>{}));const r=function(t){switch(t.arrayFormat){case"index":return(e,r,n)=>null===r?[i(e,t),"[",n,"]"].join(""):[i(e,t),"[",i(n,t),"]=",i(r,t)].join("");case"bracket":return(e,r)=>null===r?i(e,t):[i(e,t),"[]=",i(r,t)].join("");default:return(e,r)=>null===r?i(e,t):[i(e,t),"=",i(r,t)].join("")}}(e);return t?Object.keys(t).sort(e.sort).map(n=>{const o=t[n];if(void 0===o)return"";if(null===o)return i(n,e);if(Array.isArray(o)){const t=[];for(const e of o.slice())void 0!==e&&t.push(r(n,e,t.length));return t.join("&")}return i(n,e)+"="+i(o,e)}).filter(t=>t.length>0).join("&"):""}),e.parseUrl=((t,e)=>({url:t.split("?")[0]||"",query:a(s(t),e)}))},function(t,e,r){"use strict";t.exports=(t=>encodeURIComponent(t).replace(/[!'()*]/g,t=>`%${t.charCodeAt(0).toString(16).toUpperCase()}`))},function(t,e,r){"use strict";var n=new RegExp("%[a-f0-9]{2}","gi"),o=new RegExp("(%[a-f0-9]{2})+","gi");function i(t,e){try{return decodeURIComponent(t.join(""))}catch(t){}if(1===t.length)return t;e=e||1;var r=t.slice(0,e),n=t.slice(e);return Array.prototype.concat.call([],i(r),i(n))}function s(t){try{return decodeURIComponent(t)}catch(o){for(var e=t.match(n),r=1;r<e.length;r++)e=(t=i(e,r).join("")).match(n);return t}}t.exports=function(t){if("string"!=typeof t)throw new TypeError("Expected `encodedURI` to be of type `string`, got `"+typeof t+"`");try{return t=t.replace(/\+/g," "),decodeURIComponent(t)}catch(e){return function(t){for(var e={"%FE%FF":"��","%FF%FE":"��"},r=o.exec(t);r;){try{e[r[0]]=decodeURIComponent(r[0])}catch(t){var n=s(r[0]);n!==r[0]&&(e[r[0]]=n)}r=o.exec(t)}e["%C2"]="�";for(var i=Object.keys(e),a=0;a<i.length;a++){var u=i[a];t=t.replace(new RegExp(u,"g"),e[u])}return t}(t)}}},function(t,e,r){var n,o,i;o=[r(8)],void 0===(i="function"==typeof(n=function(t){"use strict";var e=t.Reader,r=t.Writer,n=t.util,o=t.roots.default||(t.roots.default={});return o.SBFrame=function(){function i(t){if(this.AudioSamples=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.Timestamp=0,i.prototype.UserPosX=0,i.prototype.UserPosY=0,i.prototype.UserPosZ=0,i.prototype.UserRotX=0,i.prototype.UserRotY=0,i.prototype.UserRotZ=0,i.prototype.HeadPosX=0,i.prototype.HeadPosY=0,i.prototype.HeadPosZ=0,i.prototype.HeadRotX=0,i.prototype.HeadRotY=0,i.prototype.HeadRotZ=0,i.prototype.LeftHandPosX=0,i.prototype.LeftHandPosY=0,i.prototype.LeftHandPosZ=0,i.prototype.LeftHandRotX=0,i.prototype.LeftHandRotY=0,i.prototype.LeftHandRotZ=0,i.prototype.RightHandPosX=0,i.prototype.RightHandPosY=0,i.prototype.RightHandPosZ=0,i.prototype.RightHandRotX=0,i.prototype.RightHandRotY=0,i.prototype.RightHandRotZ=0,i.prototype.EyePosX=0,i.prototype.EyePosY=0,i.prototype.EyePosZ=0,i.prototype.EyeRotX=0,i.prototype.EyeRotY=0,i.prototype.EyeRotZ=0,i.prototype.AudioSamples=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.Timestamp&&t.hasOwnProperty("Timestamp")&&e.uint32(13).float(t.Timestamp),null!=t.UserPosX&&t.hasOwnProperty("UserPosX")&&e.uint32(21).float(t.UserPosX),null!=t.UserPosY&&t.hasOwnProperty("UserPosY")&&e.uint32(29).float(t.UserPosY),null!=t.UserPosZ&&t.hasOwnProperty("UserPosZ")&&e.uint32(37).float(t.UserPosZ),null!=t.UserRotX&&t.hasOwnProperty("UserRotX")&&e.uint32(45).float(t.UserRotX),null!=t.UserRotY&&t.hasOwnProperty("UserRotY")&&e.uint32(53).float(t.UserRotY),null!=t.UserRotZ&&t.hasOwnProperty("UserRotZ")&&e.uint32(61).float(t.UserRotZ),null!=t.HeadPosX&&t.hasOwnProperty("HeadPosX")&&e.uint32(69).float(t.HeadPosX),null!=t.HeadPosY&&t.hasOwnProperty("HeadPosY")&&e.uint32(77).float(t.HeadPosY),null!=t.HeadPosZ&&t.hasOwnProperty("HeadPosZ")&&e.uint32(85).float(t.HeadPosZ),null!=t.HeadRotX&&t.hasOwnProperty("HeadRotX")&&e.uint32(93).float(t.HeadRotX),null!=t.HeadRotY&&t.hasOwnProperty("HeadRotY")&&e.uint32(101).float(t.HeadRotY),null!=t.HeadRotZ&&t.hasOwnProperty("HeadRotZ")&&e.uint32(109).float(t.HeadRotZ),null!=t.LeftHandPosX&&t.hasOwnProperty("LeftHandPosX")&&e.uint32(117).float(t.LeftHandPosX),null!=t.LeftHandPosY&&t.hasOwnProperty("LeftHandPosY")&&e.uint32(125).float(t.LeftHandPosY),null!=t.LeftHandPosZ&&t.hasOwnProperty("LeftHandPosZ")&&e.uint32(133).float(t.LeftHandPosZ),null!=t.LeftHandRotX&&t.hasOwnProperty("LeftHandRotX")&&e.uint32(141).float(t.LeftHandRotX),null!=t.LeftHandRotY&&t.hasOwnProperty("LeftHandRotY")&&e.uint32(149).float(t.LeftHandRotY),null!=t.LeftHandRotZ&&t.hasOwnProperty("LeftHandRotZ")&&e.uint32(157).float(t.LeftHandRotZ),null!=t.RightHandPosX&&t.hasOwnProperty("RightHandPosX")&&e.uint32(165).float(t.RightHandPosX),null!=t.RightHandPosY&&t.hasOwnProperty("RightHandPosY")&&e.uint32(173).float(t.RightHandPosY),null!=t.RightHandPosZ&&t.hasOwnProperty("RightHandPosZ")&&e.uint32(181).float(t.RightHandPosZ),null!=t.RightHandRotX&&t.hasOwnProperty("RightHandRotX")&&e.uint32(189).float(t.RightHandRotX),null!=t.RightHandRotY&&t.hasOwnProperty("RightHandRotY")&&e.uint32(197).float(t.RightHandRotY),null!=t.RightHandRotZ&&t.hasOwnProperty("RightHandRotZ")&&e.uint32(205).float(t.RightHandRotZ),null!=t.EyePosX&&t.hasOwnProperty("EyePosX")&&e.uint32(213).float(t.EyePosX),null!=t.EyePosY&&t.hasOwnProperty("EyePosY")&&e.uint32(221).float(t.EyePosY),null!=t.EyePosZ&&t.hasOwnProperty("EyePosZ")&&e.uint32(229).float(t.EyePosZ),null!=t.EyeRotX&&t.hasOwnProperty("EyeRotX")&&e.uint32(237).float(t.EyeRotX),null!=t.EyeRotY&&t.hasOwnProperty("EyeRotY")&&e.uint32(245).float(t.EyeRotY),null!=t.EyeRotZ&&t.hasOwnProperty("EyeRotZ")&&e.uint32(253).float(t.EyeRotZ),null!=t.AudioSamples&&t.AudioSamples.length){e.uint32(258).fork();for(var n=0;n<t.AudioSamples.length;++n)e.float(t.AudioSamples[n]);e.ldelim()}return e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBFrame;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.Timestamp=t.float();break;case 2:i.UserPosX=t.float();break;case 3:i.UserPosY=t.float();break;case 4:i.UserPosZ=t.float();break;case 5:i.UserRotX=t.float();break;case 6:i.UserRotY=t.float();break;case 7:i.UserRotZ=t.float();break;case 8:i.HeadPosX=t.float();break;case 9:i.HeadPosY=t.float();break;case 10:i.HeadPosZ=t.float();break;case 11:i.HeadRotX=t.float();break;case 12:i.HeadRotY=t.float();break;case 13:i.HeadRotZ=t.float();break;case 14:i.LeftHandPosX=t.float();break;case 15:i.LeftHandPosY=t.float();break;case 16:i.LeftHandPosZ=t.float();break;case 17:i.LeftHandRotX=t.float();break;case 18:i.LeftHandRotY=t.float();break;case 19:i.LeftHandRotZ=t.float();break;case 20:i.RightHandPosX=t.float();break;case 21:i.RightHandPosY=t.float();break;case 22:i.RightHandPosZ=t.float();break;case 23:i.RightHandRotX=t.float();break;case 24:i.RightHandRotY=t.float();break;case 25:i.RightHandRotZ=t.float();break;case 26:i.EyePosX=t.float();break;case 27:i.EyePosY=t.float();break;case 28:i.EyePosZ=t.float();break;case 29:i.EyeRotX=t.float();break;case 30:i.EyeRotY=t.float();break;case 31:i.EyeRotZ=t.float();break;case 32:if(i.AudioSamples&&i.AudioSamples.length||(i.AudioSamples=[]),2==(7&s))for(var a=t.uint32()+t.pos;t.pos<a;)i.AudioSamples.push(t.float());else i.AudioSamples.push(t.float());break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.Timestamp&&t.hasOwnProperty("Timestamp")&&"number"!=typeof t.Timestamp)return"Timestamp: number expected";if(null!=t.UserPosX&&t.hasOwnProperty("UserPosX")&&"number"!=typeof t.UserPosX)return"UserPosX: number expected";if(null!=t.UserPosY&&t.hasOwnProperty("UserPosY")&&"number"!=typeof t.UserPosY)return"UserPosY: number expected";if(null!=t.UserPosZ&&t.hasOwnProperty("UserPosZ")&&"number"!=typeof t.UserPosZ)return"UserPosZ: number expected";if(null!=t.UserRotX&&t.hasOwnProperty("UserRotX")&&"number"!=typeof t.UserRotX)return"UserRotX: number expected";if(null!=t.UserRotY&&t.hasOwnProperty("UserRotY")&&"number"!=typeof t.UserRotY)return"UserRotY: number expected";if(null!=t.UserRotZ&&t.hasOwnProperty("UserRotZ")&&"number"!=typeof t.UserRotZ)return"UserRotZ: number expected";if(null!=t.HeadPosX&&t.hasOwnProperty("HeadPosX")&&"number"!=typeof t.HeadPosX)return"HeadPosX: number expected";if(null!=t.HeadPosY&&t.hasOwnProperty("HeadPosY")&&"number"!=typeof t.HeadPosY)return"HeadPosY: number expected";if(null!=t.HeadPosZ&&t.hasOwnProperty("HeadPosZ")&&"number"!=typeof t.HeadPosZ)return"HeadPosZ: number expected";if(null!=t.HeadRotX&&t.hasOwnProperty("HeadRotX")&&"number"!=typeof t.HeadRotX)return"HeadRotX: number expected";if(null!=t.HeadRotY&&t.hasOwnProperty("HeadRotY")&&"number"!=typeof t.HeadRotY)return"HeadRotY: number expected";if(null!=t.HeadRotZ&&t.hasOwnProperty("HeadRotZ")&&"number"!=typeof t.HeadRotZ)return"HeadRotZ: number expected";if(null!=t.LeftHandPosX&&t.hasOwnProperty("LeftHandPosX")&&"number"!=typeof t.LeftHandPosX)return"LeftHandPosX: number expected";if(null!=t.LeftHandPosY&&t.hasOwnProperty("LeftHandPosY")&&"number"!=typeof t.LeftHandPosY)return"LeftHandPosY: number expected";if(null!=t.LeftHandPosZ&&t.hasOwnProperty("LeftHandPosZ")&&"number"!=typeof t.LeftHandPosZ)return"LeftHandPosZ: number expected";if(null!=t.LeftHandRotX&&t.hasOwnProperty("LeftHandRotX")&&"number"!=typeof t.LeftHandRotX)return"LeftHandRotX: number expected";if(null!=t.LeftHandRotY&&t.hasOwnProperty("LeftHandRotY")&&"number"!=typeof t.LeftHandRotY)return"LeftHandRotY: number expected";if(null!=t.LeftHandRotZ&&t.hasOwnProperty("LeftHandRotZ")&&"number"!=typeof t.LeftHandRotZ)return"LeftHandRotZ: number expected";if(null!=t.RightHandPosX&&t.hasOwnProperty("RightHandPosX")&&"number"!=typeof t.RightHandPosX)return"RightHandPosX: number expected";if(null!=t.RightHandPosY&&t.hasOwnProperty("RightHandPosY")&&"number"!=typeof t.RightHandPosY)return"RightHandPosY: number expected";if(null!=t.RightHandPosZ&&t.hasOwnProperty("RightHandPosZ")&&"number"!=typeof t.RightHandPosZ)return"RightHandPosZ: number expected";if(null!=t.RightHandRotX&&t.hasOwnProperty("RightHandRotX")&&"number"!=typeof t.RightHandRotX)return"RightHandRotX: number expected";if(null!=t.RightHandRotY&&t.hasOwnProperty("RightHandRotY")&&"number"!=typeof t.RightHandRotY)return"RightHandRotY: number expected";if(null!=t.RightHandRotZ&&t.hasOwnProperty("RightHandRotZ")&&"number"!=typeof t.RightHandRotZ)return"RightHandRotZ: number expected";if(null!=t.EyePosX&&t.hasOwnProperty("EyePosX")&&"number"!=typeof t.EyePosX)return"EyePosX: number expected";if(null!=t.EyePosY&&t.hasOwnProperty("EyePosY")&&"number"!=typeof t.EyePosY)return"EyePosY: number expected";if(null!=t.EyePosZ&&t.hasOwnProperty("EyePosZ")&&"number"!=typeof t.EyePosZ)return"EyePosZ: number expected";if(null!=t.EyeRotX&&t.hasOwnProperty("EyeRotX")&&"number"!=typeof t.EyeRotX)return"EyeRotX: number expected";if(null!=t.EyeRotY&&t.hasOwnProperty("EyeRotY")&&"number"!=typeof t.EyeRotY)return"EyeRotY: number expected";if(null!=t.EyeRotZ&&t.hasOwnProperty("EyeRotZ")&&"number"!=typeof t.EyeRotZ)return"EyeRotZ: number expected";if(null!=t.AudioSamples&&t.hasOwnProperty("AudioSamples")){if(!Array.isArray(t.AudioSamples))return"AudioSamples: array expected";for(var e=0;e<t.AudioSamples.length;++e)if("number"!=typeof t.AudioSamples[e])return"AudioSamples: number[] expected"}return null},i.fromObject=function(t){if(t instanceof o.SBFrame)return t;var e=new o.SBFrame;if(null!=t.Timestamp&&(e.Timestamp=Number(t.Timestamp)),null!=t.UserPosX&&(e.UserPosX=Number(t.UserPosX)),null!=t.UserPosY&&(e.UserPosY=Number(t.UserPosY)),null!=t.UserPosZ&&(e.UserPosZ=Number(t.UserPosZ)),null!=t.UserRotX&&(e.UserRotX=Number(t.UserRotX)),null!=t.UserRotY&&(e.UserRotY=Number(t.UserRotY)),null!=t.UserRotZ&&(e.UserRotZ=Number(t.UserRotZ)),null!=t.HeadPosX&&(e.HeadPosX=Number(t.HeadPosX)),null!=t.HeadPosY&&(e.HeadPosY=Number(t.HeadPosY)),null!=t.HeadPosZ&&(e.HeadPosZ=Number(t.HeadPosZ)),null!=t.HeadRotX&&(e.HeadRotX=Number(t.HeadRotX)),null!=t.HeadRotY&&(e.HeadRotY=Number(t.HeadRotY)),null!=t.HeadRotZ&&(e.HeadRotZ=Number(t.HeadRotZ)),null!=t.LeftHandPosX&&(e.LeftHandPosX=Number(t.LeftHandPosX)),null!=t.LeftHandPosY&&(e.LeftHandPosY=Number(t.LeftHandPosY)),null!=t.LeftHandPosZ&&(e.LeftHandPosZ=Number(t.LeftHandPosZ)),null!=t.LeftHandRotX&&(e.LeftHandRotX=Number(t.LeftHandRotX)),null!=t.LeftHandRotY&&(e.LeftHandRotY=Number(t.LeftHandRotY)),null!=t.LeftHandRotZ&&(e.LeftHandRotZ=Number(t.LeftHandRotZ)),null!=t.RightHandPosX&&(e.RightHandPosX=Number(t.RightHandPosX)),null!=t.RightHandPosY&&(e.RightHandPosY=Number(t.RightHandPosY)),null!=t.RightHandPosZ&&(e.RightHandPosZ=Number(t.RightHandPosZ)),null!=t.RightHandRotX&&(e.RightHandRotX=Number(t.RightHandRotX)),null!=t.RightHandRotY&&(e.RightHandRotY=Number(t.RightHandRotY)),null!=t.RightHandRotZ&&(e.RightHandRotZ=Number(t.RightHandRotZ)),null!=t.EyePosX&&(e.EyePosX=Number(t.EyePosX)),null!=t.EyePosY&&(e.EyePosY=Number(t.EyePosY)),null!=t.EyePosZ&&(e.EyePosZ=Number(t.EyePosZ)),null!=t.EyeRotX&&(e.EyeRotX=Number(t.EyeRotX)),null!=t.EyeRotY&&(e.EyeRotY=Number(t.EyeRotY)),null!=t.EyeRotZ&&(e.EyeRotZ=Number(t.EyeRotZ)),t.AudioSamples){if(!Array.isArray(t.AudioSamples))throw TypeError(".SBFrame.AudioSamples: array expected");e.AudioSamples=[];for(var r=0;r<t.AudioSamples.length;++r)e.AudioSamples[r]=Number(t.AudioSamples[r])}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.AudioSamples=[]),e.defaults&&(r.Timestamp=0,r.UserPosX=0,r.UserPosY=0,r.UserPosZ=0,r.UserRotX=0,r.UserRotY=0,r.UserRotZ=0,r.HeadPosX=0,r.HeadPosY=0,r.HeadPosZ=0,r.HeadRotX=0,r.HeadRotY=0,r.HeadRotZ=0,r.LeftHandPosX=0,r.LeftHandPosY=0,r.LeftHandPosZ=0,r.LeftHandRotX=0,r.LeftHandRotY=0,r.LeftHandRotZ=0,r.RightHandPosX=0,r.RightHandPosY=0,r.RightHandPosZ=0,r.RightHandRotX=0,r.RightHandRotY=0,r.RightHandRotZ=0,r.EyePosX=0,r.EyePosY=0,r.EyePosZ=0,r.EyeRotX=0,r.EyeRotY=0,r.EyeRotZ=0),null!=t.Timestamp&&t.hasOwnProperty("Timestamp")&&(r.Timestamp=e.json&&!isFinite(t.Timestamp)?String(t.Timestamp):t.Timestamp),null!=t.UserPosX&&t.hasOwnProperty("UserPosX")&&(r.UserPosX=e.json&&!isFinite(t.UserPosX)?String(t.UserPosX):t.UserPosX),null!=t.UserPosY&&t.hasOwnProperty("UserPosY")&&(r.UserPosY=e.json&&!isFinite(t.UserPosY)?String(t.UserPosY):t.UserPosY),null!=t.UserPosZ&&t.hasOwnProperty("UserPosZ")&&(r.UserPosZ=e.json&&!isFinite(t.UserPosZ)?String(t.UserPosZ):t.UserPosZ),null!=t.UserRotX&&t.hasOwnProperty("UserRotX")&&(r.UserRotX=e.json&&!isFinite(t.UserRotX)?String(t.UserRotX):t.UserRotX),null!=t.UserRotY&&t.hasOwnProperty("UserRotY")&&(r.UserRotY=e.json&&!isFinite(t.UserRotY)?String(t.UserRotY):t.UserRotY),null!=t.UserRotZ&&t.hasOwnProperty("UserRotZ")&&(r.UserRotZ=e.json&&!isFinite(t.UserRotZ)?String(t.UserRotZ):t.UserRotZ),null!=t.HeadPosX&&t.hasOwnProperty("HeadPosX")&&(r.HeadPosX=e.json&&!isFinite(t.HeadPosX)?String(t.HeadPosX):t.HeadPosX),null!=t.HeadPosY&&t.hasOwnProperty("HeadPosY")&&(r.HeadPosY=e.json&&!isFinite(t.HeadPosY)?String(t.HeadPosY):t.HeadPosY),null!=t.HeadPosZ&&t.hasOwnProperty("HeadPosZ")&&(r.HeadPosZ=e.json&&!isFinite(t.HeadPosZ)?String(t.HeadPosZ):t.HeadPosZ),null!=t.HeadRotX&&t.hasOwnProperty("HeadRotX")&&(r.HeadRotX=e.json&&!isFinite(t.HeadRotX)?String(t.HeadRotX):t.HeadRotX),null!=t.HeadRotY&&t.hasOwnProperty("HeadRotY")&&(r.HeadRotY=e.json&&!isFinite(t.HeadRotY)?String(t.HeadRotY):t.HeadRotY),null!=t.HeadRotZ&&t.hasOwnProperty("HeadRotZ")&&(r.HeadRotZ=e.json&&!isFinite(t.HeadRotZ)?String(t.HeadRotZ):t.HeadRotZ),null!=t.LeftHandPosX&&t.hasOwnProperty("LeftHandPosX")&&(r.LeftHandPosX=e.json&&!isFinite(t.LeftHandPosX)?String(t.LeftHandPosX):t.LeftHandPosX),null!=t.LeftHandPosY&&t.hasOwnProperty("LeftHandPosY")&&(r.LeftHandPosY=e.json&&!isFinite(t.LeftHandPosY)?String(t.LeftHandPosY):t.LeftHandPosY),null!=t.LeftHandPosZ&&t.hasOwnProperty("LeftHandPosZ")&&(r.LeftHandPosZ=e.json&&!isFinite(t.LeftHandPosZ)?String(t.LeftHandPosZ):t.LeftHandPosZ),null!=t.LeftHandRotX&&t.hasOwnProperty("LeftHandRotX")&&(r.LeftHandRotX=e.json&&!isFinite(t.LeftHandRotX)?String(t.LeftHandRotX):t.LeftHandRotX),null!=t.LeftHandRotY&&t.hasOwnProperty("LeftHandRotY")&&(r.LeftHandRotY=e.json&&!isFinite(t.LeftHandRotY)?String(t.LeftHandRotY):t.LeftHandRotY),null!=t.LeftHandRotZ&&t.hasOwnProperty("LeftHandRotZ")&&(r.LeftHandRotZ=e.json&&!isFinite(t.LeftHandRotZ)?String(t.LeftHandRotZ):t.LeftHandRotZ),null!=t.RightHandPosX&&t.hasOwnProperty("RightHandPosX")&&(r.RightHandPosX=e.json&&!isFinite(t.RightHandPosX)?String(t.RightHandPosX):t.RightHandPosX),null!=t.RightHandPosY&&t.hasOwnProperty("RightHandPosY")&&(r.RightHandPosY=e.json&&!isFinite(t.RightHandPosY)?String(t.RightHandPosY):t.RightHandPosY),null!=t.RightHandPosZ&&t.hasOwnProperty("RightHandPosZ")&&(r.RightHandPosZ=e.json&&!isFinite(t.RightHandPosZ)?String(t.RightHandPosZ):t.RightHandPosZ),null!=t.RightHandRotX&&t.hasOwnProperty("RightHandRotX")&&(r.RightHandRotX=e.json&&!isFinite(t.RightHandRotX)?String(t.RightHandRotX):t.RightHandRotX),null!=t.RightHandRotY&&t.hasOwnProperty("RightHandRotY")&&(r.RightHandRotY=e.json&&!isFinite(t.RightHandRotY)?String(t.RightHandRotY):t.RightHandRotY),null!=t.RightHandRotZ&&t.hasOwnProperty("RightHandRotZ")&&(r.RightHandRotZ=e.json&&!isFinite(t.RightHandRotZ)?String(t.RightHandRotZ):t.RightHandRotZ),null!=t.EyePosX&&t.hasOwnProperty("EyePosX")&&(r.EyePosX=e.json&&!isFinite(t.EyePosX)?String(t.EyePosX):t.EyePosX),null!=t.EyePosY&&t.hasOwnProperty("EyePosY")&&(r.EyePosY=e.json&&!isFinite(t.EyePosY)?String(t.EyePosY):t.EyePosY),null!=t.EyePosZ&&t.hasOwnProperty("EyePosZ")&&(r.EyePosZ=e.json&&!isFinite(t.EyePosZ)?String(t.EyePosZ):t.EyePosZ),null!=t.EyeRotX&&t.hasOwnProperty("EyeRotX")&&(r.EyeRotX=e.json&&!isFinite(t.EyeRotX)?String(t.EyeRotX):t.EyeRotX),null!=t.EyeRotY&&t.hasOwnProperty("EyeRotY")&&(r.EyeRotY=e.json&&!isFinite(t.EyeRotY)?String(t.EyeRotY):t.EyeRotY),null!=t.EyeRotZ&&t.hasOwnProperty("EyeRotZ")&&(r.EyeRotZ=e.json&&!isFinite(t.EyeRotZ)?String(t.EyeRotZ):t.EyeRotZ),t.AudioSamples&&t.AudioSamples.length){r.AudioSamples=[];for(var n=0;n<t.AudioSamples.length;++n)r.AudioSamples[n]=e.json&&!isFinite(t.AudioSamples[n])?String(t.AudioSamples[n]):t.AudioSamples[n]}return r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBFrameList=function(){function i(t){if(this.frames=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.frames=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.frames&&t.frames.length)for(var n=0;n<t.frames.length;++n)o.SBFrame.encode(t.frames[n],e.uint32(10).fork()).ldelim();return e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBFrameList;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.frames&&i.frames.length||(i.frames=[]),i.frames.push(o.SBFrame.decode(t,t.uint32()));break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.frames&&t.hasOwnProperty("frames")){if(!Array.isArray(t.frames))return"frames: array expected";for(var e=0;e<t.frames.length;++e){var r=o.SBFrame.verify(t.frames[e]);if(r)return"frames."+r}}return null},i.fromObject=function(t){if(t instanceof o.SBFrameList)return t;var e=new o.SBFrameList;if(t.frames){if(!Array.isArray(t.frames))throw TypeError(".SBFrameList.frames: array expected");e.frames=[];for(var r=0;r<t.frames.length;++r){if("object"!=typeof t.frames[r])throw TypeError(".SBFrameList.frames: object expected");e.frames[r]=o.SBFrame.fromObject(t.frames[r])}}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.frames=[]),t.frames&&t.frames.length){r.frames=[];for(var n=0;n<t.frames.length;++n)r.frames[n]=o.SBFrame.toObject(t.frames[n],e)}return r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBHit=function(){function i(t){if(t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.id="",i.prototype.scoreId="",i.prototype.punchId="",i.prototype.timestamp=0,i.prototype.x=0,i.prototype.y=0,i.prototype.z=0,i.prototype.vX=0,i.prototype.vY=0,i.prototype.vZ=0,i.prototype.multiplier=0,i.prototype.streak=0,i.prototype.score=0,i.prototype.trig=!1,i.prototype.isLeft=!1,i.create=function(t){return new i(t)},i.encode=function(t,e){return e||(e=r.create()),null!=t.id&&t.hasOwnProperty("id")&&e.uint32(10).string(t.id),null!=t.scoreId&&t.hasOwnProperty("scoreId")&&e.uint32(18).string(t.scoreId),null!=t.punchId&&t.hasOwnProperty("punchId")&&e.uint32(26).string(t.punchId),null!=t.timestamp&&t.hasOwnProperty("timestamp")&&e.uint32(33).double(t.timestamp),null!=t.x&&t.hasOwnProperty("x")&&e.uint32(45).float(t.x),null!=t.y&&t.hasOwnProperty("y")&&e.uint32(53).float(t.y),null!=t.z&&t.hasOwnProperty("z")&&e.uint32(61).float(t.z),null!=t.vX&&t.hasOwnProperty("vX")&&e.uint32(69).float(t.vX),null!=t.vY&&t.hasOwnProperty("vY")&&e.uint32(77).float(t.vY),null!=t.vZ&&t.hasOwnProperty("vZ")&&e.uint32(85).float(t.vZ),null!=t.multiplier&&t.hasOwnProperty("multiplier")&&e.uint32(88).int32(t.multiplier),null!=t.streak&&t.hasOwnProperty("streak")&&e.uint32(96).int32(t.streak),null!=t.score&&t.hasOwnProperty("score")&&e.uint32(104).int32(t.score),null!=t.trig&&t.hasOwnProperty("trig")&&e.uint32(112).bool(t.trig),null!=t.isLeft&&t.hasOwnProperty("isLeft")&&e.uint32(120).bool(t.isLeft),e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBHit;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.id=t.string();break;case 2:i.scoreId=t.string();break;case 3:i.punchId=t.string();break;case 4:i.timestamp=t.double();break;case 5:i.x=t.float();break;case 6:i.y=t.float();break;case 7:i.z=t.float();break;case 8:i.vX=t.float();break;case 9:i.vY=t.float();break;case 10:i.vZ=t.float();break;case 11:i.multiplier=t.int32();break;case 12:i.streak=t.int32();break;case 13:i.score=t.int32();break;case 14:i.trig=t.bool();break;case 15:i.isLeft=t.bool();break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){return"object"!=typeof t||null===t?"object expected":null!=t.id&&t.hasOwnProperty("id")&&!n.isString(t.id)?"id: string expected":null!=t.scoreId&&t.hasOwnProperty("scoreId")&&!n.isString(t.scoreId)?"scoreId: string expected":null!=t.punchId&&t.hasOwnProperty("punchId")&&!n.isString(t.punchId)?"punchId: string expected":null!=t.timestamp&&t.hasOwnProperty("timestamp")&&"number"!=typeof t.timestamp?"timestamp: number expected":null!=t.x&&t.hasOwnProperty("x")&&"number"!=typeof t.x?"x: number expected":null!=t.y&&t.hasOwnProperty("y")&&"number"!=typeof t.y?"y: number expected":null!=t.z&&t.hasOwnProperty("z")&&"number"!=typeof t.z?"z: number expected":null!=t.vX&&t.hasOwnProperty("vX")&&"number"!=typeof t.vX?"vX: number expected":null!=t.vY&&t.hasOwnProperty("vY")&&"number"!=typeof t.vY?"vY: number expected":null!=t.vZ&&t.hasOwnProperty("vZ")&&"number"!=typeof t.vZ?"vZ: number expected":null!=t.multiplier&&t.hasOwnProperty("multiplier")&&!n.isInteger(t.multiplier)?"multiplier: integer expected":null!=t.streak&&t.hasOwnProperty("streak")&&!n.isInteger(t.streak)?"streak: integer expected":null!=t.score&&t.hasOwnProperty("score")&&!n.isInteger(t.score)?"score: integer expected":null!=t.trig&&t.hasOwnProperty("trig")&&"boolean"!=typeof t.trig?"trig: boolean expected":null!=t.isLeft&&t.hasOwnProperty("isLeft")&&"boolean"!=typeof t.isLeft?"isLeft: boolean expected":null},i.fromObject=function(t){if(t instanceof o.SBHit)return t;var e=new o.SBHit;return null!=t.id&&(e.id=String(t.id)),null!=t.scoreId&&(e.scoreId=String(t.scoreId)),null!=t.punchId&&(e.punchId=String(t.punchId)),null!=t.timestamp&&(e.timestamp=Number(t.timestamp)),null!=t.x&&(e.x=Number(t.x)),null!=t.y&&(e.y=Number(t.y)),null!=t.z&&(e.z=Number(t.z)),null!=t.vX&&(e.vX=Number(t.vX)),null!=t.vY&&(e.vY=Number(t.vY)),null!=t.vZ&&(e.vZ=Number(t.vZ)),null!=t.multiplier&&(e.multiplier=0|t.multiplier),null!=t.streak&&(e.streak=0|t.streak),null!=t.score&&(e.score=0|t.score),null!=t.trig&&(e.trig=Boolean(t.trig)),null!=t.isLeft&&(e.isLeft=Boolean(t.isLeft)),e},i.toObject=function(t,e){e||(e={});var r={};return e.defaults&&(r.id="",r.scoreId="",r.punchId="",r.timestamp=0,r.x=0,r.y=0,r.z=0,r.vX=0,r.vY=0,r.vZ=0,r.multiplier=0,r.streak=0,r.score=0,r.trig=!1,r.isLeft=!1),null!=t.id&&t.hasOwnProperty("id")&&(r.id=t.id),null!=t.scoreId&&t.hasOwnProperty("scoreId")&&(r.scoreId=t.scoreId),null!=t.punchId&&t.hasOwnProperty("punchId")&&(r.punchId=t.punchId),null!=t.timestamp&&t.hasOwnProperty("timestamp")&&(r.timestamp=e.json&&!isFinite(t.timestamp)?String(t.timestamp):t.timestamp),null!=t.x&&t.hasOwnProperty("x")&&(r.x=e.json&&!isFinite(t.x)?String(t.x):t.x),null!=t.y&&t.hasOwnProperty("y")&&(r.y=e.json&&!isFinite(t.y)?String(t.y):t.y),null!=t.z&&t.hasOwnProperty("z")&&(r.z=e.json&&!isFinite(t.z)?String(t.z):t.z),null!=t.vX&&t.hasOwnProperty("vX")&&(r.vX=e.json&&!isFinite(t.vX)?String(t.vX):t.vX),null!=t.vY&&t.hasOwnProperty("vY")&&(r.vY=e.json&&!isFinite(t.vY)?String(t.vY):t.vY),null!=t.vZ&&t.hasOwnProperty("vZ")&&(r.vZ=e.json&&!isFinite(t.vZ)?String(t.vZ):t.vZ),null!=t.multiplier&&t.hasOwnProperty("multiplier")&&(r.multiplier=t.multiplier),null!=t.streak&&t.hasOwnProperty("streak")&&(r.streak=t.streak),null!=t.score&&t.hasOwnProperty("score")&&(r.score=t.score),null!=t.trig&&t.hasOwnProperty("trig")&&(r.trig=t.trig),null!=t.isLeft&&t.hasOwnProperty("isLeft")&&(r.isLeft=t.isLeft),r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBHitList=function(){function i(t){if(this.hits=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.hits=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.hits&&t.hits.length)for(var n=0;n<t.hits.length;++n)o.SBHit.encode(t.hits[n],e.uint32(10).fork()).ldelim();return e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBHitList;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.hits&&i.hits.length||(i.hits=[]),i.hits.push(o.SBHit.decode(t,t.uint32()));break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.hits&&t.hasOwnProperty("hits")){if(!Array.isArray(t.hits))return"hits: array expected";for(var e=0;e<t.hits.length;++e){var r=o.SBHit.verify(t.hits[e]);if(r)return"hits."+r}}return null},i.fromObject=function(t){if(t instanceof o.SBHitList)return t;var e=new o.SBHitList;if(t.hits){if(!Array.isArray(t.hits))throw TypeError(".SBHitList.hits: array expected");e.hits=[];for(var r=0;r<t.hits.length;++r){if("object"!=typeof t.hits[r])throw TypeError(".SBHitList.hits: object expected");e.hits[r]=o.SBHit.fromObject(t.hits[r])}}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.hits=[]),t.hits&&t.hits.length){r.hits=[];for(var n=0;n<t.hits.length;++n)r.hits[n]=o.SBHit.toObject(t.hits[n],e)}return r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBPunch=function(){function i(t){if(t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.id="",i.prototype.performanceId="",i.prototype.timestamp=0,i.prototype.x=0,i.prototype.y=0,i.prototype.z=0,i.prototype.vX=0,i.prototype.vY=0,i.prototype.vZ=0,i.prototype.trig=!1,i.prototype.isLeft=!1,i.create=function(t){return new i(t)},i.encode=function(t,e){return e||(e=r.create()),null!=t.id&&t.hasOwnProperty("id")&&e.uint32(10).string(t.id),null!=t.performanceId&&t.hasOwnProperty("performanceId")&&e.uint32(18).string(t.performanceId),null!=t.timestamp&&t.hasOwnProperty("timestamp")&&e.uint32(25).double(t.timestamp),null!=t.x&&t.hasOwnProperty("x")&&e.uint32(37).float(t.x),null!=t.y&&t.hasOwnProperty("y")&&e.uint32(45).float(t.y),null!=t.z&&t.hasOwnProperty("z")&&e.uint32(53).float(t.z),null!=t.vX&&t.hasOwnProperty("vX")&&e.uint32(61).float(t.vX),null!=t.vY&&t.hasOwnProperty("vY")&&e.uint32(69).float(t.vY),null!=t.vZ&&t.hasOwnProperty("vZ")&&e.uint32(77).float(t.vZ),null!=t.trig&&t.hasOwnProperty("trig")&&e.uint32(80).bool(t.trig),null!=t.isLeft&&t.hasOwnProperty("isLeft")&&e.uint32(88).bool(t.isLeft),e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBPunch;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.id=t.string();break;case 2:i.performanceId=t.string();break;case 3:i.timestamp=t.double();break;case 4:i.x=t.float();break;case 5:i.y=t.float();break;case 6:i.z=t.float();break;case 7:i.vX=t.float();break;case 8:i.vY=t.float();break;case 9:i.vZ=t.float();break;case 10:i.trig=t.bool();break;case 11:i.isLeft=t.bool();break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){return"object"!=typeof t||null===t?"object expected":null!=t.id&&t.hasOwnProperty("id")&&!n.isString(t.id)?"id: string expected":null!=t.performanceId&&t.hasOwnProperty("performanceId")&&!n.isString(t.performanceId)?"performanceId: string expected":null!=t.timestamp&&t.hasOwnProperty("timestamp")&&"number"!=typeof t.timestamp?"timestamp: number expected":null!=t.x&&t.hasOwnProperty("x")&&"number"!=typeof t.x?"x: number expected":null!=t.y&&t.hasOwnProperty("y")&&"number"!=typeof t.y?"y: number expected":null!=t.z&&t.hasOwnProperty("z")&&"number"!=typeof t.z?"z: number expected":null!=t.vX&&t.hasOwnProperty("vX")&&"number"!=typeof t.vX?"vX: number expected":null!=t.vY&&t.hasOwnProperty("vY")&&"number"!=typeof t.vY?"vY: number expected":null!=t.vZ&&t.hasOwnProperty("vZ")&&"number"!=typeof t.vZ?"vZ: number expected":null!=t.trig&&t.hasOwnProperty("trig")&&"boolean"!=typeof t.trig?"trig: boolean expected":null!=t.isLeft&&t.hasOwnProperty("isLeft")&&"boolean"!=typeof t.isLeft?"isLeft: boolean expected":null},i.fromObject=function(t){if(t instanceof o.SBPunch)return t;var e=new o.SBPunch;return null!=t.id&&(e.id=String(t.id)),null!=t.performanceId&&(e.performanceId=String(t.performanceId)),null!=t.timestamp&&(e.timestamp=Number(t.timestamp)),null!=t.x&&(e.x=Number(t.x)),null!=t.y&&(e.y=Number(t.y)),null!=t.z&&(e.z=Number(t.z)),null!=t.vX&&(e.vX=Number(t.vX)),null!=t.vY&&(e.vY=Number(t.vY)),null!=t.vZ&&(e.vZ=Number(t.vZ)),null!=t.trig&&(e.trig=Boolean(t.trig)),null!=t.isLeft&&(e.isLeft=Boolean(t.isLeft)),e},i.toObject=function(t,e){e||(e={});var r={};return e.defaults&&(r.id="",r.performanceId="",r.timestamp=0,r.x=0,r.y=0,r.z=0,r.vX=0,r.vY=0,r.vZ=0,r.trig=!1,r.isLeft=!1),null!=t.id&&t.hasOwnProperty("id")&&(r.id=t.id),null!=t.performanceId&&t.hasOwnProperty("performanceId")&&(r.performanceId=t.performanceId),null!=t.timestamp&&t.hasOwnProperty("timestamp")&&(r.timestamp=e.json&&!isFinite(t.timestamp)?String(t.timestamp):t.timestamp),null!=t.x&&t.hasOwnProperty("x")&&(r.x=e.json&&!isFinite(t.x)?String(t.x):t.x),null!=t.y&&t.hasOwnProperty("y")&&(r.y=e.json&&!isFinite(t.y)?String(t.y):t.y),null!=t.z&&t.hasOwnProperty("z")&&(r.z=e.json&&!isFinite(t.z)?String(t.z):t.z),null!=t.vX&&t.hasOwnProperty("vX")&&(r.vX=e.json&&!isFinite(t.vX)?String(t.vX):t.vX),null!=t.vY&&t.hasOwnProperty("vY")&&(r.vY=e.json&&!isFinite(t.vY)?String(t.vY):t.vY),null!=t.vZ&&t.hasOwnProperty("vZ")&&(r.vZ=e.json&&!isFinite(t.vZ)?String(t.vZ):t.vZ),null!=t.trig&&t.hasOwnProperty("trig")&&(r.trig=t.trig),null!=t.isLeft&&t.hasOwnProperty("isLeft")&&(r.isLeft=t.isLeft),r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBPunchList=function(){function i(t){if(this.punches=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.punches=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.punches&&t.punches.length)for(var n=0;n<t.punches.length;++n)o.SBPunch.encode(t.punches[n],e.uint32(10).fork()).ldelim();return e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBPunchList;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.punches&&i.punches.length||(i.punches=[]),i.punches.push(o.SBPunch.decode(t,t.uint32()));break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.punches&&t.hasOwnProperty("punches")){if(!Array.isArray(t.punches))return"punches: array expected";for(var e=0;e<t.punches.length;++e){var r=o.SBPunch.verify(t.punches[e]);if(r)return"punches."+r}}return null},i.fromObject=function(t){if(t instanceof o.SBPunchList)return t;var e=new o.SBPunchList;if(t.punches){if(!Array.isArray(t.punches))throw TypeError(".SBPunchList.punches: array expected");e.punches=[];for(var r=0;r<t.punches.length;++r){if("object"!=typeof t.punches[r])throw TypeError(".SBPunchList.punches: object expected");e.punches[r]=o.SBPunch.fromObject(t.punches[r])}}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.punches=[]),t.punches&&t.punches.length){r.punches=[];for(var n=0;n<t.punches.length;++n)r.punches[n]=o.SBPunch.toObject(t.punches[n],e)}return r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBPerformanceUpload=function(){function i(t){if(this.punches=[],this.frames=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.seconds=0,i.prototype.youtubeId="",i.prototype.songName="",i.prototype.songLength=0,i.prototype.songChannel="",i.prototype.songThumbnail="",i.prototype.songThumbnailWidth=0,i.prototype.songThumbnailHeight=0,i.prototype.legacy=n.newBuffer([]),i.prototype.punches=n.emptyArray,i.prototype.frames=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.seconds&&t.hasOwnProperty("seconds")&&e.uint32(13).float(t.seconds),null!=t.youtubeId&&t.hasOwnProperty("youtubeId")&&e.uint32(18).string(t.youtubeId),null!=t.songName&&t.hasOwnProperty("songName")&&e.uint32(26).string(t.songName),null!=t.songLength&&t.hasOwnProperty("songLength")&&e.uint32(37).float(t.songLength),null!=t.songChannel&&t.hasOwnProperty("songChannel")&&e.uint32(42).string(t.songChannel),null!=t.songThumbnail&&t.hasOwnProperty("songThumbnail")&&e.uint32(50).string(t.songThumbnail),null!=t.songThumbnailWidth&&t.hasOwnProperty("songThumbnailWidth")&&e.uint32(56).int32(t.songThumbnailWidth),null!=t.songThumbnailHeight&&t.hasOwnProperty("songThumbnailHeight")&&e.uint32(64).int32(t.songThumbnailHeight),null!=t.legacy&&t.hasOwnProperty("legacy")&&e.uint32(74).bytes(t.legacy),null!=t.punches&&t.punches.length)for(var n=0;n<t.punches.length;++n)o.SBPunch.encode(t.punches[n],e.uint32(82).fork()).ldelim();if(null!=t.frames&&t.frames.length)for(n=0;n<t.frames.length;++n)o.SBFrame.encode(t.frames[n],e.uint32(90).fork()).ldelim();return e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBPerformanceUpload;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.seconds=t.float();break;case 2:i.youtubeId=t.string();break;case 3:i.songName=t.string();break;case 4:i.songLength=t.float();break;case 5:i.songChannel=t.string();break;case 6:i.songThumbnail=t.string();break;case 7:i.songThumbnailWidth=t.int32();break;case 8:i.songThumbnailHeight=t.int32();break;case 9:i.legacy=t.bytes();break;case 10:i.punches&&i.punches.length||(i.punches=[]),i.punches.push(o.SBPunch.decode(t,t.uint32()));break;case 11:i.frames&&i.frames.length||(i.frames=[]),i.frames.push(o.SBFrame.decode(t,t.uint32()));break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.seconds&&t.hasOwnProperty("seconds")&&"number"!=typeof t.seconds)return"seconds: number expected";if(null!=t.youtubeId&&t.hasOwnProperty("youtubeId")&&!n.isString(t.youtubeId))return"youtubeId: string expected";if(null!=t.songName&&t.hasOwnProperty("songName")&&!n.isString(t.songName))return"songName: string expected";if(null!=t.songLength&&t.hasOwnProperty("songLength")&&"number"!=typeof t.songLength)return"songLength: number expected";if(null!=t.songChannel&&t.hasOwnProperty("songChannel")&&!n.isString(t.songChannel))return"songChannel: string expected";if(null!=t.songThumbnail&&t.hasOwnProperty("songThumbnail")&&!n.isString(t.songThumbnail))return"songThumbnail: string expected";if(null!=t.songThumbnailWidth&&t.hasOwnProperty("songThumbnailWidth")&&!n.isInteger(t.songThumbnailWidth))return"songThumbnailWidth: integer expected";if(null!=t.songThumbnailHeight&&t.hasOwnProperty("songThumbnailHeight")&&!n.isInteger(t.songThumbnailHeight))return"songThumbnailHeight: integer expected";if(null!=t.legacy&&t.hasOwnProperty("legacy")&&!(t.legacy&&"number"==typeof t.legacy.length||n.isString(t.legacy)))return"legacy: buffer expected";if(null!=t.punches&&t.hasOwnProperty("punches")){if(!Array.isArray(t.punches))return"punches: array expected";for(var e=0;e<t.punches.length;++e)if(r=o.SBPunch.verify(t.punches[e]))return"punches."+r}if(null!=t.frames&&t.hasOwnProperty("frames")){if(!Array.isArray(t.frames))return"frames: array expected";for(e=0;e<t.frames.length;++e){var r;if(r=o.SBFrame.verify(t.frames[e]))return"frames."+r}}return null},i.fromObject=function(t){if(t instanceof o.SBPerformanceUpload)return t;var e=new o.SBPerformanceUpload;if(null!=t.seconds&&(e.seconds=Number(t.seconds)),null!=t.youtubeId&&(e.youtubeId=String(t.youtubeId)),null!=t.songName&&(e.songName=String(t.songName)),null!=t.songLength&&(e.songLength=Number(t.songLength)),null!=t.songChannel&&(e.songChannel=String(t.songChannel)),null!=t.songThumbnail&&(e.songThumbnail=String(t.songThumbnail)),null!=t.songThumbnailWidth&&(e.songThumbnailWidth=0|t.songThumbnailWidth),null!=t.songThumbnailHeight&&(e.songThumbnailHeight=0|t.songThumbnailHeight),null!=t.legacy&&("string"==typeof t.legacy?n.base64.decode(t.legacy,e.legacy=n.newBuffer(n.base64.length(t.legacy)),0):t.legacy.length&&(e.legacy=t.legacy)),t.punches){if(!Array.isArray(t.punches))throw TypeError(".SBPerformanceUpload.punches: array expected");e.punches=[];for(var r=0;r<t.punches.length;++r){if("object"!=typeof t.punches[r])throw TypeError(".SBPerformanceUpload.punches: object expected");e.punches[r]=o.SBPunch.fromObject(t.punches[r])}}if(t.frames){if(!Array.isArray(t.frames))throw TypeError(".SBPerformanceUpload.frames: array expected");for(e.frames=[],r=0;r<t.frames.length;++r){if("object"!=typeof t.frames[r])throw TypeError(".SBPerformanceUpload.frames: object expected");e.frames[r]=o.SBFrame.fromObject(t.frames[r])}}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.punches=[],r.frames=[]),e.defaults&&(r.seconds=0,r.youtubeId="",r.songName="",r.songLength=0,r.songChannel="",r.songThumbnail="",r.songThumbnailWidth=0,r.songThumbnailHeight=0,r.legacy=e.bytes===String?"":[]),null!=t.seconds&&t.hasOwnProperty("seconds")&&(r.seconds=e.json&&!isFinite(t.seconds)?String(t.seconds):t.seconds),null!=t.youtubeId&&t.hasOwnProperty("youtubeId")&&(r.youtubeId=t.youtubeId),null!=t.songName&&t.hasOwnProperty("songName")&&(r.songName=t.songName),null!=t.songLength&&t.hasOwnProperty("songLength")&&(r.songLength=e.json&&!isFinite(t.songLength)?String(t.songLength):t.songLength),null!=t.songChannel&&t.hasOwnProperty("songChannel")&&(r.songChannel=t.songChannel),null!=t.songThumbnail&&t.hasOwnProperty("songThumbnail")&&(r.songThumbnail=t.songThumbnail),null!=t.songThumbnailWidth&&t.hasOwnProperty("songThumbnailWidth")&&(r.songThumbnailWidth=t.songThumbnailWidth),null!=t.songThumbnailHeight&&t.hasOwnProperty("songThumbnailHeight")&&(r.songThumbnailHeight=t.songThumbnailHeight),null!=t.legacy&&t.hasOwnProperty("legacy")&&(r.legacy=e.bytes===String?n.base64.encode(t.legacy,0,t.legacy.length):e.bytes===Array?Array.prototype.slice.call(t.legacy):t.legacy),t.punches&&t.punches.length){r.punches=[];for(var i=0;i<t.punches.length;++i)r.punches[i]=o.SBPunch.toObject(t.punches[i],e)}if(t.frames&&t.frames.length)for(r.frames=[],i=0;i<t.frames.length;++i)r.frames[i]=o.SBFrame.toObject(t.frames[i],e);return r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o.SBScoreUpload=function(){function i(t){if(this.hits=[],this.frames=[],t)for(var e=Object.keys(t),r=0;r<e.length;++r)null!=t[e[r]]&&(this[e[r]]=t[e[r]])}return i.prototype.performanceId="",i.prototype.score=0,i.prototype.offsetX=0,i.prototype.offsetY=0,i.prototype.scaleX=0,i.prototype.scaleY=0,i.prototype.legacy=n.newBuffer([]),i.prototype.hits=n.emptyArray,i.prototype.frames=n.emptyArray,i.create=function(t){return new i(t)},i.encode=function(t,e){if(e||(e=r.create()),null!=t.performanceId&&t.hasOwnProperty("performanceId")&&e.uint32(10).string(t.performanceId),null!=t.score&&t.hasOwnProperty("score")&&e.uint32(16).int32(t.score),null!=t.legacy&&t.hasOwnProperty("legacy")&&e.uint32(26).bytes(t.legacy),null!=t.hits&&t.hits.length)for(var n=0;n<t.hits.length;++n)o.SBHit.encode(t.hits[n],e.uint32(34).fork()).ldelim();if(null!=t.frames&&t.frames.length)for(n=0;n<t.frames.length;++n)o.SBFrame.encode(t.frames[n],e.uint32(42).fork()).ldelim();return null!=t.offsetX&&t.hasOwnProperty("offsetX")&&e.uint32(53).float(t.offsetX),null!=t.offsetY&&t.hasOwnProperty("offsetY")&&e.uint32(61).float(t.offsetY),null!=t.scaleX&&t.hasOwnProperty("scaleX")&&e.uint32(69).float(t.scaleX),null!=t.scaleY&&t.hasOwnProperty("scaleY")&&e.uint32(77).float(t.scaleY),e},i.encodeDelimited=function(t,e){return this.encode(t,e).ldelim()},i.decode=function(t,r){t instanceof e||(t=e.create(t));for(var n=void 0===r?t.len:t.pos+r,i=new o.SBScoreUpload;t.pos<n;){var s=t.uint32();switch(s>>>3){case 1:i.performanceId=t.string();break;case 2:i.score=t.int32();break;case 6:i.offsetX=t.float();break;case 7:i.offsetY=t.float();break;case 8:i.scaleX=t.float();break;case 9:i.scaleY=t.float();break;case 3:i.legacy=t.bytes();break;case 4:i.hits&&i.hits.length||(i.hits=[]),i.hits.push(o.SBHit.decode(t,t.uint32()));break;case 5:i.frames&&i.frames.length||(i.frames=[]),i.frames.push(o.SBFrame.decode(t,t.uint32()));break;default:t.skipType(7&s)}}return i},i.decodeDelimited=function(t){return t instanceof e||(t=new e(t)),this.decode(t,t.uint32())},i.verify=function(t){if("object"!=typeof t||null===t)return"object expected";if(null!=t.performanceId&&t.hasOwnProperty("performanceId")&&!n.isString(t.performanceId))return"performanceId: string expected";if(null!=t.score&&t.hasOwnProperty("score")&&!n.isInteger(t.score))return"score: integer expected";if(null!=t.offsetX&&t.hasOwnProperty("offsetX")&&"number"!=typeof t.offsetX)return"offsetX: number expected";if(null!=t.offsetY&&t.hasOwnProperty("offsetY")&&"number"!=typeof t.offsetY)return"offsetY: number expected";if(null!=t.scaleX&&t.hasOwnProperty("scaleX")&&"number"!=typeof t.scaleX)return"scaleX: number expected";if(null!=t.scaleY&&t.hasOwnProperty("scaleY")&&"number"!=typeof t.scaleY)return"scaleY: number expected";if(null!=t.legacy&&t.hasOwnProperty("legacy")&&!(t.legacy&&"number"==typeof t.legacy.length||n.isString(t.legacy)))return"legacy: buffer expected";if(null!=t.hits&&t.hasOwnProperty("hits")){if(!Array.isArray(t.hits))return"hits: array expected";for(var e=0;e<t.hits.length;++e)if(r=o.SBHit.verify(t.hits[e]))return"hits."+r}if(null!=t.frames&&t.hasOwnProperty("frames")){if(!Array.isArray(t.frames))return"frames: array expected";for(e=0;e<t.frames.length;++e){var r;if(r=o.SBFrame.verify(t.frames[e]))return"frames."+r}}return null},i.fromObject=function(t){if(t instanceof o.SBScoreUpload)return t;var e=new o.SBScoreUpload;if(null!=t.performanceId&&(e.performanceId=String(t.performanceId)),null!=t.score&&(e.score=0|t.score),null!=t.offsetX&&(e.offsetX=Number(t.offsetX)),null!=t.offsetY&&(e.offsetY=Number(t.offsetY)),null!=t.scaleX&&(e.scaleX=Number(t.scaleX)),null!=t.scaleY&&(e.scaleY=Number(t.scaleY)),null!=t.legacy&&("string"==typeof t.legacy?n.base64.decode(t.legacy,e.legacy=n.newBuffer(n.base64.length(t.legacy)),0):t.legacy.length&&(e.legacy=t.legacy)),t.hits){if(!Array.isArray(t.hits))throw TypeError(".SBScoreUpload.hits: array expected");e.hits=[];for(var r=0;r<t.hits.length;++r){if("object"!=typeof t.hits[r])throw TypeError(".SBScoreUpload.hits: object expected");e.hits[r]=o.SBHit.fromObject(t.hits[r])}}if(t.frames){if(!Array.isArray(t.frames))throw TypeError(".SBScoreUpload.frames: array expected");for(e.frames=[],r=0;r<t.frames.length;++r){if("object"!=typeof t.frames[r])throw TypeError(".SBScoreUpload.frames: object expected");e.frames[r]=o.SBFrame.fromObject(t.frames[r])}}return e},i.toObject=function(t,e){e||(e={});var r={};if((e.arrays||e.defaults)&&(r.hits=[],r.frames=[]),e.defaults&&(r.performanceId="",r.score=0,r.legacy=e.bytes===String?"":[],r.offsetX=0,r.offsetY=0,r.scaleX=0,r.scaleY=0),null!=t.performanceId&&t.hasOwnProperty("performanceId")&&(r.performanceId=t.performanceId),null!=t.score&&t.hasOwnProperty("score")&&(r.score=t.score),null!=t.legacy&&t.hasOwnProperty("legacy")&&(r.legacy=e.bytes===String?n.base64.encode(t.legacy,0,t.legacy.length):e.bytes===Array?Array.prototype.slice.call(t.legacy):t.legacy),t.hits&&t.hits.length){r.hits=[];for(var i=0;i<t.hits.length;++i)r.hits[i]=o.SBHit.toObject(t.hits[i],e)}if(t.frames&&t.frames.length)for(r.frames=[],i=0;i<t.frames.length;++i)r.frames[i]=o.SBFrame.toObject(t.frames[i],e);return null!=t.offsetX&&t.hasOwnProperty("offsetX")&&(r.offsetX=e.json&&!isFinite(t.offsetX)?String(t.offsetX):t.offsetX),null!=t.offsetY&&t.hasOwnProperty("offsetY")&&(r.offsetY=e.json&&!isFinite(t.offsetY)?String(t.offsetY):t.offsetY),null!=t.scaleX&&t.hasOwnProperty("scaleX")&&(r.scaleX=e.json&&!isFinite(t.scaleX)?String(t.scaleX):t.scaleX),null!=t.scaleY&&t.hasOwnProperty("scaleY")&&(r.scaleY=e.json&&!isFinite(t.scaleY)?String(t.scaleY):t.scaleY),r},i.prototype.toJSON=function(){return this.constructor.toObject(this,t.util.toJSONOptions)},i}(),o})?n.apply(e,o):n)||(t.exports=i)},function(t,e,r){"use strict";t.exports=r(9)},function(t,e,r){"use strict";var n=e;function o(){n.Reader._configure(n.BufferReader),n.util._configure()}n.build="minimal",n.Writer=r(10),n.BufferWriter=r(21),n.Reader=r(22),n.BufferReader=r(23),n.util=r(11),n.rpc=r(24),n.roots=r(26),n.configure=o,n.Writer._configure(n.BufferWriter),o()},function(t,e,r){"use strict";t.exports=f;var n,o=r(11),i=o.LongBits,s=o.base64,a=o.utf8;function u(t,e,r){this.fn=t,this.len=e,this.next=void 0,this.val=r}function l(){}function f(){this.len=0,this.head=new u(l,0,0),this.tail=this.head,this.states=null}function h(t,e,r){e[r]=255&t}function c(t,e){this.len=t,this.next=void 0,this.val=e}function p(t,e,r){for(;t.hi;)e[r++]=127&t.lo|128,t.lo=(t.lo>>>7|t.hi<<25)>>>0,t.hi>>>=7;for(;t.lo>127;)e[r++]=127&t.lo|128,t.lo=t.lo>>>7;e[r++]=t.lo}function d(t,e,r){e[r]=255&t,e[r+1]=t>>>8&255,e[r+2]=t>>>16&255,e[r+3]=t>>>24}f.create=o.Buffer?function(){return(f.create=function(){return new n})()}:function(){return new f},f.alloc=function(t){return new o.Array(t)},o.Array!==Array&&(f.alloc=o.pool(f.alloc,o.Array.prototype.subarray)),f.prototype._push=function(t,e,r){return this.tail=this.tail.next=new u(t,e,r),this.len+=e,this},c.prototype=Object.create(u.prototype),c.prototype.fn=function(t,e,r){for(;t>127;)e[r++]=127&t|128,t>>>=7;e[r]=t},f.prototype.uint32=function(t){return this.len+=(this.tail=this.tail.next=new c((t>>>=0)<128?1:t<16384?2:t<2097152?3:t<268435456?4:5,t)).len,this},f.prototype.int32=function(t){return t<0?this._push(p,10,i.fromNumber(t)):this.uint32(t)},f.prototype.sint32=function(t){return this.uint32((t<<1^t>>31)>>>0)},f.prototype.uint64=function(t){var e=i.from(t);return this._push(p,e.length(),e)},f.prototype.int64=f.prototype.uint64,f.prototype.sint64=function(t){var e=i.from(t).zzEncode();return this._push(p,e.length(),e)},f.prototype.bool=function(t){return this._push(h,1,t?1:0)},f.prototype.fixed32=function(t){return this._push(d,4,t>>>0)},f.prototype.sfixed32=f.prototype.fixed32,f.prototype.fixed64=function(t){var e=i.from(t);return this._push(d,4,e.lo)._push(d,4,e.hi)},f.prototype.sfixed64=f.prototype.fixed64,f.prototype.float=function(t){return this._push(o.float.writeFloatLE,4,t)},f.prototype.double=function(t){return this._push(o.float.writeDoubleLE,8,t)};var y=o.Array.prototype.set?function(t,e,r){e.set(t,r)}:function(t,e,r){for(var n=0;n<t.length;++n)e[r+n]=t[n]};f.prototype.bytes=function(t){var e=t.length>>>0;if(!e)return this._push(h,1,0);if(o.isString(t)){var r=f.alloc(e=s.length(t));s.decode(t,r,0),t=r}return this.uint32(e)._push(y,e,t)},f.prototype.string=function(t){var e=a.length(t);return e?this.uint32(e)._push(a.write,e,t):this._push(h,1,0)},f.prototype.fork=function(){return this.states=new function(t){this.head=t.head,this.tail=t.tail,this.len=t.len,this.next=t.states}(this),this.head=this.tail=new u(l,0,0),this.len=0,this},f.prototype.reset=function(){return this.states?(this.head=this.states.head,this.tail=this.states.tail,this.len=this.states.len,this.states=this.states.next):(this.head=this.tail=new u(l,0,0),this.len=0),this},f.prototype.ldelim=function(){var t=this.head,e=this.tail,r=this.len;return this.reset().uint32(r),r&&(this.tail.next=t.next,this.tail=e,this.len+=r),this},f.prototype.finish=function(){for(var t=this.head.next,e=this.constructor.alloc(this.len),r=0;t;)t.fn(t.val,e,r),r+=t.len,t=t.next;return e},f._configure=function(t){n=t}},function(t,e,r){"use strict";(function(t){var n=e;function o(t,e,r){for(var n=Object.keys(e),o=0;o<n.length;++o)void 0!==t[n[o]]&&r||(t[n[o]]=e[n[o]]);return t}function i(t){function e(t,r){if(!(this instanceof e))return new e(t,r);Object.defineProperty(this,"message",{get:function(){return t}}),Error.captureStackTrace?Error.captureStackTrace(this,e):Object.defineProperty(this,"stack",{value:(new Error).stack||""}),r&&o(this,r)}return(e.prototype=Object.create(Error.prototype)).constructor=e,Object.defineProperty(e.prototype,"name",{get:function(){return t}}),e.prototype.toString=function(){return this.name+": "+this.message},e}n.asPromise=r(13),n.base64=r(14),n.EventEmitter=r(15),n.float=r(16),n.inquire=r(17),n.utf8=r(18),n.pool=r(19),n.LongBits=r(20),n.emptyArray=Object.freeze?Object.freeze([]):[],n.emptyObject=Object.freeze?Object.freeze({}):{},n.isNode=Boolean(t.process&&t.process.versions&&t.process.versions.node),n.isInteger=Number.isInteger||function(t){return"number"==typeof t&&isFinite(t)&&Math.floor(t)===t},n.isString=function(t){return"string"==typeof t||t instanceof String},n.isObject=function(t){return t&&"object"==typeof t},n.isset=n.isSet=function(t,e){var r=t[e];return!(null==r||!t.hasOwnProperty(e))&&("object"!=typeof r||(Array.isArray(r)?r.length:Object.keys(r).length)>0)},n.Buffer=function(){try{var t=n.inquire("buffer").Buffer;return t.prototype.utf8Write?t:null}catch(t){return null}}(),n._Buffer_from=null,n._Buffer_allocUnsafe=null,n.newBuffer=function(t){return"number"==typeof t?n.Buffer?n._Buffer_allocUnsafe(t):new n.Array(t):n.Buffer?n._Buffer_from(t):"undefined"==typeof Uint8Array?t:new Uint8Array(t)},n.Array="undefined"!=typeof Uint8Array?Uint8Array:Array,n.Long=t.dcodeIO&&t.dcodeIO.Long||n.inquire("long"),n.key2Re=/^true|false|0|1$/,n.key32Re=/^-?(?:0|[1-9][0-9]*)$/,n.key64Re=/^(?:[\\x00-\\xff]{8}|-?(?:0|[1-9][0-9]*))$/,n.longToHash=function(t){return t?n.LongBits.from(t).toHash():n.LongBits.zeroHash},n.longFromHash=function(t,e){var r=n.LongBits.fromHash(t);return n.Long?n.Long.fromBits(r.lo,r.hi,e):r.toNumber(Boolean(e))},n.merge=o,n.lcFirst=function(t){return t.charAt(0).toLowerCase()+t.substring(1)},n.newError=i,n.ProtocolError=i("ProtocolError"),n.oneOfGetter=function(t){for(var e={},r=0;r<t.length;++r)e[t[r]]=1;return function(){for(var t=Object.keys(this),r=t.length-1;r>-1;--r)if(1===e[t[r]]&&void 0!==this[t[r]]&&null!==this[t[r]])return t[r]}},n.oneOfSetter=function(t){return function(e){for(var r=0;r<t.length;++r)t[r]!==e&&delete this[t[r]]}},n.toJSONOptions={longs:String,enums:String,bytes:String,json:!0},n._configure=function(){var t=n.Buffer;t?(n._Buffer_from=t.from!==Uint8Array.from&&t.from||function(e,r){return new t(e,r)},n._Buffer_allocUnsafe=t.allocUnsafe||function(e){return new t(e)}):n._Buffer_from=n._Buffer_allocUnsafe=null}}).call(this,r(12))},function(t,e){var r;r=function(){return this}();try{r=r||Function("return this")()||(0,eval)("this")}catch(t){"object"==typeof window&&(r=window)}t.exports=r},function(t,e,r){"use strict";t.exports=function(t,e){var r=new Array(arguments.length-1),n=0,o=2,i=!0;for(;o<arguments.length;)r[n++]=arguments[o++];return new Promise(function(o,s){r[n]=function(t){if(i)if(i=!1,t)s(t);else{for(var e=new Array(arguments.length-1),r=0;r<e.length;)e[r++]=arguments[r];o.apply(null,e)}};try{t.apply(e||null,r)}catch(t){i&&(i=!1,s(t))}})}},function(t,e,r){"use strict";var n=e;n.length=function(t){var e=t.length;if(!e)return 0;for(var r=0;--e%4>1&&"="===t.charAt(e);)++r;return Math.ceil(3*t.length)/4-r};for(var o=new Array(64),i=new Array(123),s=0;s<64;)i[o[s]=s<26?s+65:s<52?s+71:s<62?s-4:s-59|43]=s++;n.encode=function(t,e,r){for(var n,i=null,s=[],a=0,u=0;e<r;){var l=t[e++];switch(u){case 0:s[a++]=o[l>>2],n=(3&l)<<4,u=1;break;case 1:s[a++]=o[n|l>>4],n=(15&l)<<2,u=2;break;case 2:s[a++]=o[n|l>>6],s[a++]=o[63&l],u=0}a>8191&&((i||(i=[])).push(String.fromCharCode.apply(String,s)),a=0)}return u&&(s[a++]=o[n],s[a++]=61,1===u&&(s[a++]=61)),i?(a&&i.push(String.fromCharCode.apply(String,s.slice(0,a))),i.join("")):String.fromCharCode.apply(String,s.slice(0,a))};n.decode=function(t,e,r){for(var n,o=r,s=0,a=0;a<t.length;){var u=t.charCodeAt(a++);if(61===u&&s>1)break;if(void 0===(u=i[u]))throw Error("invalid encoding");switch(s){case 0:n=u,s=1;break;case 1:e[r++]=n<<2|(48&u)>>4,n=u,s=2;break;case 2:e[r++]=(15&n)<<4|(60&u)>>2,n=u,s=3;break;case 3:e[r++]=(3&n)<<6|u,s=0}}if(1===s)throw Error("invalid encoding");return r-o},n.test=function(t){return/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(t)}},function(t,e,r){"use strict";function n(){this._listeners={}}t.exports=n,n.prototype.on=function(t,e,r){return(this._listeners[t]||(this._listeners[t]=[])).push({fn:e,ctx:r||this}),this},n.prototype.off=function(t,e){if(void 0===t)this._listeners={};else if(void 0===e)this._listeners[t]=[];else for(var r=this._listeners[t],n=0;n<r.length;)r[n].fn===e?r.splice(n,1):++n;return this},n.prototype.emit=function(t){var e=this._listeners[t];if(e){for(var r=[],n=1;n<arguments.length;)r.push(arguments[n++]);for(n=0;n<e.length;)e[n].fn.apply(e[n++].ctx,r)}return this}},function(t,e,r){"use strict";function n(t){return"undefined"!=typeof Float32Array?function(){var e=new Float32Array([-0]),r=new Uint8Array(e.buffer),n=128===r[3];function o(t,n,o){e[0]=t,n[o]=r[0],n[o+1]=r[1],n[o+2]=r[2],n[o+3]=r[3]}function i(t,n,o){e[0]=t,n[o]=r[3],n[o+1]=r[2],n[o+2]=r[1],n[o+3]=r[0]}function s(t,n){return r[0]=t[n],r[1]=t[n+1],r[2]=t[n+2],r[3]=t[n+3],e[0]}function a(t,n){return r[3]=t[n],r[2]=t[n+1],r[1]=t[n+2],r[0]=t[n+3],e[0]}t.writeFloatLE=n?o:i,t.writeFloatBE=n?i:o,t.readFloatLE=n?s:a,t.readFloatBE=n?a:s}():function(){function e(t,e,r,n){var o=e<0?1:0;if(o&&(e=-e),0===e)t(1/e>0?0:2147483648,r,n);else if(isNaN(e))t(2143289344,r,n);else if(e>3.4028234663852886e38)t((o<<31|2139095040)>>>0,r,n);else if(e<1.1754943508222875e-38)t((o<<31|Math.round(e/1.401298464324817e-45))>>>0,r,n);else{var i=Math.floor(Math.log(e)/Math.LN2);t((o<<31|i+127<<23|8388607&Math.round(e*Math.pow(2,-i)*8388608))>>>0,r,n)}}function r(t,e,r){var n=t(e,r),o=2*(n>>31)+1,i=n>>>23&255,s=8388607&n;return 255===i?s?NaN:o*(1/0):0===i?1.401298464324817e-45*o*s:o*Math.pow(2,i-150)*(s+8388608)}t.writeFloatLE=e.bind(null,o),t.writeFloatBE=e.bind(null,i),t.readFloatLE=r.bind(null,s),t.readFloatBE=r.bind(null,a)}(),"undefined"!=typeof Float64Array?function(){var e=new Float64Array([-0]),r=new Uint8Array(e.buffer),n=128===r[7];function o(t,n,o){e[0]=t,n[o]=r[0],n[o+1]=r[1],n[o+2]=r[2],n[o+3]=r[3],n[o+4]=r[4],n[o+5]=r[5],n[o+6]=r[6],n[o+7]=r[7]}function i(t,n,o){e[0]=t,n[o]=r[7],n[o+1]=r[6],n[o+2]=r[5],n[o+3]=r[4],n[o+4]=r[3],n[o+5]=r[2],n[o+6]=r[1],n[o+7]=r[0]}function s(t,n){return r[0]=t[n],r[1]=t[n+1],r[2]=t[n+2],r[3]=t[n+3],r[4]=t[n+4],r[5]=t[n+5],r[6]=t[n+6],r[7]=t[n+7],e[0]}function a(t,n){return r[7]=t[n],r[6]=t[n+1],r[5]=t[n+2],r[4]=t[n+3],r[3]=t[n+4],r[2]=t[n+5],r[1]=t[n+6],r[0]=t[n+7],e[0]}t.writeDoubleLE=n?o:i,t.writeDoubleBE=n?i:o,t.readDoubleLE=n?s:a,t.readDoubleBE=n?a:s}():function(){function e(t,e,r,n,o,i){var s=n<0?1:0;if(s&&(n=-n),0===n)t(0,o,i+e),t(1/n>0?0:2147483648,o,i+r);else if(isNaN(n))t(0,o,i+e),t(2146959360,o,i+r);else if(n>1.7976931348623157e308)t(0,o,i+e),t((s<<31|2146435072)>>>0,o,i+r);else{var a;if(n<2.2250738585072014e-308)t((a=n/5e-324)>>>0,o,i+e),t((s<<31|a/4294967296)>>>0,o,i+r);else{var u=Math.floor(Math.log(n)/Math.LN2);1024===u&&(u=1023),t(4503599627370496*(a=n*Math.pow(2,-u))>>>0,o,i+e),t((s<<31|u+1023<<20|1048576*a&1048575)>>>0,o,i+r)}}}function r(t,e,r,n,o){var i=t(n,o+e),s=t(n,o+r),a=2*(s>>31)+1,u=s>>>20&2047,l=4294967296*(1048575&s)+i;return 2047===u?l?NaN:a*(1/0):0===u?5e-324*a*l:a*Math.pow(2,u-1075)*(l+4503599627370496)}t.writeDoubleLE=e.bind(null,o,0,4),t.writeDoubleBE=e.bind(null,i,4,0),t.readDoubleLE=r.bind(null,s,0,4),t.readDoubleBE=r.bind(null,a,4,0)}(),t}function o(t,e,r){e[r]=255&t,e[r+1]=t>>>8&255,e[r+2]=t>>>16&255,e[r+3]=t>>>24}function i(t,e,r){e[r]=t>>>24,e[r+1]=t>>>16&255,e[r+2]=t>>>8&255,e[r+3]=255&t}function s(t,e){return(t[e]|t[e+1]<<8|t[e+2]<<16|t[e+3]<<24)>>>0}function a(t,e){return(t[e]<<24|t[e+1]<<16|t[e+2]<<8|t[e+3])>>>0}t.exports=n(n)},function(module,exports,__webpack_require__){"use strict";function inquire(moduleName){try{var mod=eval("quire".replace(/^/,"re"))(moduleName);if(mod&&(mod.length||Object.keys(mod).length))return mod}catch(t){}return null}module.exports=inquire},function(t,e,r){"use strict";var n=e;n.length=function(t){for(var e=0,r=0,n=0;n<t.length;++n)(r=t.charCodeAt(n))<128?e+=1:r<2048?e+=2:55296==(64512&r)&&56320==(64512&t.charCodeAt(n+1))?(++n,e+=4):e+=3;return e},n.read=function(t,e,r){if(r-e<1)return"";for(var n,o=null,i=[],s=0;e<r;)(n=t[e++])<128?i[s++]=n:n>191&&n<224?i[s++]=(31&n)<<6|63&t[e++]:n>239&&n<365?(n=((7&n)<<18|(63&t[e++])<<12|(63&t[e++])<<6|63&t[e++])-65536,i[s++]=55296+(n>>10),i[s++]=56320+(1023&n)):i[s++]=(15&n)<<12|(63&t[e++])<<6|63&t[e++],s>8191&&((o||(o=[])).push(String.fromCharCode.apply(String,i)),s=0);return o?(s&&o.push(String.fromCharCode.apply(String,i.slice(0,s))),o.join("")):String.fromCharCode.apply(String,i.slice(0,s))},n.write=function(t,e,r){for(var n,o,i=r,s=0;s<t.length;++s)(n=t.charCodeAt(s))<128?e[r++]=n:n<2048?(e[r++]=n>>6|192,e[r++]=63&n|128):55296==(64512&n)&&56320==(64512&(o=t.charCodeAt(s+1)))?(n=65536+((1023&n)<<10)+(1023&o),++s,e[r++]=n>>18|240,e[r++]=n>>12&63|128,e[r++]=n>>6&63|128,e[r++]=63&n|128):(e[r++]=n>>12|224,e[r++]=n>>6&63|128,e[r++]=63&n|128);return r-i}},function(t,e,r){"use strict";t.exports=function(t,e,r){var n=r||8192,o=n>>>1,i=null,s=n;return function(r){if(r<1||r>o)return t(r);s+r>n&&(i=t(n),s=0);var a=e.call(i,s,s+=r);return 7&s&&(s=1+(7|s)),a}}},function(t,e,r){"use strict";t.exports=o;var n=r(11);function o(t,e){this.lo=t>>>0,this.hi=e>>>0}var i=o.zero=new o(0,0);i.toNumber=function(){return 0},i.zzEncode=i.zzDecode=function(){return this},i.length=function(){return 1};var s=o.zeroHash="\0\0\0\0\0\0\0\0";o.fromNumber=function(t){if(0===t)return i;var e=t<0;e&&(t=-t);var r=t>>>0,n=(t-r)/4294967296>>>0;return e&&(n=~n>>>0,r=~r>>>0,++r>4294967295&&(r=0,++n>4294967295&&(n=0))),new o(r,n)},o.from=function(t){if("number"==typeof t)return o.fromNumber(t);if(n.isString(t)){if(!n.Long)return o.fromNumber(parseInt(t,10));t=n.Long.fromString(t)}return t.low||t.high?new o(t.low>>>0,t.high>>>0):i},o.prototype.toNumber=function(t){if(!t&&this.hi>>>31){var e=1+~this.lo>>>0,r=~this.hi>>>0;return e||(r=r+1>>>0),-(e+4294967296*r)}return this.lo+4294967296*this.hi},o.prototype.toLong=function(t){return n.Long?new n.Long(0|this.lo,0|this.hi,Boolean(t)):{low:0|this.lo,high:0|this.hi,unsigned:Boolean(t)}};var a=String.prototype.charCodeAt;o.fromHash=function(t){return t===s?i:new o((a.call(t,0)|a.call(t,1)<<8|a.call(t,2)<<16|a.call(t,3)<<24)>>>0,(a.call(t,4)|a.call(t,5)<<8|a.call(t,6)<<16|a.call(t,7)<<24)>>>0)},o.prototype.toHash=function(){return String.fromCharCode(255&this.lo,this.lo>>>8&255,this.lo>>>16&255,this.lo>>>24,255&this.hi,this.hi>>>8&255,this.hi>>>16&255,this.hi>>>24)},o.prototype.zzEncode=function(){var t=this.hi>>31;return this.hi=((this.hi<<1|this.lo>>>31)^t)>>>0,this.lo=(this.lo<<1^t)>>>0,this},o.prototype.zzDecode=function(){var t=-(1&this.lo);return this.lo=((this.lo>>>1|this.hi<<31)^t)>>>0,this.hi=(this.hi>>>1^t)>>>0,this},o.prototype.length=function(){var t=this.lo,e=(this.lo>>>28|this.hi<<4)>>>0,r=this.hi>>>24;return 0===r?0===e?t<16384?t<128?1:2:t<2097152?3:4:e<16384?e<128?5:6:e<2097152?7:8:r<128?9:10}},function(t,e,r){"use strict";t.exports=s;var n=r(10);(s.prototype=Object.create(n.prototype)).constructor=s;var o=r(11),i=o.Buffer;function s(){n.call(this)}s.alloc=function(t){return(s.alloc=o._Buffer_allocUnsafe)(t)};var a=i&&i.prototype instanceof Uint8Array&&"set"===i.prototype.set.name?function(t,e,r){e.set(t,r)}:function(t,e,r){if(t.copy)t.copy(e,r,0,t.length);else for(var n=0;n<t.length;)e[r++]=t[n++]};function u(t,e,r){t.length<40?o.utf8.write(t,e,r):e.utf8Write(t,r)}s.prototype.bytes=function(t){o.isString(t)&&(t=o._Buffer_from(t,"base64"));var e=t.length>>>0;return this.uint32(e),e&&this._push(a,e,t),this},s.prototype.string=function(t){var e=i.byteLength(t);return this.uint32(e),e&&this._push(u,e,t),this}},function(t,e,r){"use strict";t.exports=u;var n,o=r(11),i=o.LongBits,s=o.utf8;function a(t,e){return RangeError("index out of range: "+t.pos+" + "+(e||1)+" > "+t.len)}function u(t){this.buf=t,this.pos=0,this.len=t.length}var l,f="undefined"!=typeof Uint8Array?function(t){if(t instanceof Uint8Array||Array.isArray(t))return new u(t);throw Error("illegal buffer")}:function(t){if(Array.isArray(t))return new u(t);throw Error("illegal buffer")};function h(){var t=new i(0,0),e=0;if(!(this.len-this.pos>4)){for(;e<3;++e){if(this.pos>=this.len)throw a(this);if(t.lo=(t.lo|(127&this.buf[this.pos])<<7*e)>>>0,this.buf[this.pos++]<128)return t}return t.lo=(t.lo|(127&this.buf[this.pos++])<<7*e)>>>0,t}for(;e<4;++e)if(t.lo=(t.lo|(127&this.buf[this.pos])<<7*e)>>>0,this.buf[this.pos++]<128)return t;if(t.lo=(t.lo|(127&this.buf[this.pos])<<28)>>>0,t.hi=(t.hi|(127&this.buf[this.pos])>>4)>>>0,this.buf[this.pos++]<128)return t;if(e=0,this.len-this.pos>4){for(;e<5;++e)if(t.hi=(t.hi|(127&this.buf[this.pos])<<7*e+3)>>>0,this.buf[this.pos++]<128)return t}else for(;e<5;++e){if(this.pos>=this.len)throw a(this);if(t.hi=(t.hi|(127&this.buf[this.pos])<<7*e+3)>>>0,this.buf[this.pos++]<128)return t}throw Error("invalid varint encoding")}function c(t,e){return(t[e-4]|t[e-3]<<8|t[e-2]<<16|t[e-1]<<24)>>>0}function p(){if(this.pos+8>this.len)throw a(this,8);return new i(c(this.buf,this.pos+=4),c(this.buf,this.pos+=4))}u.create=o.Buffer?function(t){return(u.create=function(t){return o.Buffer.isBuffer(t)?new n(t):f(t)})(t)}:f,u.prototype._slice=o.Array.prototype.subarray||o.Array.prototype.slice,u.prototype.uint32=(l=4294967295,function(){if(l=(127&this.buf[this.pos])>>>0,this.buf[this.pos++]<128)return l;if(l=(l|(127&this.buf[this.pos])<<7)>>>0,this.buf[this.pos++]<128)return l;if(l=(l|(127&this.buf[this.pos])<<14)>>>0,this.buf[this.pos++]<128)return l;if(l=(l|(127&this.buf[this.pos])<<21)>>>0,this.buf[this.pos++]<128)return l;if(l=(l|(15&this.buf[this.pos])<<28)>>>0,this.buf[this.pos++]<128)return l;if((this.pos+=5)>this.len)throw this.pos=this.len,a(this,10);return l}),u.prototype.int32=function(){return 0|this.uint32()},u.prototype.sint32=function(){var t=this.uint32();return t>>>1^-(1&t)|0},u.prototype.bool=function(){return 0!==this.uint32()},u.prototype.fixed32=function(){if(this.pos+4>this.len)throw a(this,4);return c(this.buf,this.pos+=4)},u.prototype.sfixed32=function(){if(this.pos+4>this.len)throw a(this,4);return 0|c(this.buf,this.pos+=4)},u.prototype.float=function(){if(this.pos+4>this.len)throw a(this,4);var t=o.float.readFloatLE(this.buf,this.pos);return this.pos+=4,t},u.prototype.double=function(){if(this.pos+8>this.len)throw a(this,4);var t=o.float.readDoubleLE(this.buf,this.pos);return this.pos+=8,t},u.prototype.bytes=function(){var t=this.uint32(),e=this.pos,r=this.pos+t;if(r>this.len)throw a(this,t);return this.pos+=t,Array.isArray(this.buf)?this.buf.slice(e,r):e===r?new this.buf.constructor(0):this._slice.call(this.buf,e,r)},u.prototype.string=function(){var t=this.bytes();return s.read(t,0,t.length)},u.prototype.skip=function(t){if("number"==typeof t){if(this.pos+t>this.len)throw a(this,t);this.pos+=t}else do{if(this.pos>=this.len)throw a(this)}while(128&this.buf[this.pos++]);return this},u.prototype.skipType=function(t){switch(t){case 0:this.skip();break;case 1:this.skip(8);break;case 2:this.skip(this.uint32());break;case 3:for(;;){if(4==(t=7&this.uint32()))break;this.skipType(t)}break;case 5:this.skip(4);break;default:throw Error("invalid wire type "+t+" at offset "+this.pos)}return this},u._configure=function(t){n=t;var e=o.Long?"toLong":"toNumber";o.merge(u.prototype,{int64:function(){return h.call(this)[e](!1)},uint64:function(){return h.call(this)[e](!0)},sint64:function(){return h.call(this).zzDecode()[e](!1)},fixed64:function(){return p.call(this)[e](!0)},sfixed64:function(){return p.call(this)[e](!1)}})}},function(t,e,r){"use strict";t.exports=i;var n=r(22);(i.prototype=Object.create(n.prototype)).constructor=i;var o=r(11);function i(t){n.call(this,t)}o.Buffer&&(i.prototype._slice=o.Buffer.prototype.slice),i.prototype.string=function(){var t=this.uint32();return this.buf.utf8Slice(this.pos,this.pos=Math.min(this.pos+t,this.len))}},function(t,e,r){"use strict";e.Service=r(25)},function(t,e,r){"use strict";t.exports=o;var n=r(11);function o(t,e,r){if("function"!=typeof t)throw TypeError("rpcImpl must be a function");n.EventEmitter.call(this),this.rpcImpl=t,this.requestDelimited=Boolean(e),this.responseDelimited=Boolean(r)}(o.prototype=Object.create(n.EventEmitter.prototype)).constructor=o,o.prototype.rpcCall=function t(e,r,o,i,s){if(!i)throw TypeError("request must be specified");var a=this;if(!s)return n.asPromise(t,a,e,r,o,i);if(a.rpcImpl)try{return a.rpcImpl(e,r[a.requestDelimited?"encodeDelimited":"encode"](i).finish(),function(t,r){if(t)return a.emit("error",t,e),s(t);if(null!==r){if(!(r instanceof o))try{r=o[a.responseDelimited?"decodeDelimited":"decode"](r)}catch(t){return a.emit("error",t,e),s(t)}return a.emit("data",r,e),s(null,r)}a.end(!0)})}catch(t){return a.emit("error",t,e),void setTimeout(function(){s(t)},0)}else setTimeout(function(){s(Error("already ended"))},0)},o.prototype.end=function(t){return this.rpcImpl&&(t||this.rpcImpl(null,null,null),this.rpcImpl=null,this.emit("end").off()),this}},function(t,e,r){"use strict";t.exports={}},function(t,e){t.exports=window.FormData},function(t,e,r){(function(e,n){t.exports=s;var o=r(34),i=r(35);function s(t){if(!(this instanceof s))return new s(t);i.Readable.call(this),this._str=t}o(s,i.Readable),s.prototype._read=function(){if(!this.ended){var t=this;e.nextTick(function(){t.push(new n(t._str)),t.push(null)}),this.ended=!0}}}).call(this,r(29),r(30).Buffer)},function(t,e){var r,n,o=t.exports={};function i(){throw new Error("setTimeout has not been defined")}function s(){throw new Error("clearTimeout has not been defined")}function a(t){if(r===setTimeout)return setTimeout(t,0);if((r===i||!r)&&setTimeout)return r=setTimeout,setTimeout(t,0);try{return r(t,0)}catch(e){try{return r.call(null,t,0)}catch(e){return r.call(this,t,0)}}}!function(){try{r="function"==typeof setTimeout?setTimeout:i}catch(t){r=i}try{n="function"==typeof clearTimeout?clearTimeout:s}catch(t){n=s}}();var u,l=[],f=!1,h=-1;function c(){f&&u&&(f=!1,u.length?l=u.concat(l):h=-1,l.length&&p())}function p(){if(!f){var t=a(c);f=!0;for(var e=l.length;e;){for(u=l,l=[];++h<e;)u&&u[h].run();h=-1,e=l.length}u=null,f=!1,function(t){if(n===clearTimeout)return clearTimeout(t);if((n===s||!n)&&clearTimeout)return n=clearTimeout,clearTimeout(t);try{n(t)}catch(e){try{return n.call(null,t)}catch(e){return n.call(this,t)}}}(t)}}function d(t,e){this.fun=t,this.array=e}function y(){}o.nextTick=function(t){var e=new Array(arguments.length-1);if(arguments.length>1)for(var r=1;r<arguments.length;r++)e[r-1]=arguments[r];l.push(new d(t,e)),1!==l.length||f||a(p)},d.prototype.run=function(){this.fun.apply(null,this.array)},o.title="browser",o.browser=!0,o.env={},o.argv=[],o.version="",o.versions={},o.on=y,o.addListener=y,o.once=y,o.off=y,o.removeListener=y,o.removeAllListeners=y,o.emit=y,o.prependListener=y,o.prependOnceListener=y,o.listeners=function(t){return[]},o.binding=function(t){throw new Error("process.binding is not supported")},o.cwd=function(){return"/"},o.chdir=function(t){throw new Error("process.chdir is not supported")},o.umask=function(){return 0}},function(t,e,r){"use strict";(function(t){
-/*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * @license  MIT
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["soundboxing-client"] = factory();
+	else
+		root["soundboxing-client"] = factory();
+})(self, function() {
+return /******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ([
+/* 0 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var v1 = __webpack_require__(1).SoundboxingClient;
+
+module.exports = {
+  v1: v1,
+};
+
+
+/***/ }),
+/* 1 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "SoundboxingClient": () => (/* binding */ SoundboxingClient)
+/* harmony export */ });
+const fetch = __webpack_require__(2);
+const queryString = __webpack_require__(4);
+const { SBPunchList, SBFrameList } = __webpack_require__(9);
+const FormData = __webpack_require__(28);
+const StringToStream = __webpack_require__(29);
+
+class SoundboxingClient {
+  constructor(ctx) {
+    this.authTokenID = ctx.authTokenID || null;
+    this.authAccount = ctx.authAccount || null;
+    this.followUsers = ctx.followUsers || null;
+    this.apiBase = ctx.apiBase || 'https://api.soundboxing.co';
+  }
+
+  serialize() {
+    return {
+      id: this.authTokenID,
+      account: this.authAccount,
+      followUsers: this.followUsers,
+      apiBase: this.apiBase,
+    };
+  }
+
+  async authSteam(ticket) {
+    const resp = await this.post(
+      '/auth/steam',
+      null,
+      JSON.stringify({ ticket })
+    );
+    if (!resp.auth_token || !resp.auth_token.id) {
+      throw new Error('Got no token id in response: ' + JSON.stringify(resp));
+    }
+    this.authTokenID = resp.auth_token.id;
+    this.authAccount = resp.auth_user;
+    return { user: resp.auth_user, token: resp.auth_token };
+  }
+
+  async authItch(accessToken) {
+    const resp = await this.post(
+      '/auth/itch',
+      null,
+      JSON.stringify({ access_token: accessToken })
+    );
+    if (!resp.auth_token || !resp.auth_token.id) {
+      throw new Error('Got no token id in response: ' + JSON.stringify(resp));
+    }
+    this.authTokenID = resp.auth_token.id;
+    this.authAccount = resp.auth_user;
+    return { user: resp.auth_user, token: resp.auth_token };
+  }
+
+  async authInternal(body) {
+    const resp = await this.post(
+      '/auth/steam/internal',
+      null,
+      JSON.stringify(body)
+    );
+    if (!resp.auth_token || !resp.auth_token.id) {
+      throw new Error('Got no token id in response: ' + JSON.stringify(resp));
+    }
+    return { user: resp.auth_user, token: resp.auth_token };
+  }
+
+  async getAuthAccount() {
+    if (this.authAccount) {
+      return this.authAccount;
+    }
+    const resp = await this.get('/auth/user');
+    this.authAccount = resp.user;
+    return this.authAccount;
+  }
+
+  async authUserFollows() {
+    if (this.followUsers) {
+      return this.followUsers;
+    }
+    const resp = await this.get('/users/followed-by/me');
+    const followUsers = {};
+    (resp.users || []).forEach((user) => {
+      followUsers[user.id] = user;
+    });
+    this.followUsers = followUsers;
+    return followUsers;
+  }
+
+  async createUserFollow(user) {
+    const resp = await this.post(
+      `/user/id/${user.id}/follow`,
+      { source: 'webwww' },
+      JSON.stringify({})
+    );
+    this.followUsers[user.id] = user;
+    return resp;
+  }
+
+  async deleteUserFollow(id) {
+    const resp = await this.del(`/user/id/${id}/follow`, { source: 'webwww' });
+    delete this.followUsers[id];
+    return resp;
+  }
+
+  async latestChallenges(featuredOnly, limit) {
+    let extra = {};
+    if (limit) {
+      extra['limit'] = limit;
+    }
+    if (featuredOnly) {
+      extra['featured_only'] = 't';
+    }
+    const resp = await this.get('/performances/latest', extra);
+    return resp;
+  }
+
+  async topChallenges(rank, period, limit) {
+    let extra = { time_dilation: 't' };
+    if (limit) {
+      extra['limit'] = limit;
+    }
+    const resp = await this.get(
+      `/performances/top/by-${rank}/${period}`,
+      extra
+    );
+    return resp;
+  }
+
+  async searchChallenges(query, limit) {
+    const extra = {
+      limit: limit || 10,
+      offset: 0,
+      query: query,
+    };
+    const resp = await this.get('/performances/latest', extra);
+    return resp;
+  }
+
+  async topPlaylists(rank, period, limit) {
+    let extra = {};
+    if (limit) {
+      extra['limit'] = limit;
+    }
+    const resp = await this.get(
+      `/perfplaylist/top/by-${rank}/${period}`,
+      extra
+    );
+    return resp;
+  }
+
+  async searchSongsByYoutube(query, limit) {
+    const extra = {
+      limit: limit || 10,
+      offset: 0,
+      q: query,
+    };
+    const resp = await this.get('/youtube/search', extra);
+    // Fix up performance ids, not sure why it's not working properly as is
+    if (resp.results && resp.performances) {
+      const byYoutubeId = {};
+      resp.performances.forEach((perf) => {
+        if (byYoutubeId[perf.youtube_id]) {
+          byYoutubeId[perf.youtube_id].push(perf.id);
+        } else {
+          byYoutubeId[perf.youtube_id] = [perf.id];
+        }
+      });
+      resp.results = resp.results.map((result) => {
+        result.performance_ids = byYoutubeId[result.youtube_id];
+        return result;
+      });
+    }
+    return resp;
+  }
+
+  async latestChallengesByYoutube(youtubeId, limit) {
+    const extra = { limit: limit || 10, offset: 0 };
+    const resp = await this.get('/performances/youtube/' + youtubeId);
+    return resp;
+  }
+
+  async playlistById(id) {
+    const resp = await this.get(`/perfplaylist/id/${id}`);
+    return resp;
+  }
+
+  async challengeById(id) {
+    const noPunches = true;
+    const query = noPunches ? { no_punches: 't' } : {};
+    const resp = await this.get('/performance/id/' + id, query);
+    return resp;
+  }
+
+  async userByForeignIds(steamId, oculusId, itchId) {
+    let params = {};
+    if (itchId) {
+      params['itch_id'] = itchId;
+    }
+    if (oculusId) {
+      params['oculus_id'] = oculusId;
+    }
+    if (steamId) {
+      params['steam_id'] = steamId;
+    }
+    const resp = await this.get('/user/foreign-ids', params);
+    return resp;
+  }
+
+  async userScores(id, limit) {
+    const resp = await this.get(`/score/latest/user/${id}`, limitParams(limit));
+    return resp;
+  }
+
+  async userFavorites(id, limit) {
+    const resp = await this.get(
+      `/performances/favorite/user/${id}`,
+      limitParams(limit)
+    );
+    return resp;
+  }
+
+  async userChallenges(id, limit) {
+    const resp = await this.get(`/performances/user/${id}`, limitParams(limit));
+    return resp;
+  }
+
+  async userPlaylists(id, limit) {
+    const resp = await this.get(`/perfplaylist/user/${id}`, limitParams(limit));
+    return resp;
+  }
+
+  async userFollowing(id, limit) {
+    const resp = await this.get(`/user/id/${id}/friends`, limitParams(limit));
+    return resp;
+  }
+
+  async userFollowers(id, limit) {
+    const resp = await this.get(`/user/id/${id}/followers`, limitParams(limit));
+    return resp;
+  }
+
+  async latestUsers(limit) {
+    const resp = await this.get(`/users/latest`, limitParams(limit));
+    return resp;
+  }
+
+  async feed(limit) {
+    const resp = await this.get('/feed', limitParams(limit));
+    return resp;
+  }
+
+  async notifications(limit) {
+    const resp = await this.get('/events', limitParams(limit));
+    return resp;
+  }
+
+  async deleteChallenge(id) {
+    const resp = await this.del(`/performance/id/${id}`);
+    return resp;
+  }
+
+  async createFavorite(id) {
+    const resp = await this.post(
+      `/performance/id/${id}/favorite`,
+      null,
+      JSON.stringify({})
+    );
+    return resp;
+  }
+
+  async deleteFavorite(id) {
+    const resp = await this.del(`/performance/id/${id}/favorite`);
+    return resp;
+  }
+
+  async updateChallengeFeatured(id, featured) {
+    const resp = await this.post(
+      `/performance/featured`,
+      null,
+      JSON.stringify({ performance_id: id, featured })
+    );
+    return resp;
+  }
+
+  async createUserLaunch(challengeId, scoreId) {
+    const resp = await this.post(
+      `/launch`,
+      null,
+      JSON.stringify({
+        performance_id: challengeId || '',
+        score_id: scoreId || '',
+      })
+    );
+    return resp;
+  }
+
+  async userLaunch() {
+    const resp = await this.get('/launch');
+    return resp;
+  }
+
+  async deleteUserLaunch() {
+    const resp = await this.del(`/launch`);
+    return resp;
+  }
+
+  async topScores(id, limit) {
+    const resp = await this.get(`/score/top/${id}`, limitParams(limit));
+    return resp;
+  }
+
+  async challengePunches(challenge) {
+    const resp = await fetch(challenge.punches_url);
+    const buf = await resp.arrayBuffer();
+    const punchList = SBPunchList.decode(new Uint8Array(buf));
+    return punchList.punches;
+  }
+
+  async challengeFrames(challenge) {
+    const resp = await fetch(challenge.frames_url);
+    const buf = await resp.arrayBuffer();
+    const frameList = SBFrameList.decode(new Uint8Array(buf));
+    return frameList.frames;
+  }
+
+  async syncSteamFollows(steamIds) {
+    const data = JSON.stringify({ steam_ids: steamIds });
+    const body = new FormData();
+    body.append('data', StringToStream(data), {
+      filename: 'data',
+      filepath: 'data',
+      contentType: 'application/octet-stream',
+      knownLength: data.length,
+    });
+    const resp = await this.post('/follows/steam', null, body);
+    const followUsers = {};
+    (resp.users || []).forEach((user) => {
+      followUsers[user.id] = user;
+    });
+    this.followUsers = followUsers;
+    return { follows: resp.follows, users: resp.users };
+  }
+
+  // Supporting and utility functions follow
+
+  headers() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.authTokenID) {
+      headers['X-Auth-Token-ID'] = this.authTokenID;
+    }
+    return headers;
+  }
+
+  get(path, params) {
+    const url =
+      this.apiBase + path + (params ? '?' + queryString.stringify(params) : '');
+    return fetchJSON(url, { headers: this.headers() });
+  }
+
+  post(path, params, body) {
+    const url =
+      this.apiBase + path + (params ? '?' + queryString.stringify(params) : '');
+    const opts = { headers: this.headers(), method: 'post' };
+    if (body instanceof FormData) {
+      delete opts.headers['Content-Type'];
+    }
+    if (body) {
+      opts['body'] = body; // TODO: JSON.stringify if not string already
+    }
+    return fetchJSON(url, opts);
+  }
+
+  del(path, params) {
+    const url =
+      this.apiBase + path + (params ? '?' + queryString.stringify(params) : '');
+    const opts = { headers: this.headers(), method: 'delete' };
+    return fetchJSON(url, opts);
+  }
+}
+
+const limitParams = (limit) => {
+  let params = {};
+  if (limit) {
+    params['limit'] = limit;
+  }
+  return params;
+};
+
+const fetchJSON = async (url, opts) => {
+  const res = await fetch(url, opts);
+  const json = await res.json();
+  if (json && json['error']) {
+    throw new Error(json['error']);
+  }
+  return json;
+};
+
+
+/***/ }),
+/* 2 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+// the whatwg-fetch polyfill installs the fetch() function
+// on the global object (window or self)
+//
+// Return that as the export for use in Webpack, Browserify etc.
+__webpack_require__(3);
+module.exports = self.fetch.bind(self);
+
+
+/***/ }),
+/* 3 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Headers": () => (/* binding */ Headers),
+/* harmony export */   "Request": () => (/* binding */ Request),
+/* harmony export */   "Response": () => (/* binding */ Response),
+/* harmony export */   "DOMException": () => (/* binding */ DOMException),
+/* harmony export */   "fetch": () => (/* binding */ fetch)
+/* harmony export */ });
+var global =
+  (typeof globalThis !== 'undefined' && globalThis) ||
+  (typeof self !== 'undefined' && self) ||
+  (typeof global !== 'undefined' && global)
+
+var support = {
+  searchParams: 'URLSearchParams' in global,
+  iterable: 'Symbol' in global && 'iterator' in Symbol,
+  blob:
+    'FileReader' in global &&
+    'Blob' in global &&
+    (function() {
+      try {
+        new Blob()
+        return true
+      } catch (e) {
+        return false
+      }
+    })(),
+  formData: 'FormData' in global,
+  arrayBuffer: 'ArrayBuffer' in global
+}
+
+function isDataView(obj) {
+  return obj && DataView.prototype.isPrototypeOf(obj)
+}
+
+if (support.arrayBuffer) {
+  var viewClasses = [
+    '[object Int8Array]',
+    '[object Uint8Array]',
+    '[object Uint8ClampedArray]',
+    '[object Int16Array]',
+    '[object Uint16Array]',
+    '[object Int32Array]',
+    '[object Uint32Array]',
+    '[object Float32Array]',
+    '[object Float64Array]'
+  ]
+
+  var isArrayBufferView =
+    ArrayBuffer.isView ||
+    function(obj) {
+      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+    }
+}
+
+function normalizeName(name) {
+  if (typeof name !== 'string') {
+    name = String(name)
+  }
+  if (/[^a-z0-9\-#$%&'*+.^_`|~!]/i.test(name) || name === '') {
+    throw new TypeError('Invalid character in header field name: "' + name + '"')
+  }
+  return name.toLowerCase()
+}
+
+function normalizeValue(value) {
+  if (typeof value !== 'string') {
+    value = String(value)
+  }
+  return value
+}
+
+// Build a destructive iterator for the value list
+function iteratorFor(items) {
+  var iterator = {
+    next: function() {
+      var value = items.shift()
+      return {done: value === undefined, value: value}
+    }
+  }
+
+  if (support.iterable) {
+    iterator[Symbol.iterator] = function() {
+      return iterator
+    }
+  }
+
+  return iterator
+}
+
+function Headers(headers) {
+  this.map = {}
+
+  if (headers instanceof Headers) {
+    headers.forEach(function(value, name) {
+      this.append(name, value)
+    }, this)
+  } else if (Array.isArray(headers)) {
+    headers.forEach(function(header) {
+      this.append(header[0], header[1])
+    }, this)
+  } else if (headers) {
+    Object.getOwnPropertyNames(headers).forEach(function(name) {
+      this.append(name, headers[name])
+    }, this)
+  }
+}
+
+Headers.prototype.append = function(name, value) {
+  name = normalizeName(name)
+  value = normalizeValue(value)
+  var oldValue = this.map[name]
+  this.map[name] = oldValue ? oldValue + ', ' + value : value
+}
+
+Headers.prototype['delete'] = function(name) {
+  delete this.map[normalizeName(name)]
+}
+
+Headers.prototype.get = function(name) {
+  name = normalizeName(name)
+  return this.has(name) ? this.map[name] : null
+}
+
+Headers.prototype.has = function(name) {
+  return this.map.hasOwnProperty(normalizeName(name))
+}
+
+Headers.prototype.set = function(name, value) {
+  this.map[normalizeName(name)] = normalizeValue(value)
+}
+
+Headers.prototype.forEach = function(callback, thisArg) {
+  for (var name in this.map) {
+    if (this.map.hasOwnProperty(name)) {
+      callback.call(thisArg, this.map[name], name, this)
+    }
+  }
+}
+
+Headers.prototype.keys = function() {
+  var items = []
+  this.forEach(function(value, name) {
+    items.push(name)
+  })
+  return iteratorFor(items)
+}
+
+Headers.prototype.values = function() {
+  var items = []
+  this.forEach(function(value) {
+    items.push(value)
+  })
+  return iteratorFor(items)
+}
+
+Headers.prototype.entries = function() {
+  var items = []
+  this.forEach(function(value, name) {
+    items.push([name, value])
+  })
+  return iteratorFor(items)
+}
+
+if (support.iterable) {
+  Headers.prototype[Symbol.iterator] = Headers.prototype.entries
+}
+
+function consumed(body) {
+  if (body.bodyUsed) {
+    return Promise.reject(new TypeError('Already read'))
+  }
+  body.bodyUsed = true
+}
+
+function fileReaderReady(reader) {
+  return new Promise(function(resolve, reject) {
+    reader.onload = function() {
+      resolve(reader.result)
+    }
+    reader.onerror = function() {
+      reject(reader.error)
+    }
+  })
+}
+
+function readBlobAsArrayBuffer(blob) {
+  var reader = new FileReader()
+  var promise = fileReaderReady(reader)
+  reader.readAsArrayBuffer(blob)
+  return promise
+}
+
+function readBlobAsText(blob) {
+  var reader = new FileReader()
+  var promise = fileReaderReady(reader)
+  reader.readAsText(blob)
+  return promise
+}
+
+function readArrayBufferAsText(buf) {
+  var view = new Uint8Array(buf)
+  var chars = new Array(view.length)
+
+  for (var i = 0; i < view.length; i++) {
+    chars[i] = String.fromCharCode(view[i])
+  }
+  return chars.join('')
+}
+
+function bufferClone(buf) {
+  if (buf.slice) {
+    return buf.slice(0)
+  } else {
+    var view = new Uint8Array(buf.byteLength)
+    view.set(new Uint8Array(buf))
+    return view.buffer
+  }
+}
+
+function Body() {
+  this.bodyUsed = false
+
+  this._initBody = function(body) {
+    /*
+      fetch-mock wraps the Response object in an ES6 Proxy to
+      provide useful test harness features such as flush. However, on
+      ES5 browsers without fetch or Proxy support pollyfills must be used;
+      the proxy-pollyfill is unable to proxy an attribute unless it exists
+      on the object before the Proxy is created. This change ensures
+      Response.bodyUsed exists on the instance, while maintaining the
+      semantic of setting Request.bodyUsed in the constructor before
+      _initBody is called.
+    */
+    this.bodyUsed = this.bodyUsed
+    this._bodyInit = body
+    if (!body) {
+      this._bodyText = ''
+    } else if (typeof body === 'string') {
+      this._bodyText = body
+    } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+      this._bodyBlob = body
+    } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+      this._bodyFormData = body
+    } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+      this._bodyText = body.toString()
+    } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+      this._bodyArrayBuffer = bufferClone(body.buffer)
+      // IE 10-11 can't handle a DataView body.
+      this._bodyInit = new Blob([this._bodyArrayBuffer])
+    } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+      this._bodyArrayBuffer = bufferClone(body)
+    } else {
+      this._bodyText = body = Object.prototype.toString.call(body)
+    }
+
+    if (!this.headers.get('content-type')) {
+      if (typeof body === 'string') {
+        this.headers.set('content-type', 'text/plain;charset=UTF-8')
+      } else if (this._bodyBlob && this._bodyBlob.type) {
+        this.headers.set('content-type', this._bodyBlob.type)
+      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+        this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+      }
+    }
+  }
+
+  if (support.blob) {
+    this.blob = function() {
+      var rejected = consumed(this)
+      if (rejected) {
+        return rejected
+      }
+
+      if (this._bodyBlob) {
+        return Promise.resolve(this._bodyBlob)
+      } else if (this._bodyArrayBuffer) {
+        return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+      } else if (this._bodyFormData) {
+        throw new Error('could not read FormData body as blob')
+      } else {
+        return Promise.resolve(new Blob([this._bodyText]))
+      }
+    }
+
+    this.arrayBuffer = function() {
+      if (this._bodyArrayBuffer) {
+        var isConsumed = consumed(this)
+        if (isConsumed) {
+          return isConsumed
+        }
+        if (ArrayBuffer.isView(this._bodyArrayBuffer)) {
+          return Promise.resolve(
+            this._bodyArrayBuffer.buffer.slice(
+              this._bodyArrayBuffer.byteOffset,
+              this._bodyArrayBuffer.byteOffset + this._bodyArrayBuffer.byteLength
+            )
+          )
+        } else {
+          return Promise.resolve(this._bodyArrayBuffer)
+        }
+      } else {
+        return this.blob().then(readBlobAsArrayBuffer)
+      }
+    }
+  }
+
+  this.text = function() {
+    var rejected = consumed(this)
+    if (rejected) {
+      return rejected
+    }
+
+    if (this._bodyBlob) {
+      return readBlobAsText(this._bodyBlob)
+    } else if (this._bodyArrayBuffer) {
+      return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+    } else if (this._bodyFormData) {
+      throw new Error('could not read FormData body as text')
+    } else {
+      return Promise.resolve(this._bodyText)
+    }
+  }
+
+  if (support.formData) {
+    this.formData = function() {
+      return this.text().then(decode)
+    }
+  }
+
+  this.json = function() {
+    return this.text().then(JSON.parse)
+  }
+
+  return this
+}
+
+// HTTP methods whose capitalization should be normalized
+var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
+
+function normalizeMethod(method) {
+  var upcased = method.toUpperCase()
+  return methods.indexOf(upcased) > -1 ? upcased : method
+}
+
+function Request(input, options) {
+  if (!(this instanceof Request)) {
+    throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
+  }
+
+  options = options || {}
+  var body = options.body
+
+  if (input instanceof Request) {
+    if (input.bodyUsed) {
+      throw new TypeError('Already read')
+    }
+    this.url = input.url
+    this.credentials = input.credentials
+    if (!options.headers) {
+      this.headers = new Headers(input.headers)
+    }
+    this.method = input.method
+    this.mode = input.mode
+    this.signal = input.signal
+    if (!body && input._bodyInit != null) {
+      body = input._bodyInit
+      input.bodyUsed = true
+    }
+  } else {
+    this.url = String(input)
+  }
+
+  this.credentials = options.credentials || this.credentials || 'same-origin'
+  if (options.headers || !this.headers) {
+    this.headers = new Headers(options.headers)
+  }
+  this.method = normalizeMethod(options.method || this.method || 'GET')
+  this.mode = options.mode || this.mode || null
+  this.signal = options.signal || this.signal
+  this.referrer = null
+
+  if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+    throw new TypeError('Body not allowed for GET or HEAD requests')
+  }
+  this._initBody(body)
+
+  if (this.method === 'GET' || this.method === 'HEAD') {
+    if (options.cache === 'no-store' || options.cache === 'no-cache') {
+      // Search for a '_' parameter in the query string
+      var reParamSearch = /([?&])_=[^&]*/
+      if (reParamSearch.test(this.url)) {
+        // If it already exists then set the value with the current time
+        this.url = this.url.replace(reParamSearch, '$1_=' + new Date().getTime())
+      } else {
+        // Otherwise add a new '_' parameter to the end with the current time
+        var reQueryString = /\?/
+        this.url += (reQueryString.test(this.url) ? '&' : '?') + '_=' + new Date().getTime()
+      }
+    }
+  }
+}
+
+Request.prototype.clone = function() {
+  return new Request(this, {body: this._bodyInit})
+}
+
+function decode(body) {
+  var form = new FormData()
+  body
+    .trim()
+    .split('&')
+    .forEach(function(bytes) {
+      if (bytes) {
+        var split = bytes.split('=')
+        var name = split.shift().replace(/\+/g, ' ')
+        var value = split.join('=').replace(/\+/g, ' ')
+        form.append(decodeURIComponent(name), decodeURIComponent(value))
+      }
+    })
+  return form
+}
+
+function parseHeaders(rawHeaders) {
+  var headers = new Headers()
+  // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+  // https://tools.ietf.org/html/rfc7230#section-3.2
+  var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ')
+  // Avoiding split via regex to work around a common IE11 bug with the core-js 3.6.0 regex polyfill
+  // https://github.com/github/fetch/issues/748
+  // https://github.com/zloirock/core-js/issues/751
+  preProcessedHeaders
+    .split('\r')
+    .map(function(header) {
+      return header.indexOf('\n') === 0 ? header.substr(1, header.length) : header
+    })
+    .forEach(function(line) {
+      var parts = line.split(':')
+      var key = parts.shift().trim()
+      if (key) {
+        var value = parts.join(':').trim()
+        headers.append(key, value)
+      }
+    })
+  return headers
+}
+
+Body.call(Request.prototype)
+
+function Response(bodyInit, options) {
+  if (!(this instanceof Response)) {
+    throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
+  }
+  if (!options) {
+    options = {}
+  }
+
+  this.type = 'default'
+  this.status = options.status === undefined ? 200 : options.status
+  this.ok = this.status >= 200 && this.status < 300
+  this.statusText = options.statusText === undefined ? '' : '' + options.statusText
+  this.headers = new Headers(options.headers)
+  this.url = options.url || ''
+  this._initBody(bodyInit)
+}
+
+Body.call(Response.prototype)
+
+Response.prototype.clone = function() {
+  return new Response(this._bodyInit, {
+    status: this.status,
+    statusText: this.statusText,
+    headers: new Headers(this.headers),
+    url: this.url
+  })
+}
+
+Response.error = function() {
+  var response = new Response(null, {status: 0, statusText: ''})
+  response.type = 'error'
+  return response
+}
+
+var redirectStatuses = [301, 302, 303, 307, 308]
+
+Response.redirect = function(url, status) {
+  if (redirectStatuses.indexOf(status) === -1) {
+    throw new RangeError('Invalid status code')
+  }
+
+  return new Response(null, {status: status, headers: {location: url}})
+}
+
+var DOMException = global.DOMException
+try {
+  new DOMException()
+} catch (err) {
+  DOMException = function(message, name) {
+    this.message = message
+    this.name = name
+    var error = Error(message)
+    this.stack = error.stack
+  }
+  DOMException.prototype = Object.create(Error.prototype)
+  DOMException.prototype.constructor = DOMException
+}
+
+function fetch(input, init) {
+  return new Promise(function(resolve, reject) {
+    var request = new Request(input, init)
+
+    if (request.signal && request.signal.aborted) {
+      return reject(new DOMException('Aborted', 'AbortError'))
+    }
+
+    var xhr = new XMLHttpRequest()
+
+    function abortXhr() {
+      xhr.abort()
+    }
+
+    xhr.onload = function() {
+      var options = {
+        status: xhr.status,
+        statusText: xhr.statusText,
+        headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+      }
+      options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL')
+      var body = 'response' in xhr ? xhr.response : xhr.responseText
+      setTimeout(function() {
+        resolve(new Response(body, options))
+      }, 0)
+    }
+
+    xhr.onerror = function() {
+      setTimeout(function() {
+        reject(new TypeError('Network request failed'))
+      }, 0)
+    }
+
+    xhr.ontimeout = function() {
+      setTimeout(function() {
+        reject(new TypeError('Network request failed'))
+      }, 0)
+    }
+
+    xhr.onabort = function() {
+      setTimeout(function() {
+        reject(new DOMException('Aborted', 'AbortError'))
+      }, 0)
+    }
+
+    function fixUrl(url) {
+      try {
+        return url === '' && global.location.href ? global.location.href : url
+      } catch (e) {
+        return url
+      }
+    }
+
+    xhr.open(request.method, fixUrl(request.url), true)
+
+    if (request.credentials === 'include') {
+      xhr.withCredentials = true
+    } else if (request.credentials === 'omit') {
+      xhr.withCredentials = false
+    }
+
+    if ('responseType' in xhr) {
+      if (support.blob) {
+        xhr.responseType = 'blob'
+      } else if (
+        support.arrayBuffer &&
+        request.headers.get('Content-Type') &&
+        request.headers.get('Content-Type').indexOf('application/octet-stream') !== -1
+      ) {
+        xhr.responseType = 'arraybuffer'
+      }
+    }
+
+    if (init && typeof init.headers === 'object' && !(init.headers instanceof Headers)) {
+      Object.getOwnPropertyNames(init.headers).forEach(function(name) {
+        xhr.setRequestHeader(name, normalizeValue(init.headers[name]))
+      })
+    } else {
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value)
+      })
+    }
+
+    if (request.signal) {
+      request.signal.addEventListener('abort', abortXhr)
+
+      xhr.onreadystatechange = function() {
+        // DONE (success or failure)
+        if (xhr.readyState === 4) {
+          request.signal.removeEventListener('abort', abortXhr)
+        }
+      }
+    }
+
+    xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
+  })
+}
+
+fetch.polyfill = true
+
+if (!global.fetch) {
+  global.fetch = fetch
+  global.Headers = Headers
+  global.Request = Request
+  global.Response = Response
+}
+
+
+/***/ }),
+/* 4 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+const strictUriEncode = __webpack_require__(5);
+const decodeComponent = __webpack_require__(6);
+const splitOnFirst = __webpack_require__(7);
+const filterObject = __webpack_require__(8);
+
+const isNullOrUndefined = value => value === null || value === undefined;
+
+const encodeFragmentIdentifier = Symbol('encodeFragmentIdentifier');
+
+function encoderForArrayFormat(options) {
+	switch (options.arrayFormat) {
+		case 'index':
+			return key => (result, value) => {
+				const index = result.length;
+
+				if (
+					value === undefined ||
+					(options.skipNull && value === null) ||
+					(options.skipEmptyString && value === '')
+				) {
+					return result;
+				}
+
+				if (value === null) {
+					return [...result, [encode(key, options), '[', index, ']'].join('')];
+				}
+
+				return [
+					...result,
+					[encode(key, options), '[', encode(index, options), ']=', encode(value, options)].join('')
+				];
+			};
+
+		case 'bracket':
+			return key => (result, value) => {
+				if (
+					value === undefined ||
+					(options.skipNull && value === null) ||
+					(options.skipEmptyString && value === '')
+				) {
+					return result;
+				}
+
+				if (value === null) {
+					return [...result, [encode(key, options), '[]'].join('')];
+				}
+
+				return [...result, [encode(key, options), '[]=', encode(value, options)].join('')];
+			};
+
+		case 'comma':
+		case 'separator':
+		case 'bracket-separator': {
+			const keyValueSep = options.arrayFormat === 'bracket-separator' ?
+				'[]=' :
+				'=';
+
+			return key => (result, value) => {
+				if (
+					value === undefined ||
+					(options.skipNull && value === null) ||
+					(options.skipEmptyString && value === '')
+				) {
+					return result;
+				}
+
+				// Translate null to an empty string so that it doesn't serialize as 'null'
+				value = value === null ? '' : value;
+
+				if (result.length === 0) {
+					return [[encode(key, options), keyValueSep, encode(value, options)].join('')];
+				}
+
+				return [[result, encode(value, options)].join(options.arrayFormatSeparator)];
+			};
+		}
+
+		default:
+			return key => (result, value) => {
+				if (
+					value === undefined ||
+					(options.skipNull && value === null) ||
+					(options.skipEmptyString && value === '')
+				) {
+					return result;
+				}
+
+				if (value === null) {
+					return [...result, encode(key, options)];
+				}
+
+				return [...result, [encode(key, options), '=', encode(value, options)].join('')];
+			};
+	}
+}
+
+function parserForArrayFormat(options) {
+	let result;
+
+	switch (options.arrayFormat) {
+		case 'index':
+			return (key, value, accumulator) => {
+				result = /\[(\d*)\]$/.exec(key);
+
+				key = key.replace(/\[\d*\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				}
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = {};
+				}
+
+				accumulator[key][result[1]] = value;
+			};
+
+		case 'bracket':
+			return (key, value, accumulator) => {
+				result = /(\[\])$/.exec(key);
+				key = key.replace(/\[\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				}
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = [value];
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+
+		case 'comma':
+		case 'separator':
+			return (key, value, accumulator) => {
+				const isArray = typeof value === 'string' && value.includes(options.arrayFormatSeparator);
+				const isEncodedArray = (typeof value === 'string' && !isArray && decode(value, options).includes(options.arrayFormatSeparator));
+				value = isEncodedArray ? decode(value, options) : value;
+				const newValue = isArray || isEncodedArray ? value.split(options.arrayFormatSeparator).map(item => decode(item, options)) : value === null ? value : decode(value, options);
+				accumulator[key] = newValue;
+			};
+
+		case 'bracket-separator':
+			return (key, value, accumulator) => {
+				const isArray = /(\[\])$/.test(key);
+				key = key.replace(/\[\]$/, '');
+
+				if (!isArray) {
+					accumulator[key] = value ? decode(value, options) : value;
+					return;
+				}
+
+				const arrayValue = value === null ?
+					[] :
+					value.split(options.arrayFormatSeparator).map(item => decode(item, options));
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = arrayValue;
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], arrayValue);
+			};
+
+		default:
+			return (key, value, accumulator) => {
+				if (accumulator[key] === undefined) {
+					accumulator[key] = value;
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+	}
+}
+
+function validateArrayFormatSeparator(value) {
+	if (typeof value !== 'string' || value.length !== 1) {
+		throw new TypeError('arrayFormatSeparator must be single character string');
+	}
+}
+
+function encode(value, options) {
+	if (options.encode) {
+		return options.strict ? strictUriEncode(value) : encodeURIComponent(value);
+	}
+
+	return value;
+}
+
+function decode(value, options) {
+	if (options.decode) {
+		return decodeComponent(value);
+	}
+
+	return value;
+}
+
+function keysSorter(input) {
+	if (Array.isArray(input)) {
+		return input.sort();
+	}
+
+	if (typeof input === 'object') {
+		return keysSorter(Object.keys(input))
+			.sort((a, b) => Number(a) - Number(b))
+			.map(key => input[key]);
+	}
+
+	return input;
+}
+
+function removeHash(input) {
+	const hashStart = input.indexOf('#');
+	if (hashStart !== -1) {
+		input = input.slice(0, hashStart);
+	}
+
+	return input;
+}
+
+function getHash(url) {
+	let hash = '';
+	const hashStart = url.indexOf('#');
+	if (hashStart !== -1) {
+		hash = url.slice(hashStart);
+	}
+
+	return hash;
+}
+
+function extract(input) {
+	input = removeHash(input);
+	const queryStart = input.indexOf('?');
+	if (queryStart === -1) {
+		return '';
+	}
+
+	return input.slice(queryStart + 1);
+}
+
+function parseValue(value, options) {
+	if (options.parseNumbers && !Number.isNaN(Number(value)) && (typeof value === 'string' && value.trim() !== '')) {
+		value = Number(value);
+	} else if (options.parseBooleans && value !== null && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) {
+		value = value.toLowerCase() === 'true';
+	}
+
+	return value;
+}
+
+function parse(query, options) {
+	options = Object.assign({
+		decode: true,
+		sort: true,
+		arrayFormat: 'none',
+		arrayFormatSeparator: ',',
+		parseNumbers: false,
+		parseBooleans: false
+	}, options);
+
+	validateArrayFormatSeparator(options.arrayFormatSeparator);
+
+	const formatter = parserForArrayFormat(options);
+
+	// Create an object with no prototype
+	const ret = Object.create(null);
+
+	if (typeof query !== 'string') {
+		return ret;
+	}
+
+	query = query.trim().replace(/^[?#&]/, '');
+
+	if (!query) {
+		return ret;
+	}
+
+	for (const param of query.split('&')) {
+		if (param === '') {
+			continue;
+		}
+
+		let [key, value] = splitOnFirst(options.decode ? param.replace(/\+/g, ' ') : param, '=');
+
+		// Missing `=` should be `null`:
+		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
+		value = value === undefined ? null : ['comma', 'separator', 'bracket-separator'].includes(options.arrayFormat) ? value : decode(value, options);
+		formatter(decode(key, options), value, ret);
+	}
+
+	for (const key of Object.keys(ret)) {
+		const value = ret[key];
+		if (typeof value === 'object' && value !== null) {
+			for (const k of Object.keys(value)) {
+				value[k] = parseValue(value[k], options);
+			}
+		} else {
+			ret[key] = parseValue(value, options);
+		}
+	}
+
+	if (options.sort === false) {
+		return ret;
+	}
+
+	return (options.sort === true ? Object.keys(ret).sort() : Object.keys(ret).sort(options.sort)).reduce((result, key) => {
+		const value = ret[key];
+		if (Boolean(value) && typeof value === 'object' && !Array.isArray(value)) {
+			// Sort object keys, not values
+			result[key] = keysSorter(value);
+		} else {
+			result[key] = value;
+		}
+
+		return result;
+	}, Object.create(null));
+}
+
+exports.extract = extract;
+exports.parse = parse;
+
+exports.stringify = (object, options) => {
+	if (!object) {
+		return '';
+	}
+
+	options = Object.assign({
+		encode: true,
+		strict: true,
+		arrayFormat: 'none',
+		arrayFormatSeparator: ','
+	}, options);
+
+	validateArrayFormatSeparator(options.arrayFormatSeparator);
+
+	const shouldFilter = key => (
+		(options.skipNull && isNullOrUndefined(object[key])) ||
+		(options.skipEmptyString && object[key] === '')
+	);
+
+	const formatter = encoderForArrayFormat(options);
+
+	const objectCopy = {};
+
+	for (const key of Object.keys(object)) {
+		if (!shouldFilter(key)) {
+			objectCopy[key] = object[key];
+		}
+	}
+
+	const keys = Object.keys(objectCopy);
+
+	if (options.sort !== false) {
+		keys.sort(options.sort);
+	}
+
+	return keys.map(key => {
+		const value = object[key];
+
+		if (value === undefined) {
+			return '';
+		}
+
+		if (value === null) {
+			return encode(key, options);
+		}
+
+		if (Array.isArray(value)) {
+			if (value.length === 0 && options.arrayFormat === 'bracket-separator') {
+				return encode(key, options) + '[]';
+			}
+
+			return value
+				.reduce(formatter(key), [])
+				.join('&');
+		}
+
+		return encode(key, options) + '=' + encode(value, options);
+	}).filter(x => x.length > 0).join('&');
+};
+
+exports.parseUrl = (url, options) => {
+	options = Object.assign({
+		decode: true
+	}, options);
+
+	const [url_, hash] = splitOnFirst(url, '#');
+
+	return Object.assign(
+		{
+			url: url_.split('?')[0] || '',
+			query: parse(extract(url), options)
+		},
+		options && options.parseFragmentIdentifier && hash ? {fragmentIdentifier: decode(hash, options)} : {}
+	);
+};
+
+exports.stringifyUrl = (object, options) => {
+	options = Object.assign({
+		encode: true,
+		strict: true,
+		[encodeFragmentIdentifier]: true
+	}, options);
+
+	const url = removeHash(object.url).split('?')[0] || '';
+	const queryFromUrl = exports.extract(object.url);
+	const parsedQueryFromUrl = exports.parse(queryFromUrl, {sort: false});
+
+	const query = Object.assign(parsedQueryFromUrl, object.query);
+	let queryString = exports.stringify(query, options);
+	if (queryString) {
+		queryString = `?${queryString}`;
+	}
+
+	let hash = getHash(object.url);
+	if (object.fragmentIdentifier) {
+		hash = `#${options[encodeFragmentIdentifier] ? encode(object.fragmentIdentifier, options) : object.fragmentIdentifier}`;
+	}
+
+	return `${url}${queryString}${hash}`;
+};
+
+exports.pick = (input, filter, options) => {
+	options = Object.assign({
+		parseFragmentIdentifier: true,
+		[encodeFragmentIdentifier]: false
+	}, options);
+
+	const {url, query, fragmentIdentifier} = exports.parseUrl(input, options);
+	return exports.stringifyUrl({
+		url,
+		query: filterObject(query, filter),
+		fragmentIdentifier
+	}, options);
+};
+
+exports.exclude = (input, filter, options) => {
+	const exclusionFilter = Array.isArray(filter) ? key => !filter.includes(key) : (key, value) => !filter(key, value);
+
+	return exports.pick(input, exclusionFilter, options);
+};
+
+
+/***/ }),
+/* 5 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = str => encodeURIComponent(str).replace(/[!'()*]/g, x => `%${x.charCodeAt(0).toString(16).toUpperCase()}`);
+
+
+/***/ }),
+/* 6 */
+/***/ ((module) => {
+
+"use strict";
+
+var token = '%[a-f0-9]{2}';
+var singleMatcher = new RegExp(token, 'gi');
+var multiMatcher = new RegExp('(' + token + ')+', 'gi');
+
+function decodeComponents(components, split) {
+	try {
+		// Try to decode the entire string first
+		return decodeURIComponent(components.join(''));
+	} catch (err) {
+		// Do nothing
+	}
+
+	if (components.length === 1) {
+		return components;
+	}
+
+	split = split || 1;
+
+	// Split the array in 2 parts
+	var left = components.slice(0, split);
+	var right = components.slice(split);
+
+	return Array.prototype.concat.call([], decodeComponents(left), decodeComponents(right));
+}
+
+function decode(input) {
+	try {
+		return decodeURIComponent(input);
+	} catch (err) {
+		var tokens = input.match(singleMatcher);
+
+		for (var i = 1; i < tokens.length; i++) {
+			input = decodeComponents(tokens, i).join('');
+
+			tokens = input.match(singleMatcher);
+		}
+
+		return input;
+	}
+}
+
+function customDecodeURIComponent(input) {
+	// Keep track of all the replacements and prefill the map with the `BOM`
+	var replaceMap = {
+		'%FE%FF': '\uFFFD\uFFFD',
+		'%FF%FE': '\uFFFD\uFFFD'
+	};
+
+	var match = multiMatcher.exec(input);
+	while (match) {
+		try {
+			// Decode as big chunks as possible
+			replaceMap[match[0]] = decodeURIComponent(match[0]);
+		} catch (err) {
+			var result = decode(match[0]);
+
+			if (result !== match[0]) {
+				replaceMap[match[0]] = result;
+			}
+		}
+
+		match = multiMatcher.exec(input);
+	}
+
+	// Add `%C2` at the end of the map to make sure it does not replace the combinator before everything else
+	replaceMap['%C2'] = '\uFFFD';
+
+	var entries = Object.keys(replaceMap);
+
+	for (var i = 0; i < entries.length; i++) {
+		// Replace all decoded components
+		var key = entries[i];
+		input = input.replace(new RegExp(key, 'g'), replaceMap[key]);
+	}
+
+	return input;
+}
+
+module.exports = function (encodedURI) {
+	if (typeof encodedURI !== 'string') {
+		throw new TypeError('Expected `encodedURI` to be of type `string`, got `' + typeof encodedURI + '`');
+	}
+
+	try {
+		encodedURI = encodedURI.replace(/\+/g, ' ');
+
+		// Try the built in decoder first
+		return decodeURIComponent(encodedURI);
+	} catch (err) {
+		// Fallback to a more advanced decoder
+		return customDecodeURIComponent(encodedURI);
+	}
+};
+
+
+/***/ }),
+/* 7 */
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = (string, separator) => {
+	if (!(typeof string === 'string' && typeof separator === 'string')) {
+		throw new TypeError('Expected the arguments to be of type `string`');
+	}
+
+	if (separator === '') {
+		return [string];
+	}
+
+	const separatorIndex = string.indexOf(separator);
+
+	if (separatorIndex === -1) {
+		return [string];
+	}
+
+	return [
+		string.slice(0, separatorIndex),
+		string.slice(separatorIndex + separator.length)
+	];
+};
+
+
+/***/ }),
+/* 8 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = function (obj, predicate) {
+	var ret = {};
+	var keys = Object.keys(obj);
+	var isArr = Array.isArray(predicate);
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		var val = obj[key];
+
+		if (isArr ? predicate.indexOf(key) !== -1 : predicate(key, val, obj)) {
+			ret[key] = val;
+		}
+	}
+
+	return ret;
+};
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
+(function(global, factory) { /* global define, require, module */
+
+    /* AMD */ if (true)
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(10)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+		(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+    /* CommonJS */ else {}
+
+})(this, function($protobuf) {
+    "use strict";
+
+    // Common aliases
+    var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
+    
+    // Exported root namespace
+    var $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
+    
+    $root.SBFrame = (function() {
+    
+        /**
+         * Properties of a SBFrame.
+         * @exports ISBFrame
+         * @interface ISBFrame
+         * @property {number|null} [Timestamp] SBFrame Timestamp
+         * @property {number|null} [UserPosX] SBFrame UserPosX
+         * @property {number|null} [UserPosY] SBFrame UserPosY
+         * @property {number|null} [UserPosZ] SBFrame UserPosZ
+         * @property {number|null} [UserRotX] SBFrame UserRotX
+         * @property {number|null} [UserRotY] SBFrame UserRotY
+         * @property {number|null} [UserRotZ] SBFrame UserRotZ
+         * @property {number|null} [HeadPosX] SBFrame HeadPosX
+         * @property {number|null} [HeadPosY] SBFrame HeadPosY
+         * @property {number|null} [HeadPosZ] SBFrame HeadPosZ
+         * @property {number|null} [HeadRotX] SBFrame HeadRotX
+         * @property {number|null} [HeadRotY] SBFrame HeadRotY
+         * @property {number|null} [HeadRotZ] SBFrame HeadRotZ
+         * @property {number|null} [LeftHandPosX] SBFrame LeftHandPosX
+         * @property {number|null} [LeftHandPosY] SBFrame LeftHandPosY
+         * @property {number|null} [LeftHandPosZ] SBFrame LeftHandPosZ
+         * @property {number|null} [LeftHandRotX] SBFrame LeftHandRotX
+         * @property {number|null} [LeftHandRotY] SBFrame LeftHandRotY
+         * @property {number|null} [LeftHandRotZ] SBFrame LeftHandRotZ
+         * @property {number|null} [RightHandPosX] SBFrame RightHandPosX
+         * @property {number|null} [RightHandPosY] SBFrame RightHandPosY
+         * @property {number|null} [RightHandPosZ] SBFrame RightHandPosZ
+         * @property {number|null} [RightHandRotX] SBFrame RightHandRotX
+         * @property {number|null} [RightHandRotY] SBFrame RightHandRotY
+         * @property {number|null} [RightHandRotZ] SBFrame RightHandRotZ
+         * @property {number|null} [EyePosX] SBFrame EyePosX
+         * @property {number|null} [EyePosY] SBFrame EyePosY
+         * @property {number|null} [EyePosZ] SBFrame EyePosZ
+         * @property {number|null} [EyeRotX] SBFrame EyeRotX
+         * @property {number|null} [EyeRotY] SBFrame EyeRotY
+         * @property {number|null} [EyeRotZ] SBFrame EyeRotZ
+         * @property {Array.<number>|null} [AudioSamples] SBFrame AudioSamples
+         */
+    
+        /**
+         * Constructs a new SBFrame.
+         * @exports SBFrame
+         * @classdesc Represents a SBFrame.
+         * @implements ISBFrame
+         * @constructor
+         * @param {ISBFrame=} [properties] Properties to set
+         */
+        function SBFrame(properties) {
+            this.AudioSamples = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBFrame Timestamp.
+         * @member {number} Timestamp
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.Timestamp = 0;
+    
+        /**
+         * SBFrame UserPosX.
+         * @member {number} UserPosX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserPosX = 0;
+    
+        /**
+         * SBFrame UserPosY.
+         * @member {number} UserPosY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserPosY = 0;
+    
+        /**
+         * SBFrame UserPosZ.
+         * @member {number} UserPosZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserPosZ = 0;
+    
+        /**
+         * SBFrame UserRotX.
+         * @member {number} UserRotX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserRotX = 0;
+    
+        /**
+         * SBFrame UserRotY.
+         * @member {number} UserRotY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserRotY = 0;
+    
+        /**
+         * SBFrame UserRotZ.
+         * @member {number} UserRotZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.UserRotZ = 0;
+    
+        /**
+         * SBFrame HeadPosX.
+         * @member {number} HeadPosX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadPosX = 0;
+    
+        /**
+         * SBFrame HeadPosY.
+         * @member {number} HeadPosY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadPosY = 0;
+    
+        /**
+         * SBFrame HeadPosZ.
+         * @member {number} HeadPosZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadPosZ = 0;
+    
+        /**
+         * SBFrame HeadRotX.
+         * @member {number} HeadRotX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadRotX = 0;
+    
+        /**
+         * SBFrame HeadRotY.
+         * @member {number} HeadRotY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadRotY = 0;
+    
+        /**
+         * SBFrame HeadRotZ.
+         * @member {number} HeadRotZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.HeadRotZ = 0;
+    
+        /**
+         * SBFrame LeftHandPosX.
+         * @member {number} LeftHandPosX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandPosX = 0;
+    
+        /**
+         * SBFrame LeftHandPosY.
+         * @member {number} LeftHandPosY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandPosY = 0;
+    
+        /**
+         * SBFrame LeftHandPosZ.
+         * @member {number} LeftHandPosZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandPosZ = 0;
+    
+        /**
+         * SBFrame LeftHandRotX.
+         * @member {number} LeftHandRotX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandRotX = 0;
+    
+        /**
+         * SBFrame LeftHandRotY.
+         * @member {number} LeftHandRotY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandRotY = 0;
+    
+        /**
+         * SBFrame LeftHandRotZ.
+         * @member {number} LeftHandRotZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.LeftHandRotZ = 0;
+    
+        /**
+         * SBFrame RightHandPosX.
+         * @member {number} RightHandPosX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandPosX = 0;
+    
+        /**
+         * SBFrame RightHandPosY.
+         * @member {number} RightHandPosY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandPosY = 0;
+    
+        /**
+         * SBFrame RightHandPosZ.
+         * @member {number} RightHandPosZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandPosZ = 0;
+    
+        /**
+         * SBFrame RightHandRotX.
+         * @member {number} RightHandRotX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandRotX = 0;
+    
+        /**
+         * SBFrame RightHandRotY.
+         * @member {number} RightHandRotY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandRotY = 0;
+    
+        /**
+         * SBFrame RightHandRotZ.
+         * @member {number} RightHandRotZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.RightHandRotZ = 0;
+    
+        /**
+         * SBFrame EyePosX.
+         * @member {number} EyePosX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyePosX = 0;
+    
+        /**
+         * SBFrame EyePosY.
+         * @member {number} EyePosY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyePosY = 0;
+    
+        /**
+         * SBFrame EyePosZ.
+         * @member {number} EyePosZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyePosZ = 0;
+    
+        /**
+         * SBFrame EyeRotX.
+         * @member {number} EyeRotX
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyeRotX = 0;
+    
+        /**
+         * SBFrame EyeRotY.
+         * @member {number} EyeRotY
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyeRotY = 0;
+    
+        /**
+         * SBFrame EyeRotZ.
+         * @member {number} EyeRotZ
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.EyeRotZ = 0;
+    
+        /**
+         * SBFrame AudioSamples.
+         * @member {Array.<number>} AudioSamples
+         * @memberof SBFrame
+         * @instance
+         */
+        SBFrame.prototype.AudioSamples = $util.emptyArray;
+    
+        /**
+         * Creates a new SBFrame instance using the specified properties.
+         * @function create
+         * @memberof SBFrame
+         * @static
+         * @param {ISBFrame=} [properties] Properties to set
+         * @returns {SBFrame} SBFrame instance
+         */
+        SBFrame.create = function create(properties) {
+            return new SBFrame(properties);
+        };
+    
+        /**
+         * Encodes the specified SBFrame message. Does not implicitly {@link SBFrame.verify|verify} messages.
+         * @function encode
+         * @memberof SBFrame
+         * @static
+         * @param {ISBFrame} message SBFrame message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBFrame.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.Timestamp != null && Object.hasOwnProperty.call(message, "Timestamp"))
+                writer.uint32(/* id 1, wireType 5 =*/13).float(message.Timestamp);
+            if (message.UserPosX != null && Object.hasOwnProperty.call(message, "UserPosX"))
+                writer.uint32(/* id 2, wireType 5 =*/21).float(message.UserPosX);
+            if (message.UserPosY != null && Object.hasOwnProperty.call(message, "UserPosY"))
+                writer.uint32(/* id 3, wireType 5 =*/29).float(message.UserPosY);
+            if (message.UserPosZ != null && Object.hasOwnProperty.call(message, "UserPosZ"))
+                writer.uint32(/* id 4, wireType 5 =*/37).float(message.UserPosZ);
+            if (message.UserRotX != null && Object.hasOwnProperty.call(message, "UserRotX"))
+                writer.uint32(/* id 5, wireType 5 =*/45).float(message.UserRotX);
+            if (message.UserRotY != null && Object.hasOwnProperty.call(message, "UserRotY"))
+                writer.uint32(/* id 6, wireType 5 =*/53).float(message.UserRotY);
+            if (message.UserRotZ != null && Object.hasOwnProperty.call(message, "UserRotZ"))
+                writer.uint32(/* id 7, wireType 5 =*/61).float(message.UserRotZ);
+            if (message.HeadPosX != null && Object.hasOwnProperty.call(message, "HeadPosX"))
+                writer.uint32(/* id 8, wireType 5 =*/69).float(message.HeadPosX);
+            if (message.HeadPosY != null && Object.hasOwnProperty.call(message, "HeadPosY"))
+                writer.uint32(/* id 9, wireType 5 =*/77).float(message.HeadPosY);
+            if (message.HeadPosZ != null && Object.hasOwnProperty.call(message, "HeadPosZ"))
+                writer.uint32(/* id 10, wireType 5 =*/85).float(message.HeadPosZ);
+            if (message.HeadRotX != null && Object.hasOwnProperty.call(message, "HeadRotX"))
+                writer.uint32(/* id 11, wireType 5 =*/93).float(message.HeadRotX);
+            if (message.HeadRotY != null && Object.hasOwnProperty.call(message, "HeadRotY"))
+                writer.uint32(/* id 12, wireType 5 =*/101).float(message.HeadRotY);
+            if (message.HeadRotZ != null && Object.hasOwnProperty.call(message, "HeadRotZ"))
+                writer.uint32(/* id 13, wireType 5 =*/109).float(message.HeadRotZ);
+            if (message.LeftHandPosX != null && Object.hasOwnProperty.call(message, "LeftHandPosX"))
+                writer.uint32(/* id 14, wireType 5 =*/117).float(message.LeftHandPosX);
+            if (message.LeftHandPosY != null && Object.hasOwnProperty.call(message, "LeftHandPosY"))
+                writer.uint32(/* id 15, wireType 5 =*/125).float(message.LeftHandPosY);
+            if (message.LeftHandPosZ != null && Object.hasOwnProperty.call(message, "LeftHandPosZ"))
+                writer.uint32(/* id 16, wireType 5 =*/133).float(message.LeftHandPosZ);
+            if (message.LeftHandRotX != null && Object.hasOwnProperty.call(message, "LeftHandRotX"))
+                writer.uint32(/* id 17, wireType 5 =*/141).float(message.LeftHandRotX);
+            if (message.LeftHandRotY != null && Object.hasOwnProperty.call(message, "LeftHandRotY"))
+                writer.uint32(/* id 18, wireType 5 =*/149).float(message.LeftHandRotY);
+            if (message.LeftHandRotZ != null && Object.hasOwnProperty.call(message, "LeftHandRotZ"))
+                writer.uint32(/* id 19, wireType 5 =*/157).float(message.LeftHandRotZ);
+            if (message.RightHandPosX != null && Object.hasOwnProperty.call(message, "RightHandPosX"))
+                writer.uint32(/* id 20, wireType 5 =*/165).float(message.RightHandPosX);
+            if (message.RightHandPosY != null && Object.hasOwnProperty.call(message, "RightHandPosY"))
+                writer.uint32(/* id 21, wireType 5 =*/173).float(message.RightHandPosY);
+            if (message.RightHandPosZ != null && Object.hasOwnProperty.call(message, "RightHandPosZ"))
+                writer.uint32(/* id 22, wireType 5 =*/181).float(message.RightHandPosZ);
+            if (message.RightHandRotX != null && Object.hasOwnProperty.call(message, "RightHandRotX"))
+                writer.uint32(/* id 23, wireType 5 =*/189).float(message.RightHandRotX);
+            if (message.RightHandRotY != null && Object.hasOwnProperty.call(message, "RightHandRotY"))
+                writer.uint32(/* id 24, wireType 5 =*/197).float(message.RightHandRotY);
+            if (message.RightHandRotZ != null && Object.hasOwnProperty.call(message, "RightHandRotZ"))
+                writer.uint32(/* id 25, wireType 5 =*/205).float(message.RightHandRotZ);
+            if (message.EyePosX != null && Object.hasOwnProperty.call(message, "EyePosX"))
+                writer.uint32(/* id 26, wireType 5 =*/213).float(message.EyePosX);
+            if (message.EyePosY != null && Object.hasOwnProperty.call(message, "EyePosY"))
+                writer.uint32(/* id 27, wireType 5 =*/221).float(message.EyePosY);
+            if (message.EyePosZ != null && Object.hasOwnProperty.call(message, "EyePosZ"))
+                writer.uint32(/* id 28, wireType 5 =*/229).float(message.EyePosZ);
+            if (message.EyeRotX != null && Object.hasOwnProperty.call(message, "EyeRotX"))
+                writer.uint32(/* id 29, wireType 5 =*/237).float(message.EyeRotX);
+            if (message.EyeRotY != null && Object.hasOwnProperty.call(message, "EyeRotY"))
+                writer.uint32(/* id 30, wireType 5 =*/245).float(message.EyeRotY);
+            if (message.EyeRotZ != null && Object.hasOwnProperty.call(message, "EyeRotZ"))
+                writer.uint32(/* id 31, wireType 5 =*/253).float(message.EyeRotZ);
+            if (message.AudioSamples != null && message.AudioSamples.length) {
+                writer.uint32(/* id 32, wireType 2 =*/258).fork();
+                for (var i = 0; i < message.AudioSamples.length; ++i)
+                    writer.float(message.AudioSamples[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBFrame message, length delimited. Does not implicitly {@link SBFrame.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBFrame
+         * @static
+         * @param {ISBFrame} message SBFrame message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBFrame.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBFrame message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBFrame
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBFrame} SBFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBFrame.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBFrame();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.Timestamp = reader.float();
+                    break;
+                case 2:
+                    message.UserPosX = reader.float();
+                    break;
+                case 3:
+                    message.UserPosY = reader.float();
+                    break;
+                case 4:
+                    message.UserPosZ = reader.float();
+                    break;
+                case 5:
+                    message.UserRotX = reader.float();
+                    break;
+                case 6:
+                    message.UserRotY = reader.float();
+                    break;
+                case 7:
+                    message.UserRotZ = reader.float();
+                    break;
+                case 8:
+                    message.HeadPosX = reader.float();
+                    break;
+                case 9:
+                    message.HeadPosY = reader.float();
+                    break;
+                case 10:
+                    message.HeadPosZ = reader.float();
+                    break;
+                case 11:
+                    message.HeadRotX = reader.float();
+                    break;
+                case 12:
+                    message.HeadRotY = reader.float();
+                    break;
+                case 13:
+                    message.HeadRotZ = reader.float();
+                    break;
+                case 14:
+                    message.LeftHandPosX = reader.float();
+                    break;
+                case 15:
+                    message.LeftHandPosY = reader.float();
+                    break;
+                case 16:
+                    message.LeftHandPosZ = reader.float();
+                    break;
+                case 17:
+                    message.LeftHandRotX = reader.float();
+                    break;
+                case 18:
+                    message.LeftHandRotY = reader.float();
+                    break;
+                case 19:
+                    message.LeftHandRotZ = reader.float();
+                    break;
+                case 20:
+                    message.RightHandPosX = reader.float();
+                    break;
+                case 21:
+                    message.RightHandPosY = reader.float();
+                    break;
+                case 22:
+                    message.RightHandPosZ = reader.float();
+                    break;
+                case 23:
+                    message.RightHandRotX = reader.float();
+                    break;
+                case 24:
+                    message.RightHandRotY = reader.float();
+                    break;
+                case 25:
+                    message.RightHandRotZ = reader.float();
+                    break;
+                case 26:
+                    message.EyePosX = reader.float();
+                    break;
+                case 27:
+                    message.EyePosY = reader.float();
+                    break;
+                case 28:
+                    message.EyePosZ = reader.float();
+                    break;
+                case 29:
+                    message.EyeRotX = reader.float();
+                    break;
+                case 30:
+                    message.EyeRotY = reader.float();
+                    break;
+                case 31:
+                    message.EyeRotZ = reader.float();
+                    break;
+                case 32:
+                    if (!(message.AudioSamples && message.AudioSamples.length))
+                        message.AudioSamples = [];
+                    if ((tag & 7) === 2) {
+                        var end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2)
+                            message.AudioSamples.push(reader.float());
+                    } else
+                        message.AudioSamples.push(reader.float());
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBFrame message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBFrame
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBFrame} SBFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBFrame.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBFrame message.
+         * @function verify
+         * @memberof SBFrame
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBFrame.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.Timestamp != null && message.hasOwnProperty("Timestamp"))
+                if (typeof message.Timestamp !== "number")
+                    return "Timestamp: number expected";
+            if (message.UserPosX != null && message.hasOwnProperty("UserPosX"))
+                if (typeof message.UserPosX !== "number")
+                    return "UserPosX: number expected";
+            if (message.UserPosY != null && message.hasOwnProperty("UserPosY"))
+                if (typeof message.UserPosY !== "number")
+                    return "UserPosY: number expected";
+            if (message.UserPosZ != null && message.hasOwnProperty("UserPosZ"))
+                if (typeof message.UserPosZ !== "number")
+                    return "UserPosZ: number expected";
+            if (message.UserRotX != null && message.hasOwnProperty("UserRotX"))
+                if (typeof message.UserRotX !== "number")
+                    return "UserRotX: number expected";
+            if (message.UserRotY != null && message.hasOwnProperty("UserRotY"))
+                if (typeof message.UserRotY !== "number")
+                    return "UserRotY: number expected";
+            if (message.UserRotZ != null && message.hasOwnProperty("UserRotZ"))
+                if (typeof message.UserRotZ !== "number")
+                    return "UserRotZ: number expected";
+            if (message.HeadPosX != null && message.hasOwnProperty("HeadPosX"))
+                if (typeof message.HeadPosX !== "number")
+                    return "HeadPosX: number expected";
+            if (message.HeadPosY != null && message.hasOwnProperty("HeadPosY"))
+                if (typeof message.HeadPosY !== "number")
+                    return "HeadPosY: number expected";
+            if (message.HeadPosZ != null && message.hasOwnProperty("HeadPosZ"))
+                if (typeof message.HeadPosZ !== "number")
+                    return "HeadPosZ: number expected";
+            if (message.HeadRotX != null && message.hasOwnProperty("HeadRotX"))
+                if (typeof message.HeadRotX !== "number")
+                    return "HeadRotX: number expected";
+            if (message.HeadRotY != null && message.hasOwnProperty("HeadRotY"))
+                if (typeof message.HeadRotY !== "number")
+                    return "HeadRotY: number expected";
+            if (message.HeadRotZ != null && message.hasOwnProperty("HeadRotZ"))
+                if (typeof message.HeadRotZ !== "number")
+                    return "HeadRotZ: number expected";
+            if (message.LeftHandPosX != null && message.hasOwnProperty("LeftHandPosX"))
+                if (typeof message.LeftHandPosX !== "number")
+                    return "LeftHandPosX: number expected";
+            if (message.LeftHandPosY != null && message.hasOwnProperty("LeftHandPosY"))
+                if (typeof message.LeftHandPosY !== "number")
+                    return "LeftHandPosY: number expected";
+            if (message.LeftHandPosZ != null && message.hasOwnProperty("LeftHandPosZ"))
+                if (typeof message.LeftHandPosZ !== "number")
+                    return "LeftHandPosZ: number expected";
+            if (message.LeftHandRotX != null && message.hasOwnProperty("LeftHandRotX"))
+                if (typeof message.LeftHandRotX !== "number")
+                    return "LeftHandRotX: number expected";
+            if (message.LeftHandRotY != null && message.hasOwnProperty("LeftHandRotY"))
+                if (typeof message.LeftHandRotY !== "number")
+                    return "LeftHandRotY: number expected";
+            if (message.LeftHandRotZ != null && message.hasOwnProperty("LeftHandRotZ"))
+                if (typeof message.LeftHandRotZ !== "number")
+                    return "LeftHandRotZ: number expected";
+            if (message.RightHandPosX != null && message.hasOwnProperty("RightHandPosX"))
+                if (typeof message.RightHandPosX !== "number")
+                    return "RightHandPosX: number expected";
+            if (message.RightHandPosY != null && message.hasOwnProperty("RightHandPosY"))
+                if (typeof message.RightHandPosY !== "number")
+                    return "RightHandPosY: number expected";
+            if (message.RightHandPosZ != null && message.hasOwnProperty("RightHandPosZ"))
+                if (typeof message.RightHandPosZ !== "number")
+                    return "RightHandPosZ: number expected";
+            if (message.RightHandRotX != null && message.hasOwnProperty("RightHandRotX"))
+                if (typeof message.RightHandRotX !== "number")
+                    return "RightHandRotX: number expected";
+            if (message.RightHandRotY != null && message.hasOwnProperty("RightHandRotY"))
+                if (typeof message.RightHandRotY !== "number")
+                    return "RightHandRotY: number expected";
+            if (message.RightHandRotZ != null && message.hasOwnProperty("RightHandRotZ"))
+                if (typeof message.RightHandRotZ !== "number")
+                    return "RightHandRotZ: number expected";
+            if (message.EyePosX != null && message.hasOwnProperty("EyePosX"))
+                if (typeof message.EyePosX !== "number")
+                    return "EyePosX: number expected";
+            if (message.EyePosY != null && message.hasOwnProperty("EyePosY"))
+                if (typeof message.EyePosY !== "number")
+                    return "EyePosY: number expected";
+            if (message.EyePosZ != null && message.hasOwnProperty("EyePosZ"))
+                if (typeof message.EyePosZ !== "number")
+                    return "EyePosZ: number expected";
+            if (message.EyeRotX != null && message.hasOwnProperty("EyeRotX"))
+                if (typeof message.EyeRotX !== "number")
+                    return "EyeRotX: number expected";
+            if (message.EyeRotY != null && message.hasOwnProperty("EyeRotY"))
+                if (typeof message.EyeRotY !== "number")
+                    return "EyeRotY: number expected";
+            if (message.EyeRotZ != null && message.hasOwnProperty("EyeRotZ"))
+                if (typeof message.EyeRotZ !== "number")
+                    return "EyeRotZ: number expected";
+            if (message.AudioSamples != null && message.hasOwnProperty("AudioSamples")) {
+                if (!Array.isArray(message.AudioSamples))
+                    return "AudioSamples: array expected";
+                for (var i = 0; i < message.AudioSamples.length; ++i)
+                    if (typeof message.AudioSamples[i] !== "number")
+                        return "AudioSamples: number[] expected";
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBFrame message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBFrame
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBFrame} SBFrame
+         */
+        SBFrame.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBFrame)
+                return object;
+            var message = new $root.SBFrame();
+            if (object.Timestamp != null)
+                message.Timestamp = Number(object.Timestamp);
+            if (object.UserPosX != null)
+                message.UserPosX = Number(object.UserPosX);
+            if (object.UserPosY != null)
+                message.UserPosY = Number(object.UserPosY);
+            if (object.UserPosZ != null)
+                message.UserPosZ = Number(object.UserPosZ);
+            if (object.UserRotX != null)
+                message.UserRotX = Number(object.UserRotX);
+            if (object.UserRotY != null)
+                message.UserRotY = Number(object.UserRotY);
+            if (object.UserRotZ != null)
+                message.UserRotZ = Number(object.UserRotZ);
+            if (object.HeadPosX != null)
+                message.HeadPosX = Number(object.HeadPosX);
+            if (object.HeadPosY != null)
+                message.HeadPosY = Number(object.HeadPosY);
+            if (object.HeadPosZ != null)
+                message.HeadPosZ = Number(object.HeadPosZ);
+            if (object.HeadRotX != null)
+                message.HeadRotX = Number(object.HeadRotX);
+            if (object.HeadRotY != null)
+                message.HeadRotY = Number(object.HeadRotY);
+            if (object.HeadRotZ != null)
+                message.HeadRotZ = Number(object.HeadRotZ);
+            if (object.LeftHandPosX != null)
+                message.LeftHandPosX = Number(object.LeftHandPosX);
+            if (object.LeftHandPosY != null)
+                message.LeftHandPosY = Number(object.LeftHandPosY);
+            if (object.LeftHandPosZ != null)
+                message.LeftHandPosZ = Number(object.LeftHandPosZ);
+            if (object.LeftHandRotX != null)
+                message.LeftHandRotX = Number(object.LeftHandRotX);
+            if (object.LeftHandRotY != null)
+                message.LeftHandRotY = Number(object.LeftHandRotY);
+            if (object.LeftHandRotZ != null)
+                message.LeftHandRotZ = Number(object.LeftHandRotZ);
+            if (object.RightHandPosX != null)
+                message.RightHandPosX = Number(object.RightHandPosX);
+            if (object.RightHandPosY != null)
+                message.RightHandPosY = Number(object.RightHandPosY);
+            if (object.RightHandPosZ != null)
+                message.RightHandPosZ = Number(object.RightHandPosZ);
+            if (object.RightHandRotX != null)
+                message.RightHandRotX = Number(object.RightHandRotX);
+            if (object.RightHandRotY != null)
+                message.RightHandRotY = Number(object.RightHandRotY);
+            if (object.RightHandRotZ != null)
+                message.RightHandRotZ = Number(object.RightHandRotZ);
+            if (object.EyePosX != null)
+                message.EyePosX = Number(object.EyePosX);
+            if (object.EyePosY != null)
+                message.EyePosY = Number(object.EyePosY);
+            if (object.EyePosZ != null)
+                message.EyePosZ = Number(object.EyePosZ);
+            if (object.EyeRotX != null)
+                message.EyeRotX = Number(object.EyeRotX);
+            if (object.EyeRotY != null)
+                message.EyeRotY = Number(object.EyeRotY);
+            if (object.EyeRotZ != null)
+                message.EyeRotZ = Number(object.EyeRotZ);
+            if (object.AudioSamples) {
+                if (!Array.isArray(object.AudioSamples))
+                    throw TypeError(".SBFrame.AudioSamples: array expected");
+                message.AudioSamples = [];
+                for (var i = 0; i < object.AudioSamples.length; ++i)
+                    message.AudioSamples[i] = Number(object.AudioSamples[i]);
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBFrame message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBFrame
+         * @static
+         * @param {SBFrame} message SBFrame
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBFrame.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults)
+                object.AudioSamples = [];
+            if (options.defaults) {
+                object.Timestamp = 0;
+                object.UserPosX = 0;
+                object.UserPosY = 0;
+                object.UserPosZ = 0;
+                object.UserRotX = 0;
+                object.UserRotY = 0;
+                object.UserRotZ = 0;
+                object.HeadPosX = 0;
+                object.HeadPosY = 0;
+                object.HeadPosZ = 0;
+                object.HeadRotX = 0;
+                object.HeadRotY = 0;
+                object.HeadRotZ = 0;
+                object.LeftHandPosX = 0;
+                object.LeftHandPosY = 0;
+                object.LeftHandPosZ = 0;
+                object.LeftHandRotX = 0;
+                object.LeftHandRotY = 0;
+                object.LeftHandRotZ = 0;
+                object.RightHandPosX = 0;
+                object.RightHandPosY = 0;
+                object.RightHandPosZ = 0;
+                object.RightHandRotX = 0;
+                object.RightHandRotY = 0;
+                object.RightHandRotZ = 0;
+                object.EyePosX = 0;
+                object.EyePosY = 0;
+                object.EyePosZ = 0;
+                object.EyeRotX = 0;
+                object.EyeRotY = 0;
+                object.EyeRotZ = 0;
+            }
+            if (message.Timestamp != null && message.hasOwnProperty("Timestamp"))
+                object.Timestamp = options.json && !isFinite(message.Timestamp) ? String(message.Timestamp) : message.Timestamp;
+            if (message.UserPosX != null && message.hasOwnProperty("UserPosX"))
+                object.UserPosX = options.json && !isFinite(message.UserPosX) ? String(message.UserPosX) : message.UserPosX;
+            if (message.UserPosY != null && message.hasOwnProperty("UserPosY"))
+                object.UserPosY = options.json && !isFinite(message.UserPosY) ? String(message.UserPosY) : message.UserPosY;
+            if (message.UserPosZ != null && message.hasOwnProperty("UserPosZ"))
+                object.UserPosZ = options.json && !isFinite(message.UserPosZ) ? String(message.UserPosZ) : message.UserPosZ;
+            if (message.UserRotX != null && message.hasOwnProperty("UserRotX"))
+                object.UserRotX = options.json && !isFinite(message.UserRotX) ? String(message.UserRotX) : message.UserRotX;
+            if (message.UserRotY != null && message.hasOwnProperty("UserRotY"))
+                object.UserRotY = options.json && !isFinite(message.UserRotY) ? String(message.UserRotY) : message.UserRotY;
+            if (message.UserRotZ != null && message.hasOwnProperty("UserRotZ"))
+                object.UserRotZ = options.json && !isFinite(message.UserRotZ) ? String(message.UserRotZ) : message.UserRotZ;
+            if (message.HeadPosX != null && message.hasOwnProperty("HeadPosX"))
+                object.HeadPosX = options.json && !isFinite(message.HeadPosX) ? String(message.HeadPosX) : message.HeadPosX;
+            if (message.HeadPosY != null && message.hasOwnProperty("HeadPosY"))
+                object.HeadPosY = options.json && !isFinite(message.HeadPosY) ? String(message.HeadPosY) : message.HeadPosY;
+            if (message.HeadPosZ != null && message.hasOwnProperty("HeadPosZ"))
+                object.HeadPosZ = options.json && !isFinite(message.HeadPosZ) ? String(message.HeadPosZ) : message.HeadPosZ;
+            if (message.HeadRotX != null && message.hasOwnProperty("HeadRotX"))
+                object.HeadRotX = options.json && !isFinite(message.HeadRotX) ? String(message.HeadRotX) : message.HeadRotX;
+            if (message.HeadRotY != null && message.hasOwnProperty("HeadRotY"))
+                object.HeadRotY = options.json && !isFinite(message.HeadRotY) ? String(message.HeadRotY) : message.HeadRotY;
+            if (message.HeadRotZ != null && message.hasOwnProperty("HeadRotZ"))
+                object.HeadRotZ = options.json && !isFinite(message.HeadRotZ) ? String(message.HeadRotZ) : message.HeadRotZ;
+            if (message.LeftHandPosX != null && message.hasOwnProperty("LeftHandPosX"))
+                object.LeftHandPosX = options.json && !isFinite(message.LeftHandPosX) ? String(message.LeftHandPosX) : message.LeftHandPosX;
+            if (message.LeftHandPosY != null && message.hasOwnProperty("LeftHandPosY"))
+                object.LeftHandPosY = options.json && !isFinite(message.LeftHandPosY) ? String(message.LeftHandPosY) : message.LeftHandPosY;
+            if (message.LeftHandPosZ != null && message.hasOwnProperty("LeftHandPosZ"))
+                object.LeftHandPosZ = options.json && !isFinite(message.LeftHandPosZ) ? String(message.LeftHandPosZ) : message.LeftHandPosZ;
+            if (message.LeftHandRotX != null && message.hasOwnProperty("LeftHandRotX"))
+                object.LeftHandRotX = options.json && !isFinite(message.LeftHandRotX) ? String(message.LeftHandRotX) : message.LeftHandRotX;
+            if (message.LeftHandRotY != null && message.hasOwnProperty("LeftHandRotY"))
+                object.LeftHandRotY = options.json && !isFinite(message.LeftHandRotY) ? String(message.LeftHandRotY) : message.LeftHandRotY;
+            if (message.LeftHandRotZ != null && message.hasOwnProperty("LeftHandRotZ"))
+                object.LeftHandRotZ = options.json && !isFinite(message.LeftHandRotZ) ? String(message.LeftHandRotZ) : message.LeftHandRotZ;
+            if (message.RightHandPosX != null && message.hasOwnProperty("RightHandPosX"))
+                object.RightHandPosX = options.json && !isFinite(message.RightHandPosX) ? String(message.RightHandPosX) : message.RightHandPosX;
+            if (message.RightHandPosY != null && message.hasOwnProperty("RightHandPosY"))
+                object.RightHandPosY = options.json && !isFinite(message.RightHandPosY) ? String(message.RightHandPosY) : message.RightHandPosY;
+            if (message.RightHandPosZ != null && message.hasOwnProperty("RightHandPosZ"))
+                object.RightHandPosZ = options.json && !isFinite(message.RightHandPosZ) ? String(message.RightHandPosZ) : message.RightHandPosZ;
+            if (message.RightHandRotX != null && message.hasOwnProperty("RightHandRotX"))
+                object.RightHandRotX = options.json && !isFinite(message.RightHandRotX) ? String(message.RightHandRotX) : message.RightHandRotX;
+            if (message.RightHandRotY != null && message.hasOwnProperty("RightHandRotY"))
+                object.RightHandRotY = options.json && !isFinite(message.RightHandRotY) ? String(message.RightHandRotY) : message.RightHandRotY;
+            if (message.RightHandRotZ != null && message.hasOwnProperty("RightHandRotZ"))
+                object.RightHandRotZ = options.json && !isFinite(message.RightHandRotZ) ? String(message.RightHandRotZ) : message.RightHandRotZ;
+            if (message.EyePosX != null && message.hasOwnProperty("EyePosX"))
+                object.EyePosX = options.json && !isFinite(message.EyePosX) ? String(message.EyePosX) : message.EyePosX;
+            if (message.EyePosY != null && message.hasOwnProperty("EyePosY"))
+                object.EyePosY = options.json && !isFinite(message.EyePosY) ? String(message.EyePosY) : message.EyePosY;
+            if (message.EyePosZ != null && message.hasOwnProperty("EyePosZ"))
+                object.EyePosZ = options.json && !isFinite(message.EyePosZ) ? String(message.EyePosZ) : message.EyePosZ;
+            if (message.EyeRotX != null && message.hasOwnProperty("EyeRotX"))
+                object.EyeRotX = options.json && !isFinite(message.EyeRotX) ? String(message.EyeRotX) : message.EyeRotX;
+            if (message.EyeRotY != null && message.hasOwnProperty("EyeRotY"))
+                object.EyeRotY = options.json && !isFinite(message.EyeRotY) ? String(message.EyeRotY) : message.EyeRotY;
+            if (message.EyeRotZ != null && message.hasOwnProperty("EyeRotZ"))
+                object.EyeRotZ = options.json && !isFinite(message.EyeRotZ) ? String(message.EyeRotZ) : message.EyeRotZ;
+            if (message.AudioSamples && message.AudioSamples.length) {
+                object.AudioSamples = [];
+                for (var j = 0; j < message.AudioSamples.length; ++j)
+                    object.AudioSamples[j] = options.json && !isFinite(message.AudioSamples[j]) ? String(message.AudioSamples[j]) : message.AudioSamples[j];
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this SBFrame to JSON.
+         * @function toJSON
+         * @memberof SBFrame
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBFrame.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBFrame;
+    })();
+    
+    $root.SBFrameList = (function() {
+    
+        /**
+         * Properties of a SBFrameList.
+         * @exports ISBFrameList
+         * @interface ISBFrameList
+         * @property {Array.<ISBFrame>|null} [frames] SBFrameList frames
+         */
+    
+        /**
+         * Constructs a new SBFrameList.
+         * @exports SBFrameList
+         * @classdesc Represents a SBFrameList.
+         * @implements ISBFrameList
+         * @constructor
+         * @param {ISBFrameList=} [properties] Properties to set
+         */
+        function SBFrameList(properties) {
+            this.frames = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBFrameList frames.
+         * @member {Array.<ISBFrame>} frames
+         * @memberof SBFrameList
+         * @instance
+         */
+        SBFrameList.prototype.frames = $util.emptyArray;
+    
+        /**
+         * Creates a new SBFrameList instance using the specified properties.
+         * @function create
+         * @memberof SBFrameList
+         * @static
+         * @param {ISBFrameList=} [properties] Properties to set
+         * @returns {SBFrameList} SBFrameList instance
+         */
+        SBFrameList.create = function create(properties) {
+            return new SBFrameList(properties);
+        };
+    
+        /**
+         * Encodes the specified SBFrameList message. Does not implicitly {@link SBFrameList.verify|verify} messages.
+         * @function encode
+         * @memberof SBFrameList
+         * @static
+         * @param {ISBFrameList} message SBFrameList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBFrameList.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.frames != null && message.frames.length)
+                for (var i = 0; i < message.frames.length; ++i)
+                    $root.SBFrame.encode(message.frames[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBFrameList message, length delimited. Does not implicitly {@link SBFrameList.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBFrameList
+         * @static
+         * @param {ISBFrameList} message SBFrameList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBFrameList.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBFrameList message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBFrameList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBFrameList} SBFrameList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBFrameList.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBFrameList();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (!(message.frames && message.frames.length))
+                        message.frames = [];
+                    message.frames.push($root.SBFrame.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBFrameList message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBFrameList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBFrameList} SBFrameList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBFrameList.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBFrameList message.
+         * @function verify
+         * @memberof SBFrameList
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBFrameList.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.frames != null && message.hasOwnProperty("frames")) {
+                if (!Array.isArray(message.frames))
+                    return "frames: array expected";
+                for (var i = 0; i < message.frames.length; ++i) {
+                    var error = $root.SBFrame.verify(message.frames[i]);
+                    if (error)
+                        return "frames." + error;
+                }
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBFrameList message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBFrameList
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBFrameList} SBFrameList
+         */
+        SBFrameList.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBFrameList)
+                return object;
+            var message = new $root.SBFrameList();
+            if (object.frames) {
+                if (!Array.isArray(object.frames))
+                    throw TypeError(".SBFrameList.frames: array expected");
+                message.frames = [];
+                for (var i = 0; i < object.frames.length; ++i) {
+                    if (typeof object.frames[i] !== "object")
+                        throw TypeError(".SBFrameList.frames: object expected");
+                    message.frames[i] = $root.SBFrame.fromObject(object.frames[i]);
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBFrameList message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBFrameList
+         * @static
+         * @param {SBFrameList} message SBFrameList
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBFrameList.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults)
+                object.frames = [];
+            if (message.frames && message.frames.length) {
+                object.frames = [];
+                for (var j = 0; j < message.frames.length; ++j)
+                    object.frames[j] = $root.SBFrame.toObject(message.frames[j], options);
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this SBFrameList to JSON.
+         * @function toJSON
+         * @memberof SBFrameList
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBFrameList.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBFrameList;
+    })();
+    
+    $root.SBHit = (function() {
+    
+        /**
+         * Properties of a SBHit.
+         * @exports ISBHit
+         * @interface ISBHit
+         * @property {string|null} [id] SBHit id
+         * @property {string|null} [scoreId] SBHit scoreId
+         * @property {string|null} [punchId] SBHit punchId
+         * @property {number|null} [timestamp] SBHit timestamp
+         * @property {number|null} [x] SBHit x
+         * @property {number|null} [y] SBHit y
+         * @property {number|null} [z] SBHit z
+         * @property {number|null} [vX] SBHit vX
+         * @property {number|null} [vY] SBHit vY
+         * @property {number|null} [vZ] SBHit vZ
+         * @property {number|null} [multiplier] SBHit multiplier
+         * @property {number|null} [streak] SBHit streak
+         * @property {number|null} [score] SBHit score
+         * @property {boolean|null} [trig] SBHit trig
+         * @property {boolean|null} [isLeft] SBHit isLeft
+         */
+    
+        /**
+         * Constructs a new SBHit.
+         * @exports SBHit
+         * @classdesc Represents a SBHit.
+         * @implements ISBHit
+         * @constructor
+         * @param {ISBHit=} [properties] Properties to set
+         */
+        function SBHit(properties) {
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBHit id.
+         * @member {string} id
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.id = "";
+    
+        /**
+         * SBHit scoreId.
+         * @member {string} scoreId
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.scoreId = "";
+    
+        /**
+         * SBHit punchId.
+         * @member {string} punchId
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.punchId = "";
+    
+        /**
+         * SBHit timestamp.
+         * @member {number} timestamp
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.timestamp = 0;
+    
+        /**
+         * SBHit x.
+         * @member {number} x
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.x = 0;
+    
+        /**
+         * SBHit y.
+         * @member {number} y
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.y = 0;
+    
+        /**
+         * SBHit z.
+         * @member {number} z
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.z = 0;
+    
+        /**
+         * SBHit vX.
+         * @member {number} vX
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.vX = 0;
+    
+        /**
+         * SBHit vY.
+         * @member {number} vY
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.vY = 0;
+    
+        /**
+         * SBHit vZ.
+         * @member {number} vZ
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.vZ = 0;
+    
+        /**
+         * SBHit multiplier.
+         * @member {number} multiplier
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.multiplier = 0;
+    
+        /**
+         * SBHit streak.
+         * @member {number} streak
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.streak = 0;
+    
+        /**
+         * SBHit score.
+         * @member {number} score
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.score = 0;
+    
+        /**
+         * SBHit trig.
+         * @member {boolean} trig
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.trig = false;
+    
+        /**
+         * SBHit isLeft.
+         * @member {boolean} isLeft
+         * @memberof SBHit
+         * @instance
+         */
+        SBHit.prototype.isLeft = false;
+    
+        /**
+         * Creates a new SBHit instance using the specified properties.
+         * @function create
+         * @memberof SBHit
+         * @static
+         * @param {ISBHit=} [properties] Properties to set
+         * @returns {SBHit} SBHit instance
+         */
+        SBHit.create = function create(properties) {
+            return new SBHit(properties);
+        };
+    
+        /**
+         * Encodes the specified SBHit message. Does not implicitly {@link SBHit.verify|verify} messages.
+         * @function encode
+         * @memberof SBHit
+         * @static
+         * @param {ISBHit} message SBHit message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBHit.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.scoreId != null && Object.hasOwnProperty.call(message, "scoreId"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.scoreId);
+            if (message.punchId != null && Object.hasOwnProperty.call(message, "punchId"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.punchId);
+            if (message.timestamp != null && Object.hasOwnProperty.call(message, "timestamp"))
+                writer.uint32(/* id 4, wireType 1 =*/33).double(message.timestamp);
+            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
+                writer.uint32(/* id 5, wireType 5 =*/45).float(message.x);
+            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
+                writer.uint32(/* id 6, wireType 5 =*/53).float(message.y);
+            if (message.z != null && Object.hasOwnProperty.call(message, "z"))
+                writer.uint32(/* id 7, wireType 5 =*/61).float(message.z);
+            if (message.vX != null && Object.hasOwnProperty.call(message, "vX"))
+                writer.uint32(/* id 8, wireType 5 =*/69).float(message.vX);
+            if (message.vY != null && Object.hasOwnProperty.call(message, "vY"))
+                writer.uint32(/* id 9, wireType 5 =*/77).float(message.vY);
+            if (message.vZ != null && Object.hasOwnProperty.call(message, "vZ"))
+                writer.uint32(/* id 10, wireType 5 =*/85).float(message.vZ);
+            if (message.multiplier != null && Object.hasOwnProperty.call(message, "multiplier"))
+                writer.uint32(/* id 11, wireType 0 =*/88).int32(message.multiplier);
+            if (message.streak != null && Object.hasOwnProperty.call(message, "streak"))
+                writer.uint32(/* id 12, wireType 0 =*/96).int32(message.streak);
+            if (message.score != null && Object.hasOwnProperty.call(message, "score"))
+                writer.uint32(/* id 13, wireType 0 =*/104).int32(message.score);
+            if (message.trig != null && Object.hasOwnProperty.call(message, "trig"))
+                writer.uint32(/* id 14, wireType 0 =*/112).bool(message.trig);
+            if (message.isLeft != null && Object.hasOwnProperty.call(message, "isLeft"))
+                writer.uint32(/* id 15, wireType 0 =*/120).bool(message.isLeft);
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBHit message, length delimited. Does not implicitly {@link SBHit.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBHit
+         * @static
+         * @param {ISBHit} message SBHit message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBHit.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBHit message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBHit
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBHit} SBHit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBHit.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBHit();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.id = reader.string();
+                    break;
+                case 2:
+                    message.scoreId = reader.string();
+                    break;
+                case 3:
+                    message.punchId = reader.string();
+                    break;
+                case 4:
+                    message.timestamp = reader.double();
+                    break;
+                case 5:
+                    message.x = reader.float();
+                    break;
+                case 6:
+                    message.y = reader.float();
+                    break;
+                case 7:
+                    message.z = reader.float();
+                    break;
+                case 8:
+                    message.vX = reader.float();
+                    break;
+                case 9:
+                    message.vY = reader.float();
+                    break;
+                case 10:
+                    message.vZ = reader.float();
+                    break;
+                case 11:
+                    message.multiplier = reader.int32();
+                    break;
+                case 12:
+                    message.streak = reader.int32();
+                    break;
+                case 13:
+                    message.score = reader.int32();
+                    break;
+                case 14:
+                    message.trig = reader.bool();
+                    break;
+                case 15:
+                    message.isLeft = reader.bool();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBHit message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBHit
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBHit} SBHit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBHit.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBHit message.
+         * @function verify
+         * @memberof SBHit
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBHit.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.scoreId != null && message.hasOwnProperty("scoreId"))
+                if (!$util.isString(message.scoreId))
+                    return "scoreId: string expected";
+            if (message.punchId != null && message.hasOwnProperty("punchId"))
+                if (!$util.isString(message.punchId))
+                    return "punchId: string expected";
+            if (message.timestamp != null && message.hasOwnProperty("timestamp"))
+                if (typeof message.timestamp !== "number")
+                    return "timestamp: number expected";
+            if (message.x != null && message.hasOwnProperty("x"))
+                if (typeof message.x !== "number")
+                    return "x: number expected";
+            if (message.y != null && message.hasOwnProperty("y"))
+                if (typeof message.y !== "number")
+                    return "y: number expected";
+            if (message.z != null && message.hasOwnProperty("z"))
+                if (typeof message.z !== "number")
+                    return "z: number expected";
+            if (message.vX != null && message.hasOwnProperty("vX"))
+                if (typeof message.vX !== "number")
+                    return "vX: number expected";
+            if (message.vY != null && message.hasOwnProperty("vY"))
+                if (typeof message.vY !== "number")
+                    return "vY: number expected";
+            if (message.vZ != null && message.hasOwnProperty("vZ"))
+                if (typeof message.vZ !== "number")
+                    return "vZ: number expected";
+            if (message.multiplier != null && message.hasOwnProperty("multiplier"))
+                if (!$util.isInteger(message.multiplier))
+                    return "multiplier: integer expected";
+            if (message.streak != null && message.hasOwnProperty("streak"))
+                if (!$util.isInteger(message.streak))
+                    return "streak: integer expected";
+            if (message.score != null && message.hasOwnProperty("score"))
+                if (!$util.isInteger(message.score))
+                    return "score: integer expected";
+            if (message.trig != null && message.hasOwnProperty("trig"))
+                if (typeof message.trig !== "boolean")
+                    return "trig: boolean expected";
+            if (message.isLeft != null && message.hasOwnProperty("isLeft"))
+                if (typeof message.isLeft !== "boolean")
+                    return "isLeft: boolean expected";
+            return null;
+        };
+    
+        /**
+         * Creates a SBHit message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBHit
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBHit} SBHit
+         */
+        SBHit.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBHit)
+                return object;
+            var message = new $root.SBHit();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.scoreId != null)
+                message.scoreId = String(object.scoreId);
+            if (object.punchId != null)
+                message.punchId = String(object.punchId);
+            if (object.timestamp != null)
+                message.timestamp = Number(object.timestamp);
+            if (object.x != null)
+                message.x = Number(object.x);
+            if (object.y != null)
+                message.y = Number(object.y);
+            if (object.z != null)
+                message.z = Number(object.z);
+            if (object.vX != null)
+                message.vX = Number(object.vX);
+            if (object.vY != null)
+                message.vY = Number(object.vY);
+            if (object.vZ != null)
+                message.vZ = Number(object.vZ);
+            if (object.multiplier != null)
+                message.multiplier = object.multiplier | 0;
+            if (object.streak != null)
+                message.streak = object.streak | 0;
+            if (object.score != null)
+                message.score = object.score | 0;
+            if (object.trig != null)
+                message.trig = Boolean(object.trig);
+            if (object.isLeft != null)
+                message.isLeft = Boolean(object.isLeft);
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBHit message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBHit
+         * @static
+         * @param {SBHit} message SBHit
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBHit.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.scoreId = "";
+                object.punchId = "";
+                object.timestamp = 0;
+                object.x = 0;
+                object.y = 0;
+                object.z = 0;
+                object.vX = 0;
+                object.vY = 0;
+                object.vZ = 0;
+                object.multiplier = 0;
+                object.streak = 0;
+                object.score = 0;
+                object.trig = false;
+                object.isLeft = false;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.scoreId != null && message.hasOwnProperty("scoreId"))
+                object.scoreId = message.scoreId;
+            if (message.punchId != null && message.hasOwnProperty("punchId"))
+                object.punchId = message.punchId;
+            if (message.timestamp != null && message.hasOwnProperty("timestamp"))
+                object.timestamp = options.json && !isFinite(message.timestamp) ? String(message.timestamp) : message.timestamp;
+            if (message.x != null && message.hasOwnProperty("x"))
+                object.x = options.json && !isFinite(message.x) ? String(message.x) : message.x;
+            if (message.y != null && message.hasOwnProperty("y"))
+                object.y = options.json && !isFinite(message.y) ? String(message.y) : message.y;
+            if (message.z != null && message.hasOwnProperty("z"))
+                object.z = options.json && !isFinite(message.z) ? String(message.z) : message.z;
+            if (message.vX != null && message.hasOwnProperty("vX"))
+                object.vX = options.json && !isFinite(message.vX) ? String(message.vX) : message.vX;
+            if (message.vY != null && message.hasOwnProperty("vY"))
+                object.vY = options.json && !isFinite(message.vY) ? String(message.vY) : message.vY;
+            if (message.vZ != null && message.hasOwnProperty("vZ"))
+                object.vZ = options.json && !isFinite(message.vZ) ? String(message.vZ) : message.vZ;
+            if (message.multiplier != null && message.hasOwnProperty("multiplier"))
+                object.multiplier = message.multiplier;
+            if (message.streak != null && message.hasOwnProperty("streak"))
+                object.streak = message.streak;
+            if (message.score != null && message.hasOwnProperty("score"))
+                object.score = message.score;
+            if (message.trig != null && message.hasOwnProperty("trig"))
+                object.trig = message.trig;
+            if (message.isLeft != null && message.hasOwnProperty("isLeft"))
+                object.isLeft = message.isLeft;
+            return object;
+        };
+    
+        /**
+         * Converts this SBHit to JSON.
+         * @function toJSON
+         * @memberof SBHit
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBHit.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBHit;
+    })();
+    
+    $root.SBHitList = (function() {
+    
+        /**
+         * Properties of a SBHitList.
+         * @exports ISBHitList
+         * @interface ISBHitList
+         * @property {Array.<ISBHit>|null} [hits] SBHitList hits
+         */
+    
+        /**
+         * Constructs a new SBHitList.
+         * @exports SBHitList
+         * @classdesc Represents a SBHitList.
+         * @implements ISBHitList
+         * @constructor
+         * @param {ISBHitList=} [properties] Properties to set
+         */
+        function SBHitList(properties) {
+            this.hits = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBHitList hits.
+         * @member {Array.<ISBHit>} hits
+         * @memberof SBHitList
+         * @instance
+         */
+        SBHitList.prototype.hits = $util.emptyArray;
+    
+        /**
+         * Creates a new SBHitList instance using the specified properties.
+         * @function create
+         * @memberof SBHitList
+         * @static
+         * @param {ISBHitList=} [properties] Properties to set
+         * @returns {SBHitList} SBHitList instance
+         */
+        SBHitList.create = function create(properties) {
+            return new SBHitList(properties);
+        };
+    
+        /**
+         * Encodes the specified SBHitList message. Does not implicitly {@link SBHitList.verify|verify} messages.
+         * @function encode
+         * @memberof SBHitList
+         * @static
+         * @param {ISBHitList} message SBHitList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBHitList.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.hits != null && message.hits.length)
+                for (var i = 0; i < message.hits.length; ++i)
+                    $root.SBHit.encode(message.hits[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBHitList message, length delimited. Does not implicitly {@link SBHitList.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBHitList
+         * @static
+         * @param {ISBHitList} message SBHitList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBHitList.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBHitList message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBHitList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBHitList} SBHitList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBHitList.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBHitList();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (!(message.hits && message.hits.length))
+                        message.hits = [];
+                    message.hits.push($root.SBHit.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBHitList message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBHitList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBHitList} SBHitList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBHitList.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBHitList message.
+         * @function verify
+         * @memberof SBHitList
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBHitList.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.hits != null && message.hasOwnProperty("hits")) {
+                if (!Array.isArray(message.hits))
+                    return "hits: array expected";
+                for (var i = 0; i < message.hits.length; ++i) {
+                    var error = $root.SBHit.verify(message.hits[i]);
+                    if (error)
+                        return "hits." + error;
+                }
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBHitList message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBHitList
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBHitList} SBHitList
+         */
+        SBHitList.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBHitList)
+                return object;
+            var message = new $root.SBHitList();
+            if (object.hits) {
+                if (!Array.isArray(object.hits))
+                    throw TypeError(".SBHitList.hits: array expected");
+                message.hits = [];
+                for (var i = 0; i < object.hits.length; ++i) {
+                    if (typeof object.hits[i] !== "object")
+                        throw TypeError(".SBHitList.hits: object expected");
+                    message.hits[i] = $root.SBHit.fromObject(object.hits[i]);
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBHitList message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBHitList
+         * @static
+         * @param {SBHitList} message SBHitList
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBHitList.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults)
+                object.hits = [];
+            if (message.hits && message.hits.length) {
+                object.hits = [];
+                for (var j = 0; j < message.hits.length; ++j)
+                    object.hits[j] = $root.SBHit.toObject(message.hits[j], options);
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this SBHitList to JSON.
+         * @function toJSON
+         * @memberof SBHitList
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBHitList.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBHitList;
+    })();
+    
+    $root.SBPunch = (function() {
+    
+        /**
+         * Properties of a SBPunch.
+         * @exports ISBPunch
+         * @interface ISBPunch
+         * @property {string|null} [id] SBPunch id
+         * @property {string|null} [performanceId] SBPunch performanceId
+         * @property {number|null} [timestamp] SBPunch timestamp
+         * @property {number|null} [x] SBPunch x
+         * @property {number|null} [y] SBPunch y
+         * @property {number|null} [z] SBPunch z
+         * @property {number|null} [vX] SBPunch vX
+         * @property {number|null} [vY] SBPunch vY
+         * @property {number|null} [vZ] SBPunch vZ
+         * @property {boolean|null} [trig] SBPunch trig
+         * @property {boolean|null} [isLeft] SBPunch isLeft
+         */
+    
+        /**
+         * Constructs a new SBPunch.
+         * @exports SBPunch
+         * @classdesc Represents a SBPunch.
+         * @implements ISBPunch
+         * @constructor
+         * @param {ISBPunch=} [properties] Properties to set
+         */
+        function SBPunch(properties) {
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBPunch id.
+         * @member {string} id
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.id = "";
+    
+        /**
+         * SBPunch performanceId.
+         * @member {string} performanceId
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.performanceId = "";
+    
+        /**
+         * SBPunch timestamp.
+         * @member {number} timestamp
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.timestamp = 0;
+    
+        /**
+         * SBPunch x.
+         * @member {number} x
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.x = 0;
+    
+        /**
+         * SBPunch y.
+         * @member {number} y
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.y = 0;
+    
+        /**
+         * SBPunch z.
+         * @member {number} z
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.z = 0;
+    
+        /**
+         * SBPunch vX.
+         * @member {number} vX
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.vX = 0;
+    
+        /**
+         * SBPunch vY.
+         * @member {number} vY
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.vY = 0;
+    
+        /**
+         * SBPunch vZ.
+         * @member {number} vZ
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.vZ = 0;
+    
+        /**
+         * SBPunch trig.
+         * @member {boolean} trig
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.trig = false;
+    
+        /**
+         * SBPunch isLeft.
+         * @member {boolean} isLeft
+         * @memberof SBPunch
+         * @instance
+         */
+        SBPunch.prototype.isLeft = false;
+    
+        /**
+         * Creates a new SBPunch instance using the specified properties.
+         * @function create
+         * @memberof SBPunch
+         * @static
+         * @param {ISBPunch=} [properties] Properties to set
+         * @returns {SBPunch} SBPunch instance
+         */
+        SBPunch.create = function create(properties) {
+            return new SBPunch(properties);
+        };
+    
+        /**
+         * Encodes the specified SBPunch message. Does not implicitly {@link SBPunch.verify|verify} messages.
+         * @function encode
+         * @memberof SBPunch
+         * @static
+         * @param {ISBPunch} message SBPunch message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPunch.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.performanceId != null && Object.hasOwnProperty.call(message, "performanceId"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.performanceId);
+            if (message.timestamp != null && Object.hasOwnProperty.call(message, "timestamp"))
+                writer.uint32(/* id 3, wireType 1 =*/25).double(message.timestamp);
+            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
+                writer.uint32(/* id 4, wireType 5 =*/37).float(message.x);
+            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
+                writer.uint32(/* id 5, wireType 5 =*/45).float(message.y);
+            if (message.z != null && Object.hasOwnProperty.call(message, "z"))
+                writer.uint32(/* id 6, wireType 5 =*/53).float(message.z);
+            if (message.vX != null && Object.hasOwnProperty.call(message, "vX"))
+                writer.uint32(/* id 7, wireType 5 =*/61).float(message.vX);
+            if (message.vY != null && Object.hasOwnProperty.call(message, "vY"))
+                writer.uint32(/* id 8, wireType 5 =*/69).float(message.vY);
+            if (message.vZ != null && Object.hasOwnProperty.call(message, "vZ"))
+                writer.uint32(/* id 9, wireType 5 =*/77).float(message.vZ);
+            if (message.trig != null && Object.hasOwnProperty.call(message, "trig"))
+                writer.uint32(/* id 10, wireType 0 =*/80).bool(message.trig);
+            if (message.isLeft != null && Object.hasOwnProperty.call(message, "isLeft"))
+                writer.uint32(/* id 11, wireType 0 =*/88).bool(message.isLeft);
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBPunch message, length delimited. Does not implicitly {@link SBPunch.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBPunch
+         * @static
+         * @param {ISBPunch} message SBPunch message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPunch.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBPunch message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBPunch
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBPunch} SBPunch
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPunch.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBPunch();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.id = reader.string();
+                    break;
+                case 2:
+                    message.performanceId = reader.string();
+                    break;
+                case 3:
+                    message.timestamp = reader.double();
+                    break;
+                case 4:
+                    message.x = reader.float();
+                    break;
+                case 5:
+                    message.y = reader.float();
+                    break;
+                case 6:
+                    message.z = reader.float();
+                    break;
+                case 7:
+                    message.vX = reader.float();
+                    break;
+                case 8:
+                    message.vY = reader.float();
+                    break;
+                case 9:
+                    message.vZ = reader.float();
+                    break;
+                case 10:
+                    message.trig = reader.bool();
+                    break;
+                case 11:
+                    message.isLeft = reader.bool();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBPunch message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBPunch
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBPunch} SBPunch
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPunch.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBPunch message.
+         * @function verify
+         * @memberof SBPunch
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBPunch.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.performanceId != null && message.hasOwnProperty("performanceId"))
+                if (!$util.isString(message.performanceId))
+                    return "performanceId: string expected";
+            if (message.timestamp != null && message.hasOwnProperty("timestamp"))
+                if (typeof message.timestamp !== "number")
+                    return "timestamp: number expected";
+            if (message.x != null && message.hasOwnProperty("x"))
+                if (typeof message.x !== "number")
+                    return "x: number expected";
+            if (message.y != null && message.hasOwnProperty("y"))
+                if (typeof message.y !== "number")
+                    return "y: number expected";
+            if (message.z != null && message.hasOwnProperty("z"))
+                if (typeof message.z !== "number")
+                    return "z: number expected";
+            if (message.vX != null && message.hasOwnProperty("vX"))
+                if (typeof message.vX !== "number")
+                    return "vX: number expected";
+            if (message.vY != null && message.hasOwnProperty("vY"))
+                if (typeof message.vY !== "number")
+                    return "vY: number expected";
+            if (message.vZ != null && message.hasOwnProperty("vZ"))
+                if (typeof message.vZ !== "number")
+                    return "vZ: number expected";
+            if (message.trig != null && message.hasOwnProperty("trig"))
+                if (typeof message.trig !== "boolean")
+                    return "trig: boolean expected";
+            if (message.isLeft != null && message.hasOwnProperty("isLeft"))
+                if (typeof message.isLeft !== "boolean")
+                    return "isLeft: boolean expected";
+            return null;
+        };
+    
+        /**
+         * Creates a SBPunch message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBPunch
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBPunch} SBPunch
+         */
+        SBPunch.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBPunch)
+                return object;
+            var message = new $root.SBPunch();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.performanceId != null)
+                message.performanceId = String(object.performanceId);
+            if (object.timestamp != null)
+                message.timestamp = Number(object.timestamp);
+            if (object.x != null)
+                message.x = Number(object.x);
+            if (object.y != null)
+                message.y = Number(object.y);
+            if (object.z != null)
+                message.z = Number(object.z);
+            if (object.vX != null)
+                message.vX = Number(object.vX);
+            if (object.vY != null)
+                message.vY = Number(object.vY);
+            if (object.vZ != null)
+                message.vZ = Number(object.vZ);
+            if (object.trig != null)
+                message.trig = Boolean(object.trig);
+            if (object.isLeft != null)
+                message.isLeft = Boolean(object.isLeft);
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBPunch message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBPunch
+         * @static
+         * @param {SBPunch} message SBPunch
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBPunch.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.performanceId = "";
+                object.timestamp = 0;
+                object.x = 0;
+                object.y = 0;
+                object.z = 0;
+                object.vX = 0;
+                object.vY = 0;
+                object.vZ = 0;
+                object.trig = false;
+                object.isLeft = false;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.performanceId != null && message.hasOwnProperty("performanceId"))
+                object.performanceId = message.performanceId;
+            if (message.timestamp != null && message.hasOwnProperty("timestamp"))
+                object.timestamp = options.json && !isFinite(message.timestamp) ? String(message.timestamp) : message.timestamp;
+            if (message.x != null && message.hasOwnProperty("x"))
+                object.x = options.json && !isFinite(message.x) ? String(message.x) : message.x;
+            if (message.y != null && message.hasOwnProperty("y"))
+                object.y = options.json && !isFinite(message.y) ? String(message.y) : message.y;
+            if (message.z != null && message.hasOwnProperty("z"))
+                object.z = options.json && !isFinite(message.z) ? String(message.z) : message.z;
+            if (message.vX != null && message.hasOwnProperty("vX"))
+                object.vX = options.json && !isFinite(message.vX) ? String(message.vX) : message.vX;
+            if (message.vY != null && message.hasOwnProperty("vY"))
+                object.vY = options.json && !isFinite(message.vY) ? String(message.vY) : message.vY;
+            if (message.vZ != null && message.hasOwnProperty("vZ"))
+                object.vZ = options.json && !isFinite(message.vZ) ? String(message.vZ) : message.vZ;
+            if (message.trig != null && message.hasOwnProperty("trig"))
+                object.trig = message.trig;
+            if (message.isLeft != null && message.hasOwnProperty("isLeft"))
+                object.isLeft = message.isLeft;
+            return object;
+        };
+    
+        /**
+         * Converts this SBPunch to JSON.
+         * @function toJSON
+         * @memberof SBPunch
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBPunch.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBPunch;
+    })();
+    
+    $root.SBPunchList = (function() {
+    
+        /**
+         * Properties of a SBPunchList.
+         * @exports ISBPunchList
+         * @interface ISBPunchList
+         * @property {Array.<ISBPunch>|null} [punches] SBPunchList punches
+         */
+    
+        /**
+         * Constructs a new SBPunchList.
+         * @exports SBPunchList
+         * @classdesc Represents a SBPunchList.
+         * @implements ISBPunchList
+         * @constructor
+         * @param {ISBPunchList=} [properties] Properties to set
+         */
+        function SBPunchList(properties) {
+            this.punches = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBPunchList punches.
+         * @member {Array.<ISBPunch>} punches
+         * @memberof SBPunchList
+         * @instance
+         */
+        SBPunchList.prototype.punches = $util.emptyArray;
+    
+        /**
+         * Creates a new SBPunchList instance using the specified properties.
+         * @function create
+         * @memberof SBPunchList
+         * @static
+         * @param {ISBPunchList=} [properties] Properties to set
+         * @returns {SBPunchList} SBPunchList instance
+         */
+        SBPunchList.create = function create(properties) {
+            return new SBPunchList(properties);
+        };
+    
+        /**
+         * Encodes the specified SBPunchList message. Does not implicitly {@link SBPunchList.verify|verify} messages.
+         * @function encode
+         * @memberof SBPunchList
+         * @static
+         * @param {ISBPunchList} message SBPunchList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPunchList.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.punches != null && message.punches.length)
+                for (var i = 0; i < message.punches.length; ++i)
+                    $root.SBPunch.encode(message.punches[i], writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBPunchList message, length delimited. Does not implicitly {@link SBPunchList.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBPunchList
+         * @static
+         * @param {ISBPunchList} message SBPunchList message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPunchList.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBPunchList message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBPunchList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBPunchList} SBPunchList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPunchList.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBPunchList();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    if (!(message.punches && message.punches.length))
+                        message.punches = [];
+                    message.punches.push($root.SBPunch.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBPunchList message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBPunchList
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBPunchList} SBPunchList
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPunchList.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBPunchList message.
+         * @function verify
+         * @memberof SBPunchList
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBPunchList.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.punches != null && message.hasOwnProperty("punches")) {
+                if (!Array.isArray(message.punches))
+                    return "punches: array expected";
+                for (var i = 0; i < message.punches.length; ++i) {
+                    var error = $root.SBPunch.verify(message.punches[i]);
+                    if (error)
+                        return "punches." + error;
+                }
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBPunchList message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBPunchList
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBPunchList} SBPunchList
+         */
+        SBPunchList.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBPunchList)
+                return object;
+            var message = new $root.SBPunchList();
+            if (object.punches) {
+                if (!Array.isArray(object.punches))
+                    throw TypeError(".SBPunchList.punches: array expected");
+                message.punches = [];
+                for (var i = 0; i < object.punches.length; ++i) {
+                    if (typeof object.punches[i] !== "object")
+                        throw TypeError(".SBPunchList.punches: object expected");
+                    message.punches[i] = $root.SBPunch.fromObject(object.punches[i]);
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBPunchList message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBPunchList
+         * @static
+         * @param {SBPunchList} message SBPunchList
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBPunchList.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults)
+                object.punches = [];
+            if (message.punches && message.punches.length) {
+                object.punches = [];
+                for (var j = 0; j < message.punches.length; ++j)
+                    object.punches[j] = $root.SBPunch.toObject(message.punches[j], options);
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this SBPunchList to JSON.
+         * @function toJSON
+         * @memberof SBPunchList
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBPunchList.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBPunchList;
+    })();
+    
+    $root.SBPerformanceUpload = (function() {
+    
+        /**
+         * Properties of a SBPerformanceUpload.
+         * @exports ISBPerformanceUpload
+         * @interface ISBPerformanceUpload
+         * @property {number|null} [seconds] SBPerformanceUpload seconds
+         * @property {string|null} [youtubeId] SBPerformanceUpload youtubeId
+         * @property {string|null} [songName] SBPerformanceUpload songName
+         * @property {number|null} [songLength] SBPerformanceUpload songLength
+         * @property {string|null} [songChannel] SBPerformanceUpload songChannel
+         * @property {string|null} [songThumbnail] SBPerformanceUpload songThumbnail
+         * @property {number|null} [songThumbnailWidth] SBPerformanceUpload songThumbnailWidth
+         * @property {number|null} [songThumbnailHeight] SBPerformanceUpload songThumbnailHeight
+         * @property {Uint8Array|null} [legacy] SBPerformanceUpload legacy
+         * @property {Array.<ISBPunch>|null} [punches] SBPerformanceUpload punches
+         * @property {Array.<ISBFrame>|null} [frames] SBPerformanceUpload frames
+         */
+    
+        /**
+         * Constructs a new SBPerformanceUpload.
+         * @exports SBPerformanceUpload
+         * @classdesc Represents a SBPerformanceUpload.
+         * @implements ISBPerformanceUpload
+         * @constructor
+         * @param {ISBPerformanceUpload=} [properties] Properties to set
+         */
+        function SBPerformanceUpload(properties) {
+            this.punches = [];
+            this.frames = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBPerformanceUpload seconds.
+         * @member {number} seconds
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.seconds = 0;
+    
+        /**
+         * SBPerformanceUpload youtubeId.
+         * @member {string} youtubeId
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.youtubeId = "";
+    
+        /**
+         * SBPerformanceUpload songName.
+         * @member {string} songName
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songName = "";
+    
+        /**
+         * SBPerformanceUpload songLength.
+         * @member {number} songLength
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songLength = 0;
+    
+        /**
+         * SBPerformanceUpload songChannel.
+         * @member {string} songChannel
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songChannel = "";
+    
+        /**
+         * SBPerformanceUpload songThumbnail.
+         * @member {string} songThumbnail
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songThumbnail = "";
+    
+        /**
+         * SBPerformanceUpload songThumbnailWidth.
+         * @member {number} songThumbnailWidth
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songThumbnailWidth = 0;
+    
+        /**
+         * SBPerformanceUpload songThumbnailHeight.
+         * @member {number} songThumbnailHeight
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.songThumbnailHeight = 0;
+    
+        /**
+         * SBPerformanceUpload legacy.
+         * @member {Uint8Array} legacy
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.legacy = $util.newBuffer([]);
+    
+        /**
+         * SBPerformanceUpload punches.
+         * @member {Array.<ISBPunch>} punches
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.punches = $util.emptyArray;
+    
+        /**
+         * SBPerformanceUpload frames.
+         * @member {Array.<ISBFrame>} frames
+         * @memberof SBPerformanceUpload
+         * @instance
+         */
+        SBPerformanceUpload.prototype.frames = $util.emptyArray;
+    
+        /**
+         * Creates a new SBPerformanceUpload instance using the specified properties.
+         * @function create
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {ISBPerformanceUpload=} [properties] Properties to set
+         * @returns {SBPerformanceUpload} SBPerformanceUpload instance
+         */
+        SBPerformanceUpload.create = function create(properties) {
+            return new SBPerformanceUpload(properties);
+        };
+    
+        /**
+         * Encodes the specified SBPerformanceUpload message. Does not implicitly {@link SBPerformanceUpload.verify|verify} messages.
+         * @function encode
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {ISBPerformanceUpload} message SBPerformanceUpload message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPerformanceUpload.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.seconds != null && Object.hasOwnProperty.call(message, "seconds"))
+                writer.uint32(/* id 1, wireType 5 =*/13).float(message.seconds);
+            if (message.youtubeId != null && Object.hasOwnProperty.call(message, "youtubeId"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.youtubeId);
+            if (message.songName != null && Object.hasOwnProperty.call(message, "songName"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.songName);
+            if (message.songLength != null && Object.hasOwnProperty.call(message, "songLength"))
+                writer.uint32(/* id 4, wireType 5 =*/37).float(message.songLength);
+            if (message.songChannel != null && Object.hasOwnProperty.call(message, "songChannel"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.songChannel);
+            if (message.songThumbnail != null && Object.hasOwnProperty.call(message, "songThumbnail"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.songThumbnail);
+            if (message.songThumbnailWidth != null && Object.hasOwnProperty.call(message, "songThumbnailWidth"))
+                writer.uint32(/* id 7, wireType 0 =*/56).int32(message.songThumbnailWidth);
+            if (message.songThumbnailHeight != null && Object.hasOwnProperty.call(message, "songThumbnailHeight"))
+                writer.uint32(/* id 8, wireType 0 =*/64).int32(message.songThumbnailHeight);
+            if (message.legacy != null && Object.hasOwnProperty.call(message, "legacy"))
+                writer.uint32(/* id 9, wireType 2 =*/74).bytes(message.legacy);
+            if (message.punches != null && message.punches.length)
+                for (var i = 0; i < message.punches.length; ++i)
+                    $root.SBPunch.encode(message.punches[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.frames != null && message.frames.length)
+                for (var i = 0; i < message.frames.length; ++i)
+                    $root.SBFrame.encode(message.frames[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBPerformanceUpload message, length delimited. Does not implicitly {@link SBPerformanceUpload.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {ISBPerformanceUpload} message SBPerformanceUpload message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBPerformanceUpload.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBPerformanceUpload message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBPerformanceUpload} SBPerformanceUpload
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPerformanceUpload.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBPerformanceUpload();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.seconds = reader.float();
+                    break;
+                case 2:
+                    message.youtubeId = reader.string();
+                    break;
+                case 3:
+                    message.songName = reader.string();
+                    break;
+                case 4:
+                    message.songLength = reader.float();
+                    break;
+                case 5:
+                    message.songChannel = reader.string();
+                    break;
+                case 6:
+                    message.songThumbnail = reader.string();
+                    break;
+                case 7:
+                    message.songThumbnailWidth = reader.int32();
+                    break;
+                case 8:
+                    message.songThumbnailHeight = reader.int32();
+                    break;
+                case 9:
+                    message.legacy = reader.bytes();
+                    break;
+                case 10:
+                    if (!(message.punches && message.punches.length))
+                        message.punches = [];
+                    message.punches.push($root.SBPunch.decode(reader, reader.uint32()));
+                    break;
+                case 11:
+                    if (!(message.frames && message.frames.length))
+                        message.frames = [];
+                    message.frames.push($root.SBFrame.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBPerformanceUpload message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBPerformanceUpload} SBPerformanceUpload
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBPerformanceUpload.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBPerformanceUpload message.
+         * @function verify
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBPerformanceUpload.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.seconds != null && message.hasOwnProperty("seconds"))
+                if (typeof message.seconds !== "number")
+                    return "seconds: number expected";
+            if (message.youtubeId != null && message.hasOwnProperty("youtubeId"))
+                if (!$util.isString(message.youtubeId))
+                    return "youtubeId: string expected";
+            if (message.songName != null && message.hasOwnProperty("songName"))
+                if (!$util.isString(message.songName))
+                    return "songName: string expected";
+            if (message.songLength != null && message.hasOwnProperty("songLength"))
+                if (typeof message.songLength !== "number")
+                    return "songLength: number expected";
+            if (message.songChannel != null && message.hasOwnProperty("songChannel"))
+                if (!$util.isString(message.songChannel))
+                    return "songChannel: string expected";
+            if (message.songThumbnail != null && message.hasOwnProperty("songThumbnail"))
+                if (!$util.isString(message.songThumbnail))
+                    return "songThumbnail: string expected";
+            if (message.songThumbnailWidth != null && message.hasOwnProperty("songThumbnailWidth"))
+                if (!$util.isInteger(message.songThumbnailWidth))
+                    return "songThumbnailWidth: integer expected";
+            if (message.songThumbnailHeight != null && message.hasOwnProperty("songThumbnailHeight"))
+                if (!$util.isInteger(message.songThumbnailHeight))
+                    return "songThumbnailHeight: integer expected";
+            if (message.legacy != null && message.hasOwnProperty("legacy"))
+                if (!(message.legacy && typeof message.legacy.length === "number" || $util.isString(message.legacy)))
+                    return "legacy: buffer expected";
+            if (message.punches != null && message.hasOwnProperty("punches")) {
+                if (!Array.isArray(message.punches))
+                    return "punches: array expected";
+                for (var i = 0; i < message.punches.length; ++i) {
+                    var error = $root.SBPunch.verify(message.punches[i]);
+                    if (error)
+                        return "punches." + error;
+                }
+            }
+            if (message.frames != null && message.hasOwnProperty("frames")) {
+                if (!Array.isArray(message.frames))
+                    return "frames: array expected";
+                for (var i = 0; i < message.frames.length; ++i) {
+                    var error = $root.SBFrame.verify(message.frames[i]);
+                    if (error)
+                        return "frames." + error;
+                }
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBPerformanceUpload message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBPerformanceUpload} SBPerformanceUpload
+         */
+        SBPerformanceUpload.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBPerformanceUpload)
+                return object;
+            var message = new $root.SBPerformanceUpload();
+            if (object.seconds != null)
+                message.seconds = Number(object.seconds);
+            if (object.youtubeId != null)
+                message.youtubeId = String(object.youtubeId);
+            if (object.songName != null)
+                message.songName = String(object.songName);
+            if (object.songLength != null)
+                message.songLength = Number(object.songLength);
+            if (object.songChannel != null)
+                message.songChannel = String(object.songChannel);
+            if (object.songThumbnail != null)
+                message.songThumbnail = String(object.songThumbnail);
+            if (object.songThumbnailWidth != null)
+                message.songThumbnailWidth = object.songThumbnailWidth | 0;
+            if (object.songThumbnailHeight != null)
+                message.songThumbnailHeight = object.songThumbnailHeight | 0;
+            if (object.legacy != null)
+                if (typeof object.legacy === "string")
+                    $util.base64.decode(object.legacy, message.legacy = $util.newBuffer($util.base64.length(object.legacy)), 0);
+                else if (object.legacy.length)
+                    message.legacy = object.legacy;
+            if (object.punches) {
+                if (!Array.isArray(object.punches))
+                    throw TypeError(".SBPerformanceUpload.punches: array expected");
+                message.punches = [];
+                for (var i = 0; i < object.punches.length; ++i) {
+                    if (typeof object.punches[i] !== "object")
+                        throw TypeError(".SBPerformanceUpload.punches: object expected");
+                    message.punches[i] = $root.SBPunch.fromObject(object.punches[i]);
+                }
+            }
+            if (object.frames) {
+                if (!Array.isArray(object.frames))
+                    throw TypeError(".SBPerformanceUpload.frames: array expected");
+                message.frames = [];
+                for (var i = 0; i < object.frames.length; ++i) {
+                    if (typeof object.frames[i] !== "object")
+                        throw TypeError(".SBPerformanceUpload.frames: object expected");
+                    message.frames[i] = $root.SBFrame.fromObject(object.frames[i]);
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBPerformanceUpload message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBPerformanceUpload
+         * @static
+         * @param {SBPerformanceUpload} message SBPerformanceUpload
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBPerformanceUpload.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults) {
+                object.punches = [];
+                object.frames = [];
+            }
+            if (options.defaults) {
+                object.seconds = 0;
+                object.youtubeId = "";
+                object.songName = "";
+                object.songLength = 0;
+                object.songChannel = "";
+                object.songThumbnail = "";
+                object.songThumbnailWidth = 0;
+                object.songThumbnailHeight = 0;
+                if (options.bytes === String)
+                    object.legacy = "";
+                else {
+                    object.legacy = [];
+                    if (options.bytes !== Array)
+                        object.legacy = $util.newBuffer(object.legacy);
+                }
+            }
+            if (message.seconds != null && message.hasOwnProperty("seconds"))
+                object.seconds = options.json && !isFinite(message.seconds) ? String(message.seconds) : message.seconds;
+            if (message.youtubeId != null && message.hasOwnProperty("youtubeId"))
+                object.youtubeId = message.youtubeId;
+            if (message.songName != null && message.hasOwnProperty("songName"))
+                object.songName = message.songName;
+            if (message.songLength != null && message.hasOwnProperty("songLength"))
+                object.songLength = options.json && !isFinite(message.songLength) ? String(message.songLength) : message.songLength;
+            if (message.songChannel != null && message.hasOwnProperty("songChannel"))
+                object.songChannel = message.songChannel;
+            if (message.songThumbnail != null && message.hasOwnProperty("songThumbnail"))
+                object.songThumbnail = message.songThumbnail;
+            if (message.songThumbnailWidth != null && message.hasOwnProperty("songThumbnailWidth"))
+                object.songThumbnailWidth = message.songThumbnailWidth;
+            if (message.songThumbnailHeight != null && message.hasOwnProperty("songThumbnailHeight"))
+                object.songThumbnailHeight = message.songThumbnailHeight;
+            if (message.legacy != null && message.hasOwnProperty("legacy"))
+                object.legacy = options.bytes === String ? $util.base64.encode(message.legacy, 0, message.legacy.length) : options.bytes === Array ? Array.prototype.slice.call(message.legacy) : message.legacy;
+            if (message.punches && message.punches.length) {
+                object.punches = [];
+                for (var j = 0; j < message.punches.length; ++j)
+                    object.punches[j] = $root.SBPunch.toObject(message.punches[j], options);
+            }
+            if (message.frames && message.frames.length) {
+                object.frames = [];
+                for (var j = 0; j < message.frames.length; ++j)
+                    object.frames[j] = $root.SBFrame.toObject(message.frames[j], options);
+            }
+            return object;
+        };
+    
+        /**
+         * Converts this SBPerformanceUpload to JSON.
+         * @function toJSON
+         * @memberof SBPerformanceUpload
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBPerformanceUpload.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBPerformanceUpload;
+    })();
+    
+    $root.SBScoreUpload = (function() {
+    
+        /**
+         * Properties of a SBScoreUpload.
+         * @exports ISBScoreUpload
+         * @interface ISBScoreUpload
+         * @property {string|null} [performanceId] SBScoreUpload performanceId
+         * @property {number|null} [score] SBScoreUpload score
+         * @property {number|null} [offsetX] SBScoreUpload offsetX
+         * @property {number|null} [offsetY] SBScoreUpload offsetY
+         * @property {number|null} [scaleX] SBScoreUpload scaleX
+         * @property {number|null} [scaleY] SBScoreUpload scaleY
+         * @property {Uint8Array|null} [legacy] SBScoreUpload legacy
+         * @property {Array.<ISBHit>|null} [hits] SBScoreUpload hits
+         * @property {Array.<ISBFrame>|null} [frames] SBScoreUpload frames
+         */
+    
+        /**
+         * Constructs a new SBScoreUpload.
+         * @exports SBScoreUpload
+         * @classdesc Represents a SBScoreUpload.
+         * @implements ISBScoreUpload
+         * @constructor
+         * @param {ISBScoreUpload=} [properties] Properties to set
+         */
+        function SBScoreUpload(properties) {
+            this.hits = [];
+            this.frames = [];
+            if (properties)
+                for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+    
+        /**
+         * SBScoreUpload performanceId.
+         * @member {string} performanceId
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.performanceId = "";
+    
+        /**
+         * SBScoreUpload score.
+         * @member {number} score
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.score = 0;
+    
+        /**
+         * SBScoreUpload offsetX.
+         * @member {number} offsetX
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.offsetX = 0;
+    
+        /**
+         * SBScoreUpload offsetY.
+         * @member {number} offsetY
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.offsetY = 0;
+    
+        /**
+         * SBScoreUpload scaleX.
+         * @member {number} scaleX
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.scaleX = 0;
+    
+        /**
+         * SBScoreUpload scaleY.
+         * @member {number} scaleY
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.scaleY = 0;
+    
+        /**
+         * SBScoreUpload legacy.
+         * @member {Uint8Array} legacy
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.legacy = $util.newBuffer([]);
+    
+        /**
+         * SBScoreUpload hits.
+         * @member {Array.<ISBHit>} hits
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.hits = $util.emptyArray;
+    
+        /**
+         * SBScoreUpload frames.
+         * @member {Array.<ISBFrame>} frames
+         * @memberof SBScoreUpload
+         * @instance
+         */
+        SBScoreUpload.prototype.frames = $util.emptyArray;
+    
+        /**
+         * Creates a new SBScoreUpload instance using the specified properties.
+         * @function create
+         * @memberof SBScoreUpload
+         * @static
+         * @param {ISBScoreUpload=} [properties] Properties to set
+         * @returns {SBScoreUpload} SBScoreUpload instance
+         */
+        SBScoreUpload.create = function create(properties) {
+            return new SBScoreUpload(properties);
+        };
+    
+        /**
+         * Encodes the specified SBScoreUpload message. Does not implicitly {@link SBScoreUpload.verify|verify} messages.
+         * @function encode
+         * @memberof SBScoreUpload
+         * @static
+         * @param {ISBScoreUpload} message SBScoreUpload message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBScoreUpload.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.performanceId != null && Object.hasOwnProperty.call(message, "performanceId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.performanceId);
+            if (message.score != null && Object.hasOwnProperty.call(message, "score"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.score);
+            if (message.legacy != null && Object.hasOwnProperty.call(message, "legacy"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.legacy);
+            if (message.hits != null && message.hits.length)
+                for (var i = 0; i < message.hits.length; ++i)
+                    $root.SBHit.encode(message.hits[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.frames != null && message.frames.length)
+                for (var i = 0; i < message.frames.length; ++i)
+                    $root.SBFrame.encode(message.frames[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.offsetX != null && Object.hasOwnProperty.call(message, "offsetX"))
+                writer.uint32(/* id 6, wireType 5 =*/53).float(message.offsetX);
+            if (message.offsetY != null && Object.hasOwnProperty.call(message, "offsetY"))
+                writer.uint32(/* id 7, wireType 5 =*/61).float(message.offsetY);
+            if (message.scaleX != null && Object.hasOwnProperty.call(message, "scaleX"))
+                writer.uint32(/* id 8, wireType 5 =*/69).float(message.scaleX);
+            if (message.scaleY != null && Object.hasOwnProperty.call(message, "scaleY"))
+                writer.uint32(/* id 9, wireType 5 =*/77).float(message.scaleY);
+            return writer;
+        };
+    
+        /**
+         * Encodes the specified SBScoreUpload message, length delimited. Does not implicitly {@link SBScoreUpload.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof SBScoreUpload
+         * @static
+         * @param {ISBScoreUpload} message SBScoreUpload message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SBScoreUpload.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+    
+        /**
+         * Decodes a SBScoreUpload message from the specified reader or buffer.
+         * @function decode
+         * @memberof SBScoreUpload
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {SBScoreUpload} SBScoreUpload
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBScoreUpload.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            var end = length === undefined ? reader.len : reader.pos + length, message = new $root.SBScoreUpload();
+            while (reader.pos < end) {
+                var tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.performanceId = reader.string();
+                    break;
+                case 2:
+                    message.score = reader.int32();
+                    break;
+                case 6:
+                    message.offsetX = reader.float();
+                    break;
+                case 7:
+                    message.offsetY = reader.float();
+                    break;
+                case 8:
+                    message.scaleX = reader.float();
+                    break;
+                case 9:
+                    message.scaleY = reader.float();
+                    break;
+                case 3:
+                    message.legacy = reader.bytes();
+                    break;
+                case 4:
+                    if (!(message.hits && message.hits.length))
+                        message.hits = [];
+                    message.hits.push($root.SBHit.decode(reader, reader.uint32()));
+                    break;
+                case 5:
+                    if (!(message.frames && message.frames.length))
+                        message.frames = [];
+                    message.frames.push($root.SBFrame.decode(reader, reader.uint32()));
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Decodes a SBScoreUpload message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof SBScoreUpload
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {SBScoreUpload} SBScoreUpload
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SBScoreUpload.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+    
+        /**
+         * Verifies a SBScoreUpload message.
+         * @function verify
+         * @memberof SBScoreUpload
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SBScoreUpload.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.performanceId != null && message.hasOwnProperty("performanceId"))
+                if (!$util.isString(message.performanceId))
+                    return "performanceId: string expected";
+            if (message.score != null && message.hasOwnProperty("score"))
+                if (!$util.isInteger(message.score))
+                    return "score: integer expected";
+            if (message.offsetX != null && message.hasOwnProperty("offsetX"))
+                if (typeof message.offsetX !== "number")
+                    return "offsetX: number expected";
+            if (message.offsetY != null && message.hasOwnProperty("offsetY"))
+                if (typeof message.offsetY !== "number")
+                    return "offsetY: number expected";
+            if (message.scaleX != null && message.hasOwnProperty("scaleX"))
+                if (typeof message.scaleX !== "number")
+                    return "scaleX: number expected";
+            if (message.scaleY != null && message.hasOwnProperty("scaleY"))
+                if (typeof message.scaleY !== "number")
+                    return "scaleY: number expected";
+            if (message.legacy != null && message.hasOwnProperty("legacy"))
+                if (!(message.legacy && typeof message.legacy.length === "number" || $util.isString(message.legacy)))
+                    return "legacy: buffer expected";
+            if (message.hits != null && message.hasOwnProperty("hits")) {
+                if (!Array.isArray(message.hits))
+                    return "hits: array expected";
+                for (var i = 0; i < message.hits.length; ++i) {
+                    var error = $root.SBHit.verify(message.hits[i]);
+                    if (error)
+                        return "hits." + error;
+                }
+            }
+            if (message.frames != null && message.hasOwnProperty("frames")) {
+                if (!Array.isArray(message.frames))
+                    return "frames: array expected";
+                for (var i = 0; i < message.frames.length; ++i) {
+                    var error = $root.SBFrame.verify(message.frames[i]);
+                    if (error)
+                        return "frames." + error;
+                }
+            }
+            return null;
+        };
+    
+        /**
+         * Creates a SBScoreUpload message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof SBScoreUpload
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {SBScoreUpload} SBScoreUpload
+         */
+        SBScoreUpload.fromObject = function fromObject(object) {
+            if (object instanceof $root.SBScoreUpload)
+                return object;
+            var message = new $root.SBScoreUpload();
+            if (object.performanceId != null)
+                message.performanceId = String(object.performanceId);
+            if (object.score != null)
+                message.score = object.score | 0;
+            if (object.offsetX != null)
+                message.offsetX = Number(object.offsetX);
+            if (object.offsetY != null)
+                message.offsetY = Number(object.offsetY);
+            if (object.scaleX != null)
+                message.scaleX = Number(object.scaleX);
+            if (object.scaleY != null)
+                message.scaleY = Number(object.scaleY);
+            if (object.legacy != null)
+                if (typeof object.legacy === "string")
+                    $util.base64.decode(object.legacy, message.legacy = $util.newBuffer($util.base64.length(object.legacy)), 0);
+                else if (object.legacy.length)
+                    message.legacy = object.legacy;
+            if (object.hits) {
+                if (!Array.isArray(object.hits))
+                    throw TypeError(".SBScoreUpload.hits: array expected");
+                message.hits = [];
+                for (var i = 0; i < object.hits.length; ++i) {
+                    if (typeof object.hits[i] !== "object")
+                        throw TypeError(".SBScoreUpload.hits: object expected");
+                    message.hits[i] = $root.SBHit.fromObject(object.hits[i]);
+                }
+            }
+            if (object.frames) {
+                if (!Array.isArray(object.frames))
+                    throw TypeError(".SBScoreUpload.frames: array expected");
+                message.frames = [];
+                for (var i = 0; i < object.frames.length; ++i) {
+                    if (typeof object.frames[i] !== "object")
+                        throw TypeError(".SBScoreUpload.frames: object expected");
+                    message.frames[i] = $root.SBFrame.fromObject(object.frames[i]);
+                }
+            }
+            return message;
+        };
+    
+        /**
+         * Creates a plain object from a SBScoreUpload message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof SBScoreUpload
+         * @static
+         * @param {SBScoreUpload} message SBScoreUpload
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SBScoreUpload.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            var object = {};
+            if (options.arrays || options.defaults) {
+                object.hits = [];
+                object.frames = [];
+            }
+            if (options.defaults) {
+                object.performanceId = "";
+                object.score = 0;
+                if (options.bytes === String)
+                    object.legacy = "";
+                else {
+                    object.legacy = [];
+                    if (options.bytes !== Array)
+                        object.legacy = $util.newBuffer(object.legacy);
+                }
+                object.offsetX = 0;
+                object.offsetY = 0;
+                object.scaleX = 0;
+                object.scaleY = 0;
+            }
+            if (message.performanceId != null && message.hasOwnProperty("performanceId"))
+                object.performanceId = message.performanceId;
+            if (message.score != null && message.hasOwnProperty("score"))
+                object.score = message.score;
+            if (message.legacy != null && message.hasOwnProperty("legacy"))
+                object.legacy = options.bytes === String ? $util.base64.encode(message.legacy, 0, message.legacy.length) : options.bytes === Array ? Array.prototype.slice.call(message.legacy) : message.legacy;
+            if (message.hits && message.hits.length) {
+                object.hits = [];
+                for (var j = 0; j < message.hits.length; ++j)
+                    object.hits[j] = $root.SBHit.toObject(message.hits[j], options);
+            }
+            if (message.frames && message.frames.length) {
+                object.frames = [];
+                for (var j = 0; j < message.frames.length; ++j)
+                    object.frames[j] = $root.SBFrame.toObject(message.frames[j], options);
+            }
+            if (message.offsetX != null && message.hasOwnProperty("offsetX"))
+                object.offsetX = options.json && !isFinite(message.offsetX) ? String(message.offsetX) : message.offsetX;
+            if (message.offsetY != null && message.hasOwnProperty("offsetY"))
+                object.offsetY = options.json && !isFinite(message.offsetY) ? String(message.offsetY) : message.offsetY;
+            if (message.scaleX != null && message.hasOwnProperty("scaleX"))
+                object.scaleX = options.json && !isFinite(message.scaleX) ? String(message.scaleX) : message.scaleX;
+            if (message.scaleY != null && message.hasOwnProperty("scaleY"))
+                object.scaleY = options.json && !isFinite(message.scaleY) ? String(message.scaleY) : message.scaleY;
+            return object;
+        };
+    
+        /**
+         * Converts this SBScoreUpload to JSON.
+         * @function toJSON
+         * @memberof SBScoreUpload
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SBScoreUpload.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+    
+        return SBScoreUpload;
+    })();
+
+    return $root;
+});
+
+
+/***/ }),
+/* 10 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// minimal library entry point.
+
+
+module.exports = __webpack_require__(11);
+
+
+/***/ }),
+/* 11 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+var protobuf = exports;
+
+/**
+ * Build type, one of `"full"`, `"light"` or `"minimal"`.
+ * @name build
+ * @type {string}
+ * @const
  */
-var n=r(31),o=r(32),i=r(33);function s(){return u.TYPED_ARRAY_SUPPORT?2147483647:1073741823}function a(t,e){if(s()<e)throw new RangeError("Invalid typed array length");return u.TYPED_ARRAY_SUPPORT?(t=new Uint8Array(e)).__proto__=u.prototype:(null===t&&(t=new u(e)),t.length=e),t}function u(t,e,r){if(!(u.TYPED_ARRAY_SUPPORT||this instanceof u))return new u(t,e,r);if("number"==typeof t){if("string"==typeof e)throw new Error("If encoding is specified then the first argument must be a string");return h(this,t)}return l(this,t,e,r)}function l(t,e,r,n){if("number"==typeof e)throw new TypeError('"value" argument must not be a number');return"undefined"!=typeof ArrayBuffer&&e instanceof ArrayBuffer?function(t,e,r,n){if(e.byteLength,r<0||e.byteLength<r)throw new RangeError("'offset' is out of bounds");if(e.byteLength<r+(n||0))throw new RangeError("'length' is out of bounds");e=void 0===r&&void 0===n?new Uint8Array(e):void 0===n?new Uint8Array(e,r):new Uint8Array(e,r,n);u.TYPED_ARRAY_SUPPORT?(t=e).__proto__=u.prototype:t=c(t,e);return t}(t,e,r,n):"string"==typeof e?function(t,e,r){"string"==typeof r&&""!==r||(r="utf8");if(!u.isEncoding(r))throw new TypeError('"encoding" must be a valid string encoding');var n=0|d(e,r),o=(t=a(t,n)).write(e,r);o!==n&&(t=t.slice(0,o));return t}(t,e,r):function(t,e){if(u.isBuffer(e)){var r=0|p(e.length);return 0===(t=a(t,r)).length?t:(e.copy(t,0,0,r),t)}if(e){if("undefined"!=typeof ArrayBuffer&&e.buffer instanceof ArrayBuffer||"length"in e)return"number"!=typeof e.length||(n=e.length)!=n?a(t,0):c(t,e);if("Buffer"===e.type&&i(e.data))return c(t,e.data)}var n;throw new TypeError("First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.")}(t,e)}function f(t){if("number"!=typeof t)throw new TypeError('"size" argument must be a number');if(t<0)throw new RangeError('"size" argument must not be negative')}function h(t,e){if(f(e),t=a(t,e<0?0:0|p(e)),!u.TYPED_ARRAY_SUPPORT)for(var r=0;r<e;++r)t[r]=0;return t}function c(t,e){var r=e.length<0?0:0|p(e.length);t=a(t,r);for(var n=0;n<r;n+=1)t[n]=255&e[n];return t}function p(t){if(t>=s())throw new RangeError("Attempt to allocate Buffer larger than maximum size: 0x"+s().toString(16)+" bytes");return 0|t}function d(t,e){if(u.isBuffer(t))return t.length;if("undefined"!=typeof ArrayBuffer&&"function"==typeof ArrayBuffer.isView&&(ArrayBuffer.isView(t)||t instanceof ArrayBuffer))return t.byteLength;"string"!=typeof t&&(t=""+t);var r=t.length;if(0===r)return 0;for(var n=!1;;)switch(e){case"ascii":case"latin1":case"binary":return r;case"utf8":case"utf-8":case void 0:return N(t).length;case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return 2*r;case"hex":return r>>>1;case"base64":return F(t).length;default:if(n)return N(t).length;e=(""+e).toLowerCase(),n=!0}}function y(t,e,r){var n=t[e];t[e]=t[r],t[r]=n}function g(t,e,r,n,o){if(0===t.length)return-1;if("string"==typeof r?(n=r,r=0):r>2147483647?r=2147483647:r<-2147483648&&(r=-2147483648),r=+r,isNaN(r)&&(r=o?0:t.length-1),r<0&&(r=t.length+r),r>=t.length){if(o)return-1;r=t.length-1}else if(r<0){if(!o)return-1;r=0}if("string"==typeof e&&(e=u.from(e,n)),u.isBuffer(e))return 0===e.length?-1:m(t,e,r,n,o);if("number"==typeof e)return e&=255,u.TYPED_ARRAY_SUPPORT&&"function"==typeof Uint8Array.prototype.indexOf?o?Uint8Array.prototype.indexOf.call(t,e,r):Uint8Array.prototype.lastIndexOf.call(t,e,r):m(t,[e],r,n,o);throw new TypeError("val must be string, number or Buffer")}function m(t,e,r,n,o){var i,s=1,a=t.length,u=e.length;if(void 0!==n&&("ucs2"===(n=String(n).toLowerCase())||"ucs-2"===n||"utf16le"===n||"utf-16le"===n)){if(t.length<2||e.length<2)return-1;s=2,a/=2,u/=2,r/=2}function l(t,e){return 1===s?t[e]:t.readUInt16BE(e*s)}if(o){var f=-1;for(i=r;i<a;i++)if(l(t,i)===l(e,-1===f?0:i-f)){if(-1===f&&(f=i),i-f+1===u)return f*s}else-1!==f&&(i-=i-f),f=-1}else for(r+u>a&&(r=a-u),i=r;i>=0;i--){for(var h=!0,c=0;c<u;c++)if(l(t,i+c)!==l(e,c)){h=!1;break}if(h)return i}return-1}function b(t,e,r,n){r=Number(r)||0;var o=t.length-r;n?(n=Number(n))>o&&(n=o):n=o;var i=e.length;if(i%2!=0)throw new TypeError("Invalid hex string");n>i/2&&(n=i/2);for(var s=0;s<n;++s){var a=parseInt(e.substr(2*s,2),16);if(isNaN(a))return s;t[r+s]=a}return s}function w(t,e,r,n){return C(N(e,t.length-r),t,r,n)}function v(t,e,r,n){return C(function(t){for(var e=[],r=0;r<t.length;++r)e.push(255&t.charCodeAt(r));return e}(e),t,r,n)}function P(t,e,r,n){return v(t,e,r,n)}function R(t,e,r,n){return C(F(e),t,r,n)}function S(t,e,r,n){return C(function(t,e){for(var r,n,o,i=[],s=0;s<t.length&&!((e-=2)<0);++s)r=t.charCodeAt(s),n=r>>8,o=r%256,i.push(o),i.push(n);return i}(e,t.length-r),t,r,n)}function O(t,e,r){return 0===e&&r===t.length?n.fromByteArray(t):n.fromByteArray(t.slice(e,r))}function _(t,e,r){r=Math.min(t.length,r);for(var n=[],o=e;o<r;){var i,s,a,u,l=t[o],f=null,h=l>239?4:l>223?3:l>191?2:1;if(o+h<=r)switch(h){case 1:l<128&&(f=l);break;case 2:128==(192&(i=t[o+1]))&&(u=(31&l)<<6|63&i)>127&&(f=u);break;case 3:i=t[o+1],s=t[o+2],128==(192&i)&&128==(192&s)&&(u=(15&l)<<12|(63&i)<<6|63&s)>2047&&(u<55296||u>57343)&&(f=u);break;case 4:i=t[o+1],s=t[o+2],a=t[o+3],128==(192&i)&&128==(192&s)&&128==(192&a)&&(u=(15&l)<<18|(63&i)<<12|(63&s)<<6|63&a)>65535&&u<1114112&&(f=u)}null===f?(f=65533,h=1):f>65535&&(f-=65536,n.push(f>>>10&1023|55296),f=56320|1023&f),n.push(f),o+=h}return function(t){var e=t.length;if(e<=H)return String.fromCharCode.apply(String,t);var r="",n=0;for(;n<e;)r+=String.fromCharCode.apply(String,t.slice(n,n+=H));return r}(n)}e.Buffer=u,e.SlowBuffer=function(t){+t!=t&&(t=0);return u.alloc(+t)},e.INSPECT_MAX_BYTES=50,u.TYPED_ARRAY_SUPPORT=void 0!==t.TYPED_ARRAY_SUPPORT?t.TYPED_ARRAY_SUPPORT:function(){try{var t=new Uint8Array(1);return t.__proto__={__proto__:Uint8Array.prototype,foo:function(){return 42}},42===t.foo()&&"function"==typeof t.subarray&&0===t.subarray(1,1).byteLength}catch(t){return!1}}(),e.kMaxLength=s(),u.poolSize=8192,u._augment=function(t){return t.__proto__=u.prototype,t},u.from=function(t,e,r){return l(null,t,e,r)},u.TYPED_ARRAY_SUPPORT&&(u.prototype.__proto__=Uint8Array.prototype,u.__proto__=Uint8Array,"undefined"!=typeof Symbol&&Symbol.species&&u[Symbol.species]===u&&Object.defineProperty(u,Symbol.species,{value:null,configurable:!0})),u.alloc=function(t,e,r){return function(t,e,r,n){return f(e),e<=0?a(t,e):void 0!==r?"string"==typeof n?a(t,e).fill(r,n):a(t,e).fill(r):a(t,e)}(null,t,e,r)},u.allocUnsafe=function(t){return h(null,t)},u.allocUnsafeSlow=function(t){return h(null,t)},u.isBuffer=function(t){return!(null==t||!t._isBuffer)},u.compare=function(t,e){if(!u.isBuffer(t)||!u.isBuffer(e))throw new TypeError("Arguments must be Buffers");if(t===e)return 0;for(var r=t.length,n=e.length,o=0,i=Math.min(r,n);o<i;++o)if(t[o]!==e[o]){r=t[o],n=e[o];break}return r<n?-1:n<r?1:0},u.isEncoding=function(t){switch(String(t).toLowerCase()){case"hex":case"utf8":case"utf-8":case"ascii":case"latin1":case"binary":case"base64":case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return!0;default:return!1}},u.concat=function(t,e){if(!i(t))throw new TypeError('"list" argument must be an Array of Buffers');if(0===t.length)return u.alloc(0);var r;if(void 0===e)for(e=0,r=0;r<t.length;++r)e+=t[r].length;var n=u.allocUnsafe(e),o=0;for(r=0;r<t.length;++r){var s=t[r];if(!u.isBuffer(s))throw new TypeError('"list" argument must be an Array of Buffers');s.copy(n,o),o+=s.length}return n},u.byteLength=d,u.prototype._isBuffer=!0,u.prototype.swap16=function(){var t=this.length;if(t%2!=0)throw new RangeError("Buffer size must be a multiple of 16-bits");for(var e=0;e<t;e+=2)y(this,e,e+1);return this},u.prototype.swap32=function(){var t=this.length;if(t%4!=0)throw new RangeError("Buffer size must be a multiple of 32-bits");for(var e=0;e<t;e+=4)y(this,e,e+3),y(this,e+1,e+2);return this},u.prototype.swap64=function(){var t=this.length;if(t%8!=0)throw new RangeError("Buffer size must be a multiple of 64-bits");for(var e=0;e<t;e+=8)y(this,e,e+7),y(this,e+1,e+6),y(this,e+2,e+5),y(this,e+3,e+4);return this},u.prototype.toString=function(){var t=0|this.length;return 0===t?"":0===arguments.length?_(this,0,t):function(t,e,r){var n=!1;if((void 0===e||e<0)&&(e=0),e>this.length)return"";if((void 0===r||r>this.length)&&(r=this.length),r<=0)return"";if((r>>>=0)<=(e>>>=0))return"";for(t||(t="utf8");;)switch(t){case"hex":return L(this,e,r);case"utf8":case"utf-8":return _(this,e,r);case"ascii":return E(this,e,r);case"latin1":case"binary":return x(this,e,r);case"base64":return O(this,e,r);case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return k(this,e,r);default:if(n)throw new TypeError("Unknown encoding: "+t);t=(t+"").toLowerCase(),n=!0}}.apply(this,arguments)},u.prototype.equals=function(t){if(!u.isBuffer(t))throw new TypeError("Argument must be a Buffer");return this===t||0===u.compare(this,t)},u.prototype.inspect=function(){var t="",r=e.INSPECT_MAX_BYTES;return this.length>0&&(t=this.toString("hex",0,r).match(/.{2}/g).join(" "),this.length>r&&(t+=" ... ")),"<Buffer "+t+">"},u.prototype.compare=function(t,e,r,n,o){if(!u.isBuffer(t))throw new TypeError("Argument must be a Buffer");if(void 0===e&&(e=0),void 0===r&&(r=t?t.length:0),void 0===n&&(n=0),void 0===o&&(o=this.length),e<0||r>t.length||n<0||o>this.length)throw new RangeError("out of range index");if(n>=o&&e>=r)return 0;if(n>=o)return-1;if(e>=r)return 1;if(e>>>=0,r>>>=0,n>>>=0,o>>>=0,this===t)return 0;for(var i=o-n,s=r-e,a=Math.min(i,s),l=this.slice(n,o),f=t.slice(e,r),h=0;h<a;++h)if(l[h]!==f[h]){i=l[h],s=f[h];break}return i<s?-1:s<i?1:0},u.prototype.includes=function(t,e,r){return-1!==this.indexOf(t,e,r)},u.prototype.indexOf=function(t,e,r){return g(this,t,e,r,!0)},u.prototype.lastIndexOf=function(t,e,r){return g(this,t,e,r,!1)},u.prototype.write=function(t,e,r,n){if(void 0===e)n="utf8",r=this.length,e=0;else if(void 0===r&&"string"==typeof e)n=e,r=this.length,e=0;else{if(!isFinite(e))throw new Error("Buffer.write(string, encoding, offset[, length]) is no longer supported");e|=0,isFinite(r)?(r|=0,void 0===n&&(n="utf8")):(n=r,r=void 0)}var o=this.length-e;if((void 0===r||r>o)&&(r=o),t.length>0&&(r<0||e<0)||e>this.length)throw new RangeError("Attempt to write outside buffer bounds");n||(n="utf8");for(var i=!1;;)switch(n){case"hex":return b(this,t,e,r);case"utf8":case"utf-8":return w(this,t,e,r);case"ascii":return v(this,t,e,r);case"latin1":case"binary":return P(this,t,e,r);case"base64":return R(this,t,e,r);case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return S(this,t,e,r);default:if(i)throw new TypeError("Unknown encoding: "+n);n=(""+n).toLowerCase(),i=!0}},u.prototype.toJSON=function(){return{type:"Buffer",data:Array.prototype.slice.call(this._arr||this,0)}};var H=4096;function E(t,e,r){var n="";r=Math.min(t.length,r);for(var o=e;o<r;++o)n+=String.fromCharCode(127&t[o]);return n}function x(t,e,r){var n="";r=Math.min(t.length,r);for(var o=e;o<r;++o)n+=String.fromCharCode(t[o]);return n}function L(t,e,r){var n=t.length;(!e||e<0)&&(e=0),(!r||r<0||r>n)&&(r=n);for(var o="",i=e;i<r;++i)o+=I(t[i]);return o}function k(t,e,r){for(var n=t.slice(e,r),o="",i=0;i<n.length;i+=2)o+=String.fromCharCode(n[i]+256*n[i+1]);return o}function Y(t,e,r){if(t%1!=0||t<0)throw new RangeError("offset is not uint");if(t+e>r)throw new RangeError("Trying to access beyond buffer length")}function A(t,e,r,n,o,i){if(!u.isBuffer(t))throw new TypeError('"buffer" argument must be a Buffer instance');if(e>o||e<i)throw new RangeError('"value" argument is out of bounds');if(r+n>t.length)throw new RangeError("Index out of range")}function T(t,e,r,n){e<0&&(e=65535+e+1);for(var o=0,i=Math.min(t.length-r,2);o<i;++o)t[r+o]=(e&255<<8*(n?o:1-o))>>>8*(n?o:1-o)}function B(t,e,r,n){e<0&&(e=4294967295+e+1);for(var o=0,i=Math.min(t.length-r,4);o<i;++o)t[r+o]=e>>>8*(n?o:3-o)&255}function U(t,e,r,n,o,i){if(r+n>t.length)throw new RangeError("Index out of range");if(r<0)throw new RangeError("Index out of range")}function X(t,e,r,n,i){return i||U(t,0,r,4),o.write(t,e,r,n,23,4),r+4}function j(t,e,r,n,i){return i||U(t,0,r,8),o.write(t,e,r,n,52,8),r+8}u.prototype.slice=function(t,e){var r,n=this.length;if(t=~~t,e=void 0===e?n:~~e,t<0?(t+=n)<0&&(t=0):t>n&&(t=n),e<0?(e+=n)<0&&(e=0):e>n&&(e=n),e<t&&(e=t),u.TYPED_ARRAY_SUPPORT)(r=this.subarray(t,e)).__proto__=u.prototype;else{var o=e-t;r=new u(o,void 0);for(var i=0;i<o;++i)r[i]=this[i+t]}return r},u.prototype.readUIntLE=function(t,e,r){t|=0,e|=0,r||Y(t,e,this.length);for(var n=this[t],o=1,i=0;++i<e&&(o*=256);)n+=this[t+i]*o;return n},u.prototype.readUIntBE=function(t,e,r){t|=0,e|=0,r||Y(t,e,this.length);for(var n=this[t+--e],o=1;e>0&&(o*=256);)n+=this[t+--e]*o;return n},u.prototype.readUInt8=function(t,e){return e||Y(t,1,this.length),this[t]},u.prototype.readUInt16LE=function(t,e){return e||Y(t,2,this.length),this[t]|this[t+1]<<8},u.prototype.readUInt16BE=function(t,e){return e||Y(t,2,this.length),this[t]<<8|this[t+1]},u.prototype.readUInt32LE=function(t,e){return e||Y(t,4,this.length),(this[t]|this[t+1]<<8|this[t+2]<<16)+16777216*this[t+3]},u.prototype.readUInt32BE=function(t,e){return e||Y(t,4,this.length),16777216*this[t]+(this[t+1]<<16|this[t+2]<<8|this[t+3])},u.prototype.readIntLE=function(t,e,r){t|=0,e|=0,r||Y(t,e,this.length);for(var n=this[t],o=1,i=0;++i<e&&(o*=256);)n+=this[t+i]*o;return n>=(o*=128)&&(n-=Math.pow(2,8*e)),n},u.prototype.readIntBE=function(t,e,r){t|=0,e|=0,r||Y(t,e,this.length);for(var n=e,o=1,i=this[t+--n];n>0&&(o*=256);)i+=this[t+--n]*o;return i>=(o*=128)&&(i-=Math.pow(2,8*e)),i},u.prototype.readInt8=function(t,e){return e||Y(t,1,this.length),128&this[t]?-1*(255-this[t]+1):this[t]},u.prototype.readInt16LE=function(t,e){e||Y(t,2,this.length);var r=this[t]|this[t+1]<<8;return 32768&r?4294901760|r:r},u.prototype.readInt16BE=function(t,e){e||Y(t,2,this.length);var r=this[t+1]|this[t]<<8;return 32768&r?4294901760|r:r},u.prototype.readInt32LE=function(t,e){return e||Y(t,4,this.length),this[t]|this[t+1]<<8|this[t+2]<<16|this[t+3]<<24},u.prototype.readInt32BE=function(t,e){return e||Y(t,4,this.length),this[t]<<24|this[t+1]<<16|this[t+2]<<8|this[t+3]},u.prototype.readFloatLE=function(t,e){return e||Y(t,4,this.length),o.read(this,t,!0,23,4)},u.prototype.readFloatBE=function(t,e){return e||Y(t,4,this.length),o.read(this,t,!1,23,4)},u.prototype.readDoubleLE=function(t,e){return e||Y(t,8,this.length),o.read(this,t,!0,52,8)},u.prototype.readDoubleBE=function(t,e){return e||Y(t,8,this.length),o.read(this,t,!1,52,8)},u.prototype.writeUIntLE=function(t,e,r,n){(t=+t,e|=0,r|=0,n)||A(this,t,e,r,Math.pow(2,8*r)-1,0);var o=1,i=0;for(this[e]=255&t;++i<r&&(o*=256);)this[e+i]=t/o&255;return e+r},u.prototype.writeUIntBE=function(t,e,r,n){(t=+t,e|=0,r|=0,n)||A(this,t,e,r,Math.pow(2,8*r)-1,0);var o=r-1,i=1;for(this[e+o]=255&t;--o>=0&&(i*=256);)this[e+o]=t/i&255;return e+r},u.prototype.writeUInt8=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,1,255,0),u.TYPED_ARRAY_SUPPORT||(t=Math.floor(t)),this[e]=255&t,e+1},u.prototype.writeUInt16LE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,2,65535,0),u.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8):T(this,t,e,!0),e+2},u.prototype.writeUInt16BE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,2,65535,0),u.TYPED_ARRAY_SUPPORT?(this[e]=t>>>8,this[e+1]=255&t):T(this,t,e,!1),e+2},u.prototype.writeUInt32LE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,4,4294967295,0),u.TYPED_ARRAY_SUPPORT?(this[e+3]=t>>>24,this[e+2]=t>>>16,this[e+1]=t>>>8,this[e]=255&t):B(this,t,e,!0),e+4},u.prototype.writeUInt32BE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,4,4294967295,0),u.TYPED_ARRAY_SUPPORT?(this[e]=t>>>24,this[e+1]=t>>>16,this[e+2]=t>>>8,this[e+3]=255&t):B(this,t,e,!1),e+4},u.prototype.writeIntLE=function(t,e,r,n){if(t=+t,e|=0,!n){var o=Math.pow(2,8*r-1);A(this,t,e,r,o-1,-o)}var i=0,s=1,a=0;for(this[e]=255&t;++i<r&&(s*=256);)t<0&&0===a&&0!==this[e+i-1]&&(a=1),this[e+i]=(t/s>>0)-a&255;return e+r},u.prototype.writeIntBE=function(t,e,r,n){if(t=+t,e|=0,!n){var o=Math.pow(2,8*r-1);A(this,t,e,r,o-1,-o)}var i=r-1,s=1,a=0;for(this[e+i]=255&t;--i>=0&&(s*=256);)t<0&&0===a&&0!==this[e+i+1]&&(a=1),this[e+i]=(t/s>>0)-a&255;return e+r},u.prototype.writeInt8=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,1,127,-128),u.TYPED_ARRAY_SUPPORT||(t=Math.floor(t)),t<0&&(t=255+t+1),this[e]=255&t,e+1},u.prototype.writeInt16LE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,2,32767,-32768),u.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8):T(this,t,e,!0),e+2},u.prototype.writeInt16BE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,2,32767,-32768),u.TYPED_ARRAY_SUPPORT?(this[e]=t>>>8,this[e+1]=255&t):T(this,t,e,!1),e+2},u.prototype.writeInt32LE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,4,2147483647,-2147483648),u.TYPED_ARRAY_SUPPORT?(this[e]=255&t,this[e+1]=t>>>8,this[e+2]=t>>>16,this[e+3]=t>>>24):B(this,t,e,!0),e+4},u.prototype.writeInt32BE=function(t,e,r){return t=+t,e|=0,r||A(this,t,e,4,2147483647,-2147483648),t<0&&(t=4294967295+t+1),u.TYPED_ARRAY_SUPPORT?(this[e]=t>>>24,this[e+1]=t>>>16,this[e+2]=t>>>8,this[e+3]=255&t):B(this,t,e,!1),e+4},u.prototype.writeFloatLE=function(t,e,r){return X(this,t,e,!0,r)},u.prototype.writeFloatBE=function(t,e,r){return X(this,t,e,!1,r)},u.prototype.writeDoubleLE=function(t,e,r){return j(this,t,e,!0,r)},u.prototype.writeDoubleBE=function(t,e,r){return j(this,t,e,!1,r)},u.prototype.copy=function(t,e,r,n){if(r||(r=0),n||0===n||(n=this.length),e>=t.length&&(e=t.length),e||(e=0),n>0&&n<r&&(n=r),n===r)return 0;if(0===t.length||0===this.length)return 0;if(e<0)throw new RangeError("targetStart out of bounds");if(r<0||r>=this.length)throw new RangeError("sourceStart out of bounds");if(n<0)throw new RangeError("sourceEnd out of bounds");n>this.length&&(n=this.length),t.length-e<n-r&&(n=t.length-e+r);var o,i=n-r;if(this===t&&r<e&&e<n)for(o=i-1;o>=0;--o)t[o+e]=this[o+r];else if(i<1e3||!u.TYPED_ARRAY_SUPPORT)for(o=0;o<i;++o)t[o+e]=this[o+r];else Uint8Array.prototype.set.call(t,this.subarray(r,r+i),e);return i},u.prototype.fill=function(t,e,r,n){if("string"==typeof t){if("string"==typeof e?(n=e,e=0,r=this.length):"string"==typeof r&&(n=r,r=this.length),1===t.length){var o=t.charCodeAt(0);o<256&&(t=o)}if(void 0!==n&&"string"!=typeof n)throw new TypeError("encoding must be a string");if("string"==typeof n&&!u.isEncoding(n))throw new TypeError("Unknown encoding: "+n)}else"number"==typeof t&&(t&=255);if(e<0||this.length<e||this.length<r)throw new RangeError("Out of range index");if(r<=e)return this;var i;if(e>>>=0,r=void 0===r?this.length:r>>>0,t||(t=0),"number"==typeof t)for(i=e;i<r;++i)this[i]=t;else{var s=u.isBuffer(t)?t:N(new u(t,n).toString()),a=s.length;for(i=0;i<r-e;++i)this[i+e]=s[i%a]}return this};var Z=/[^+\/0-9A-Za-z-_]/g;function I(t){return t<16?"0"+t.toString(16):t.toString(16)}function N(t,e){var r;e=e||1/0;for(var n=t.length,o=null,i=[],s=0;s<n;++s){if((r=t.charCodeAt(s))>55295&&r<57344){if(!o){if(r>56319){(e-=3)>-1&&i.push(239,191,189);continue}if(s+1===n){(e-=3)>-1&&i.push(239,191,189);continue}o=r;continue}if(r<56320){(e-=3)>-1&&i.push(239,191,189),o=r;continue}r=65536+(o-55296<<10|r-56320)}else o&&(e-=3)>-1&&i.push(239,191,189);if(o=null,r<128){if((e-=1)<0)break;i.push(r)}else if(r<2048){if((e-=2)<0)break;i.push(r>>6|192,63&r|128)}else if(r<65536){if((e-=3)<0)break;i.push(r>>12|224,r>>6&63|128,63&r|128)}else{if(!(r<1114112))throw new Error("Invalid code point");if((e-=4)<0)break;i.push(r>>18|240,r>>12&63|128,r>>6&63|128,63&r|128)}}return i}function F(t){return n.toByteArray(function(t){if((t=function(t){return t.trim?t.trim():t.replace(/^\s+|\s+$/g,"")}(t).replace(Z,"")).length<2)return"";for(;t.length%4!=0;)t+="=";return t}(t))}function C(t,e,r,n){for(var o=0;o<n&&!(o+r>=e.length||o>=t.length);++o)e[o+r]=t[o];return o}}).call(this,r(12))},function(t,e,r){"use strict";e.byteLength=function(t){return 3*t.length/4-l(t)},e.toByteArray=function(t){var e,r,n,s,a,u=t.length;s=l(t),a=new i(3*u/4-s),r=s>0?u-4:u;var f=0;for(e=0;e<r;e+=4)n=o[t.charCodeAt(e)]<<18|o[t.charCodeAt(e+1)]<<12|o[t.charCodeAt(e+2)]<<6|o[t.charCodeAt(e+3)],a[f++]=n>>16&255,a[f++]=n>>8&255,a[f++]=255&n;2===s?(n=o[t.charCodeAt(e)]<<2|o[t.charCodeAt(e+1)]>>4,a[f++]=255&n):1===s&&(n=o[t.charCodeAt(e)]<<10|o[t.charCodeAt(e+1)]<<4|o[t.charCodeAt(e+2)]>>2,a[f++]=n>>8&255,a[f++]=255&n);return a},e.fromByteArray=function(t){for(var e,r=t.length,o=r%3,i="",s=[],a=0,u=r-o;a<u;a+=16383)s.push(f(t,a,a+16383>u?u:a+16383));1===o?(e=t[r-1],i+=n[e>>2],i+=n[e<<4&63],i+="=="):2===o&&(e=(t[r-2]<<8)+t[r-1],i+=n[e>>10],i+=n[e>>4&63],i+=n[e<<2&63],i+="=");return s.push(i),s.join("")};for(var n=[],o=[],i="undefined"!=typeof Uint8Array?Uint8Array:Array,s="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",a=0,u=s.length;a<u;++a)n[a]=s[a],o[s.charCodeAt(a)]=a;function l(t){var e=t.length;if(e%4>0)throw new Error("Invalid string. Length must be a multiple of 4");return"="===t[e-2]?2:"="===t[e-1]?1:0}function f(t,e,r){for(var o,i,s=[],a=e;a<r;a+=3)o=(t[a]<<16&16711680)+(t[a+1]<<8&65280)+(255&t[a+2]),s.push(n[(i=o)>>18&63]+n[i>>12&63]+n[i>>6&63]+n[63&i]);return s.join("")}o["-".charCodeAt(0)]=62,o["_".charCodeAt(0)]=63},function(t,e){e.read=function(t,e,r,n,o){var i,s,a=8*o-n-1,u=(1<<a)-1,l=u>>1,f=-7,h=r?o-1:0,c=r?-1:1,p=t[e+h];for(h+=c,i=p&(1<<-f)-1,p>>=-f,f+=a;f>0;i=256*i+t[e+h],h+=c,f-=8);for(s=i&(1<<-f)-1,i>>=-f,f+=n;f>0;s=256*s+t[e+h],h+=c,f-=8);if(0===i)i=1-l;else{if(i===u)return s?NaN:1/0*(p?-1:1);s+=Math.pow(2,n),i-=l}return(p?-1:1)*s*Math.pow(2,i-n)},e.write=function(t,e,r,n,o,i){var s,a,u,l=8*i-o-1,f=(1<<l)-1,h=f>>1,c=23===o?Math.pow(2,-24)-Math.pow(2,-77):0,p=n?0:i-1,d=n?1:-1,y=e<0||0===e&&1/e<0?1:0;for(e=Math.abs(e),isNaN(e)||e===1/0?(a=isNaN(e)?1:0,s=f):(s=Math.floor(Math.log(e)/Math.LN2),e*(u=Math.pow(2,-s))<1&&(s--,u*=2),(e+=s+h>=1?c/u:c*Math.pow(2,1-h))*u>=2&&(s++,u/=2),s+h>=f?(a=0,s=f):s+h>=1?(a=(e*u-1)*Math.pow(2,o),s+=h):(a=e*Math.pow(2,h-1)*Math.pow(2,o),s=0));o>=8;t[r+p]=255&a,p+=d,a/=256,o-=8);for(s=s<<o|a,l+=o;l>0;t[r+p]=255&s,p+=d,s/=256,l-=8);t[r+p-d]|=128*y}},function(t,e){var r={}.toString;t.exports=Array.isArray||function(t){return"[object Array]"==r.call(t)}},function(t,e){"function"==typeof Object.create?t.exports=function(t,e){t.super_=e,t.prototype=Object.create(e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}})}:t.exports=function(t,e){t.super_=e;var r=function(){};r.prototype=e.prototype,t.prototype=new r,t.prototype.constructor=t}},function(t,e,r){(e=t.exports=r(36)).Stream=e,e.Readable=e,e.Writable=r(47),e.Duplex=r(46),e.Transform=r(52),e.PassThrough=r(53)},function(t,e,r){"use strict";(function(e,n){var o=r(37);t.exports=w;var i,s=r(33);w.ReadableState=b;r(38).EventEmitter;var a=function(t,e){return t.listeners(e).length},u=r(39),l=r(40).Buffer,f=e.Uint8Array||function(){};var h=r(41);h.inherits=r(34);var c=r(42),p=void 0;p=c&&c.debuglog?c.debuglog("stream"):function(){};var d,y=r(43),g=r(45);h.inherits(w,u);var m=["error","close","destroy","pause","resume"];function b(t,e){i=i||r(46),t=t||{};var n=e instanceof i;this.objectMode=!!t.objectMode,n&&(this.objectMode=this.objectMode||!!t.readableObjectMode);var o=t.highWaterMark,s=t.readableHighWaterMark,a=this.objectMode?16:16384;this.highWaterMark=o||0===o?o:n&&(s||0===s)?s:a,this.highWaterMark=Math.floor(this.highWaterMark),this.buffer=new y,this.length=0,this.pipes=null,this.pipesCount=0,this.flowing=null,this.ended=!1,this.endEmitted=!1,this.reading=!1,this.sync=!0,this.needReadable=!1,this.emittedReadable=!1,this.readableListening=!1,this.resumeScheduled=!1,this.destroyed=!1,this.defaultEncoding=t.defaultEncoding||"utf8",this.awaitDrain=0,this.readingMore=!1,this.decoder=null,this.encoding=null,t.encoding&&(d||(d=r(51).StringDecoder),this.decoder=new d(t.encoding),this.encoding=t.encoding)}function w(t){if(i=i||r(46),!(this instanceof w))return new w(t);this._readableState=new b(t,this),this.readable=!0,t&&("function"==typeof t.read&&(this._read=t.read),"function"==typeof t.destroy&&(this._destroy=t.destroy)),u.call(this)}function v(t,e,r,n,o){var i,s=t._readableState;null===e?(s.reading=!1,function(t,e){if(e.ended)return;if(e.decoder){var r=e.decoder.end();r&&r.length&&(e.buffer.push(r),e.length+=e.objectMode?1:r.length)}e.ended=!0,O(t)}(t,s)):(o||(i=function(t,e){var r;n=e,l.isBuffer(n)||n instanceof f||"string"==typeof e||void 0===e||t.objectMode||(r=new TypeError("Invalid non-string/buffer chunk"));var n;return r}(s,e)),i?t.emit("error",i):s.objectMode||e&&e.length>0?("string"==typeof e||s.objectMode||Object.getPrototypeOf(e)===l.prototype||(e=function(t){return l.from(t)}(e)),n?s.endEmitted?t.emit("error",new Error("stream.unshift() after end event")):P(t,s,e,!0):s.ended?t.emit("error",new Error("stream.push() after EOF")):(s.reading=!1,s.decoder&&!r?(e=s.decoder.write(e),s.objectMode||0!==e.length?P(t,s,e,!1):H(t,s)):P(t,s,e,!1))):n||(s.reading=!1));return function(t){return!t.ended&&(t.needReadable||t.length<t.highWaterMark||0===t.length)}(s)}function P(t,e,r,n){e.flowing&&0===e.length&&!e.sync?(t.emit("data",r),t.read(0)):(e.length+=e.objectMode?1:r.length,n?e.buffer.unshift(r):e.buffer.push(r),e.needReadable&&O(t)),H(t,e)}Object.defineProperty(w.prototype,"destroyed",{get:function(){return void 0!==this._readableState&&this._readableState.destroyed},set:function(t){this._readableState&&(this._readableState.destroyed=t)}}),w.prototype.destroy=g.destroy,w.prototype._undestroy=g.undestroy,w.prototype._destroy=function(t,e){this.push(null),e(t)},w.prototype.push=function(t,e){var r,n=this._readableState;return n.objectMode?r=!0:"string"==typeof t&&((e=e||n.defaultEncoding)!==n.encoding&&(t=l.from(t,e),e=""),r=!0),v(this,t,e,!1,r)},w.prototype.unshift=function(t){return v(this,t,null,!0,!1)},w.prototype.isPaused=function(){return!1===this._readableState.flowing},w.prototype.setEncoding=function(t){return d||(d=r(51).StringDecoder),this._readableState.decoder=new d(t),this._readableState.encoding=t,this};var R=8388608;function S(t,e){return t<=0||0===e.length&&e.ended?0:e.objectMode?1:t!=t?e.flowing&&e.length?e.buffer.head.data.length:e.length:(t>e.highWaterMark&&(e.highWaterMark=function(t){return t>=R?t=R:(t--,t|=t>>>1,t|=t>>>2,t|=t>>>4,t|=t>>>8,t|=t>>>16,t++),t}(t)),t<=e.length?t:e.ended?e.length:(e.needReadable=!0,0))}function O(t){var e=t._readableState;e.needReadable=!1,e.emittedReadable||(p("emitReadable",e.flowing),e.emittedReadable=!0,e.sync?o.nextTick(_,t):_(t))}function _(t){p("emit readable"),t.emit("readable"),k(t)}function H(t,e){e.readingMore||(e.readingMore=!0,o.nextTick(E,t,e))}function E(t,e){for(var r=e.length;!e.reading&&!e.flowing&&!e.ended&&e.length<e.highWaterMark&&(p("maybeReadMore read 0"),t.read(0),r!==e.length);)r=e.length;e.readingMore=!1}function x(t){p("readable nexttick read 0"),t.read(0)}function L(t,e){e.reading||(p("resume read 0"),t.read(0)),e.resumeScheduled=!1,e.awaitDrain=0,t.emit("resume"),k(t),e.flowing&&!e.reading&&t.read(0)}function k(t){var e=t._readableState;for(p("flow",e.flowing);e.flowing&&null!==t.read(););}function Y(t,e){return 0===e.length?null:(e.objectMode?r=e.buffer.shift():!t||t>=e.length?(r=e.decoder?e.buffer.join(""):1===e.buffer.length?e.buffer.head.data:e.buffer.concat(e.length),e.buffer.clear()):r=function(t,e,r){var n;t<e.head.data.length?(n=e.head.data.slice(0,t),e.head.data=e.head.data.slice(t)):n=t===e.head.data.length?e.shift():r?function(t,e){var r=e.head,n=1,o=r.data;t-=o.length;for(;r=r.next;){var i=r.data,s=t>i.length?i.length:t;if(s===i.length?o+=i:o+=i.slice(0,t),0===(t-=s)){s===i.length?(++n,r.next?e.head=r.next:e.head=e.tail=null):(e.head=r,r.data=i.slice(s));break}++n}return e.length-=n,o}(t,e):function(t,e){var r=l.allocUnsafe(t),n=e.head,o=1;n.data.copy(r),t-=n.data.length;for(;n=n.next;){var i=n.data,s=t>i.length?i.length:t;if(i.copy(r,r.length-t,0,s),0===(t-=s)){s===i.length?(++o,n.next?e.head=n.next:e.head=e.tail=null):(e.head=n,n.data=i.slice(s));break}++o}return e.length-=o,r}(t,e);return n}(t,e.buffer,e.decoder),r);var r}function A(t){var e=t._readableState;if(e.length>0)throw new Error('"endReadable()" called on non-empty stream');e.endEmitted||(e.ended=!0,o.nextTick(T,e,t))}function T(t,e){t.endEmitted||0!==t.length||(t.endEmitted=!0,e.readable=!1,e.emit("end"))}function B(t,e){for(var r=0,n=t.length;r<n;r++)if(t[r]===e)return r;return-1}w.prototype.read=function(t){p("read",t),t=parseInt(t,10);var e=this._readableState,r=t;if(0!==t&&(e.emittedReadable=!1),0===t&&e.needReadable&&(e.length>=e.highWaterMark||e.ended))return p("read: emitReadable",e.length,e.ended),0===e.length&&e.ended?A(this):O(this),null;if(0===(t=S(t,e))&&e.ended)return 0===e.length&&A(this),null;var n,o=e.needReadable;return p("need readable",o),(0===e.length||e.length-t<e.highWaterMark)&&p("length less than watermark",o=!0),e.ended||e.reading?p("reading or ended",o=!1):o&&(p("do read"),e.reading=!0,e.sync=!0,0===e.length&&(e.needReadable=!0),this._read(e.highWaterMark),e.sync=!1,e.reading||(t=S(r,e))),null===(n=t>0?Y(t,e):null)?(e.needReadable=!0,t=0):e.length-=t,0===e.length&&(e.ended||(e.needReadable=!0),r!==t&&e.ended&&A(this)),null!==n&&this.emit("data",n),n},w.prototype._read=function(t){this.emit("error",new Error("_read() is not implemented"))},w.prototype.pipe=function(t,e){var r=this,i=this._readableState;switch(i.pipesCount){case 0:i.pipes=t;break;case 1:i.pipes=[i.pipes,t];break;default:i.pipes.push(t)}i.pipesCount+=1,p("pipe count=%d opts=%j",i.pipesCount,e);var u=(!e||!1!==e.end)&&t!==n.stdout&&t!==n.stderr?f:w;function l(e,n){p("onunpipe"),e===r&&n&&!1===n.hasUnpiped&&(n.hasUnpiped=!0,p("cleanup"),t.removeListener("close",m),t.removeListener("finish",b),t.removeListener("drain",h),t.removeListener("error",g),t.removeListener("unpipe",l),r.removeListener("end",f),r.removeListener("end",w),r.removeListener("data",y),c=!0,!i.awaitDrain||t._writableState&&!t._writableState.needDrain||h())}function f(){p("onend"),t.end()}i.endEmitted?o.nextTick(u):r.once("end",u),t.on("unpipe",l);var h=function(t){return function(){var e=t._readableState;p("pipeOnDrain",e.awaitDrain),e.awaitDrain&&e.awaitDrain--,0===e.awaitDrain&&a(t,"data")&&(e.flowing=!0,k(t))}}(r);t.on("drain",h);var c=!1;var d=!1;function y(e){p("ondata"),d=!1,!1!==t.write(e)||d||((1===i.pipesCount&&i.pipes===t||i.pipesCount>1&&-1!==B(i.pipes,t))&&!c&&(p("false write response, pause",r._readableState.awaitDrain),r._readableState.awaitDrain++,d=!0),r.pause())}function g(e){p("onerror",e),w(),t.removeListener("error",g),0===a(t,"error")&&t.emit("error",e)}function m(){t.removeListener("finish",b),w()}function b(){p("onfinish"),t.removeListener("close",m),w()}function w(){p("unpipe"),r.unpipe(t)}return r.on("data",y),function(t,e,r){if("function"==typeof t.prependListener)return t.prependListener(e,r);t._events&&t._events[e]?s(t._events[e])?t._events[e].unshift(r):t._events[e]=[r,t._events[e]]:t.on(e,r)}(t,"error",g),t.once("close",m),t.once("finish",b),t.emit("pipe",r),i.flowing||(p("pipe resume"),r.resume()),t},w.prototype.unpipe=function(t){var e=this._readableState,r={hasUnpiped:!1};if(0===e.pipesCount)return this;if(1===e.pipesCount)return t&&t!==e.pipes?this:(t||(t=e.pipes),e.pipes=null,e.pipesCount=0,e.flowing=!1,t&&t.emit("unpipe",this,r),this);if(!t){var n=e.pipes,o=e.pipesCount;e.pipes=null,e.pipesCount=0,e.flowing=!1;for(var i=0;i<o;i++)n[i].emit("unpipe",this,r);return this}var s=B(e.pipes,t);return-1===s?this:(e.pipes.splice(s,1),e.pipesCount-=1,1===e.pipesCount&&(e.pipes=e.pipes[0]),t.emit("unpipe",this,r),this)},w.prototype.on=function(t,e){var r=u.prototype.on.call(this,t,e);if("data"===t)!1!==this._readableState.flowing&&this.resume();else if("readable"===t){var n=this._readableState;n.endEmitted||n.readableListening||(n.readableListening=n.needReadable=!0,n.emittedReadable=!1,n.reading?n.length&&O(this):o.nextTick(x,this))}return r},w.prototype.addListener=w.prototype.on,w.prototype.resume=function(){var t=this._readableState;return t.flowing||(p("resume"),t.flowing=!0,function(t,e){e.resumeScheduled||(e.resumeScheduled=!0,o.nextTick(L,t,e))}(this,t)),this},w.prototype.pause=function(){return p("call pause flowing=%j",this._readableState.flowing),!1!==this._readableState.flowing&&(p("pause"),this._readableState.flowing=!1,this.emit("pause")),this},w.prototype.wrap=function(t){var e=this,r=this._readableState,n=!1;for(var o in t.on("end",function(){if(p("wrapped end"),r.decoder&&!r.ended){var t=r.decoder.end();t&&t.length&&e.push(t)}e.push(null)}),t.on("data",function(o){(p("wrapped data"),r.decoder&&(o=r.decoder.write(o)),!r.objectMode||null!==o&&void 0!==o)&&((r.objectMode||o&&o.length)&&(e.push(o)||(n=!0,t.pause())))}),t)void 0===this[o]&&"function"==typeof t[o]&&(this[o]=function(e){return function(){return t[e].apply(t,arguments)}}(o));for(var i=0;i<m.length;i++)t.on(m[i],this.emit.bind(this,m[i]));return this._read=function(e){p("wrapped _read",e),n&&(n=!1,t.resume())},this},Object.defineProperty(w.prototype,"readableHighWaterMark",{enumerable:!1,get:function(){return this._readableState.highWaterMark}}),w._fromList=Y}).call(this,r(12),r(29))},function(t,e,r){"use strict";(function(e){!e.version||0===e.version.indexOf("v0.")||0===e.version.indexOf("v1.")&&0!==e.version.indexOf("v1.8.")?t.exports={nextTick:function(t,r,n,o){if("function"!=typeof t)throw new TypeError('"callback" argument must be a function');var i,s,a=arguments.length;switch(a){case 0:case 1:return e.nextTick(t);case 2:return e.nextTick(function(){t.call(null,r)});case 3:return e.nextTick(function(){t.call(null,r,n)});case 4:return e.nextTick(function(){t.call(null,r,n,o)});default:for(i=new Array(a-1),s=0;s<i.length;)i[s++]=arguments[s];return e.nextTick(function(){t.apply(null,i)})}}}:t.exports=e}).call(this,r(29))},function(t,e){function r(){this._events=this._events||{},this._maxListeners=this._maxListeners||void 0}function n(t){return"function"==typeof t}function o(t){return"object"==typeof t&&null!==t}function i(t){return void 0===t}t.exports=r,r.EventEmitter=r,r.prototype._events=void 0,r.prototype._maxListeners=void 0,r.defaultMaxListeners=10,r.prototype.setMaxListeners=function(t){if("number"!=typeof t||t<0||isNaN(t))throw TypeError("n must be a positive number");return this._maxListeners=t,this},r.prototype.emit=function(t){var e,r,s,a,u,l;if(this._events||(this._events={}),"error"===t&&(!this._events.error||o(this._events.error)&&!this._events.error.length)){if((e=arguments[1])instanceof Error)throw e;var f=new Error('Uncaught, unspecified "error" event. ('+e+")");throw f.context=e,f}if(i(r=this._events[t]))return!1;if(n(r))switch(arguments.length){case 1:r.call(this);break;case 2:r.call(this,arguments[1]);break;case 3:r.call(this,arguments[1],arguments[2]);break;default:a=Array.prototype.slice.call(arguments,1),r.apply(this,a)}else if(o(r))for(a=Array.prototype.slice.call(arguments,1),s=(l=r.slice()).length,u=0;u<s;u++)l[u].apply(this,a);return!0},r.prototype.addListener=function(t,e){var s;if(!n(e))throw TypeError("listener must be a function");return this._events||(this._events={}),this._events.newListener&&this.emit("newListener",t,n(e.listener)?e.listener:e),this._events[t]?o(this._events[t])?this._events[t].push(e):this._events[t]=[this._events[t],e]:this._events[t]=e,o(this._events[t])&&!this._events[t].warned&&(s=i(this._maxListeners)?r.defaultMaxListeners:this._maxListeners)&&s>0&&this._events[t].length>s&&(this._events[t].warned=!0,console.error("(node) warning: possible EventEmitter memory leak detected. %d listeners added. Use emitter.setMaxListeners() to increase limit.",this._events[t].length),"function"==typeof console.trace&&console.trace()),this},r.prototype.on=r.prototype.addListener,r.prototype.once=function(t,e){if(!n(e))throw TypeError("listener must be a function");var r=!1;function o(){this.removeListener(t,o),r||(r=!0,e.apply(this,arguments))}return o.listener=e,this.on(t,o),this},r.prototype.removeListener=function(t,e){var r,i,s,a;if(!n(e))throw TypeError("listener must be a function");if(!this._events||!this._events[t])return this;if(s=(r=this._events[t]).length,i=-1,r===e||n(r.listener)&&r.listener===e)delete this._events[t],this._events.removeListener&&this.emit("removeListener",t,e);else if(o(r)){for(a=s;a-- >0;)if(r[a]===e||r[a].listener&&r[a].listener===e){i=a;break}if(i<0)return this;1===r.length?(r.length=0,delete this._events[t]):r.splice(i,1),this._events.removeListener&&this.emit("removeListener",t,e)}return this},r.prototype.removeAllListeners=function(t){var e,r;if(!this._events)return this;if(!this._events.removeListener)return 0===arguments.length?this._events={}:this._events[t]&&delete this._events[t],this;if(0===arguments.length){for(e in this._events)"removeListener"!==e&&this.removeAllListeners(e);return this.removeAllListeners("removeListener"),this._events={},this}if(n(r=this._events[t]))this.removeListener(t,r);else if(r)for(;r.length;)this.removeListener(t,r[r.length-1]);return delete this._events[t],this},r.prototype.listeners=function(t){return this._events&&this._events[t]?n(this._events[t])?[this._events[t]]:this._events[t].slice():[]},r.prototype.listenerCount=function(t){if(this._events){var e=this._events[t];if(n(e))return 1;if(e)return e.length}return 0},r.listenerCount=function(t,e){return t.listenerCount(e)}},function(t,e,r){t.exports=r(38).EventEmitter},function(t,e,r){var n=r(30),o=n.Buffer;function i(t,e){for(var r in t)e[r]=t[r]}function s(t,e,r){return o(t,e,r)}o.from&&o.alloc&&o.allocUnsafe&&o.allocUnsafeSlow?t.exports=n:(i(n,e),e.Buffer=s),i(o,s),s.from=function(t,e,r){if("number"==typeof t)throw new TypeError("Argument must not be a number");return o(t,e,r)},s.alloc=function(t,e,r){if("number"!=typeof t)throw new TypeError("Argument must be a number");var n=o(t);return void 0!==e?"string"==typeof r?n.fill(e,r):n.fill(e):n.fill(0),n},s.allocUnsafe=function(t){if("number"!=typeof t)throw new TypeError("Argument must be a number");return o(t)},s.allocUnsafeSlow=function(t){if("number"!=typeof t)throw new TypeError("Argument must be a number");return n.SlowBuffer(t)}},function(t,e,r){(function(t){function r(t){return Object.prototype.toString.call(t)}e.isArray=function(t){return Array.isArray?Array.isArray(t):"[object Array]"===r(t)},e.isBoolean=function(t){return"boolean"==typeof t},e.isNull=function(t){return null===t},e.isNullOrUndefined=function(t){return null==t},e.isNumber=function(t){return"number"==typeof t},e.isString=function(t){return"string"==typeof t},e.isSymbol=function(t){return"symbol"==typeof t},e.isUndefined=function(t){return void 0===t},e.isRegExp=function(t){return"[object RegExp]"===r(t)},e.isObject=function(t){return"object"==typeof t&&null!==t},e.isDate=function(t){return"[object Date]"===r(t)},e.isError=function(t){return"[object Error]"===r(t)||t instanceof Error},e.isFunction=function(t){return"function"==typeof t},e.isPrimitive=function(t){return null===t||"boolean"==typeof t||"number"==typeof t||"string"==typeof t||"symbol"==typeof t||void 0===t},e.isBuffer=t.isBuffer}).call(this,r(30).Buffer)},function(t,e){},function(t,e,r){"use strict";var n=r(40).Buffer,o=r(44);t.exports=function(){function t(){!function(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}(this,t),this.head=null,this.tail=null,this.length=0}return t.prototype.push=function(t){var e={data:t,next:null};this.length>0?this.tail.next=e:this.head=e,this.tail=e,++this.length},t.prototype.unshift=function(t){var e={data:t,next:this.head};0===this.length&&(this.tail=e),this.head=e,++this.length},t.prototype.shift=function(){if(0!==this.length){var t=this.head.data;return 1===this.length?this.head=this.tail=null:this.head=this.head.next,--this.length,t}},t.prototype.clear=function(){this.head=this.tail=null,this.length=0},t.prototype.join=function(t){if(0===this.length)return"";for(var e=this.head,r=""+e.data;e=e.next;)r+=t+e.data;return r},t.prototype.concat=function(t){if(0===this.length)return n.alloc(0);if(1===this.length)return this.head.data;for(var e,r,o,i=n.allocUnsafe(t>>>0),s=this.head,a=0;s;)e=s.data,r=i,o=a,e.copy(r,o),a+=s.data.length,s=s.next;return i},t}(),o&&o.inspect&&o.inspect.custom&&(t.exports.prototype[o.inspect.custom]=function(){var t=o.inspect({length:this.length});return this.constructor.name+" "+t})},function(t,e){},function(t,e,r){"use strict";var n=r(37);function o(t,e){t.emit("error",e)}t.exports={destroy:function(t,e){var r=this,i=this._readableState&&this._readableState.destroyed,s=this._writableState&&this._writableState.destroyed;return i||s?(e?e(t):!t||this._writableState&&this._writableState.errorEmitted||n.nextTick(o,this,t),this):(this._readableState&&(this._readableState.destroyed=!0),this._writableState&&(this._writableState.destroyed=!0),this._destroy(t||null,function(t){!e&&t?(n.nextTick(o,r,t),r._writableState&&(r._writableState.errorEmitted=!0)):e&&e(t)}),this)},undestroy:function(){this._readableState&&(this._readableState.destroyed=!1,this._readableState.reading=!1,this._readableState.ended=!1,this._readableState.endEmitted=!1),this._writableState&&(this._writableState.destroyed=!1,this._writableState.ended=!1,this._writableState.ending=!1,this._writableState.finished=!1,this._writableState.errorEmitted=!1)}}},function(t,e,r){"use strict";var n=r(37),o=Object.keys||function(t){var e=[];for(var r in t)e.push(r);return e};t.exports=h;var i=r(41);i.inherits=r(34);var s=r(36),a=r(47);i.inherits(h,s);for(var u=o(a.prototype),l=0;l<u.length;l++){var f=u[l];h.prototype[f]||(h.prototype[f]=a.prototype[f])}function h(t){if(!(this instanceof h))return new h(t);s.call(this,t),a.call(this,t),t&&!1===t.readable&&(this.readable=!1),t&&!1===t.writable&&(this.writable=!1),this.allowHalfOpen=!0,t&&!1===t.allowHalfOpen&&(this.allowHalfOpen=!1),this.once("end",c)}function c(){this.allowHalfOpen||this._writableState.ended||n.nextTick(p,this)}function p(t){t.end()}Object.defineProperty(h.prototype,"writableHighWaterMark",{enumerable:!1,get:function(){return this._writableState.highWaterMark}}),Object.defineProperty(h.prototype,"destroyed",{get:function(){return void 0!==this._readableState&&void 0!==this._writableState&&(this._readableState.destroyed&&this._writableState.destroyed)},set:function(t){void 0!==this._readableState&&void 0!==this._writableState&&(this._readableState.destroyed=t,this._writableState.destroyed=t)}}),h.prototype._destroy=function(t,e){this.push(null),this.end(),n.nextTick(e,t)}},function(t,e,r){"use strict";(function(e,n,o){var i=r(37);function s(t){var e=this;this.next=null,this.entry=null,this.finish=function(){!function(t,e,r){var n=t.entry;t.entry=null;for(;n;){var o=n.callback;e.pendingcb--,o(r),n=n.next}e.corkedRequestsFree?e.corkedRequestsFree.next=t:e.corkedRequestsFree=t}(e,t)}}t.exports=b;var a,u=!e.browser&&["v0.10","v0.9."].indexOf(e.version.slice(0,5))>-1?n:i.nextTick;b.WritableState=m;var l=r(41);l.inherits=r(34);var f={deprecate:r(50)},h=r(39),c=r(40).Buffer,p=o.Uint8Array||function(){};var d,y=r(45);function g(){}function m(t,e){a=a||r(46),t=t||{};var n=e instanceof a;this.objectMode=!!t.objectMode,n&&(this.objectMode=this.objectMode||!!t.writableObjectMode);var o=t.highWaterMark,l=t.writableHighWaterMark,f=this.objectMode?16:16384;this.highWaterMark=o||0===o?o:n&&(l||0===l)?l:f,this.highWaterMark=Math.floor(this.highWaterMark),this.finalCalled=!1,this.needDrain=!1,this.ending=!1,this.ended=!1,this.finished=!1,this.destroyed=!1;var h=!1===t.decodeStrings;this.decodeStrings=!h,this.defaultEncoding=t.defaultEncoding||"utf8",this.length=0,this.writing=!1,this.corked=0,this.sync=!0,this.bufferProcessing=!1,this.onwrite=function(t){!function(t,e){var r=t._writableState,n=r.sync,o=r.writecb;if(function(t){t.writing=!1,t.writecb=null,t.length-=t.writelen,t.writelen=0}(r),e)!function(t,e,r,n,o){--e.pendingcb,r?(i.nextTick(o,n),i.nextTick(O,t,e),t._writableState.errorEmitted=!0,t.emit("error",n)):(o(n),t._writableState.errorEmitted=!0,t.emit("error",n),O(t,e))}(t,r,n,e,o);else{var s=R(r);s||r.corked||r.bufferProcessing||!r.bufferedRequest||P(t,r),n?u(v,t,r,s,o):v(t,r,s,o)}}(e,t)},this.writecb=null,this.writelen=0,this.bufferedRequest=null,this.lastBufferedRequest=null,this.pendingcb=0,this.prefinished=!1,this.errorEmitted=!1,this.bufferedRequestCount=0,this.corkedRequestsFree=new s(this)}function b(t){if(a=a||r(46),!(d.call(b,this)||this instanceof a))return new b(t);this._writableState=new m(t,this),this.writable=!0,t&&("function"==typeof t.write&&(this._write=t.write),"function"==typeof t.writev&&(this._writev=t.writev),"function"==typeof t.destroy&&(this._destroy=t.destroy),"function"==typeof t.final&&(this._final=t.final)),h.call(this)}function w(t,e,r,n,o,i,s){e.writelen=n,e.writecb=s,e.writing=!0,e.sync=!0,r?t._writev(o,e.onwrite):t._write(o,i,e.onwrite),e.sync=!1}function v(t,e,r,n){r||function(t,e){0===e.length&&e.needDrain&&(e.needDrain=!1,t.emit("drain"))}(t,e),e.pendingcb--,n(),O(t,e)}function P(t,e){e.bufferProcessing=!0;var r=e.bufferedRequest;if(t._writev&&r&&r.next){var n=e.bufferedRequestCount,o=new Array(n),i=e.corkedRequestsFree;i.entry=r;for(var a=0,u=!0;r;)o[a]=r,r.isBuf||(u=!1),r=r.next,a+=1;o.allBuffers=u,w(t,e,!0,e.length,o,"",i.finish),e.pendingcb++,e.lastBufferedRequest=null,i.next?(e.corkedRequestsFree=i.next,i.next=null):e.corkedRequestsFree=new s(e),e.bufferedRequestCount=0}else{for(;r;){var l=r.chunk,f=r.encoding,h=r.callback;if(w(t,e,!1,e.objectMode?1:l.length,l,f,h),r=r.next,e.bufferedRequestCount--,e.writing)break}null===r&&(e.lastBufferedRequest=null)}e.bufferedRequest=r,e.bufferProcessing=!1}function R(t){return t.ending&&0===t.length&&null===t.bufferedRequest&&!t.finished&&!t.writing}function S(t,e){t._final(function(r){e.pendingcb--,r&&t.emit("error",r),e.prefinished=!0,t.emit("prefinish"),O(t,e)})}function O(t,e){var r=R(e);return r&&(!function(t,e){e.prefinished||e.finalCalled||("function"==typeof t._final?(e.pendingcb++,e.finalCalled=!0,i.nextTick(S,t,e)):(e.prefinished=!0,t.emit("prefinish")))}(t,e),0===e.pendingcb&&(e.finished=!0,t.emit("finish"))),r}l.inherits(b,h),m.prototype.getBuffer=function(){for(var t=this.bufferedRequest,e=[];t;)e.push(t),t=t.next;return e},function(){try{Object.defineProperty(m.prototype,"buffer",{get:f.deprecate(function(){return this.getBuffer()},"_writableState.buffer is deprecated. Use _writableState.getBuffer instead.","DEP0003")})}catch(t){}}(),"function"==typeof Symbol&&Symbol.hasInstance&&"function"==typeof Function.prototype[Symbol.hasInstance]?(d=Function.prototype[Symbol.hasInstance],Object.defineProperty(b,Symbol.hasInstance,{value:function(t){return!!d.call(this,t)||this===b&&(t&&t._writableState instanceof m)}})):d=function(t){return t instanceof this},b.prototype.pipe=function(){this.emit("error",new Error("Cannot pipe, not readable"))},b.prototype.write=function(t,e,r){var n,o=this._writableState,s=!1,a=!o.objectMode&&(n=t,c.isBuffer(n)||n instanceof p);return a&&!c.isBuffer(t)&&(t=function(t){return c.from(t)}(t)),"function"==typeof e&&(r=e,e=null),a?e="buffer":e||(e=o.defaultEncoding),"function"!=typeof r&&(r=g),o.ended?function(t,e){var r=new Error("write after end");t.emit("error",r),i.nextTick(e,r)}(this,r):(a||function(t,e,r,n){var o=!0,s=!1;return null===r?s=new TypeError("May not write null values to stream"):"string"==typeof r||void 0===r||e.objectMode||(s=new TypeError("Invalid non-string/buffer chunk")),s&&(t.emit("error",s),i.nextTick(n,s),o=!1),o}(this,o,t,r))&&(o.pendingcb++,s=function(t,e,r,n,o,i){if(!r){var s=function(t,e,r){t.objectMode||!1===t.decodeStrings||"string"!=typeof e||(e=c.from(e,r));return e}(e,n,o);n!==s&&(r=!0,o="buffer",n=s)}var a=e.objectMode?1:n.length;e.length+=a;var u=e.length<e.highWaterMark;u||(e.needDrain=!0);if(e.writing||e.corked){var l=e.lastBufferedRequest;e.lastBufferedRequest={chunk:n,encoding:o,isBuf:r,callback:i,next:null},l?l.next=e.lastBufferedRequest:e.bufferedRequest=e.lastBufferedRequest,e.bufferedRequestCount+=1}else w(t,e,!1,a,n,o,i);return u}(this,o,a,t,e,r)),s},b.prototype.cork=function(){this._writableState.corked++},b.prototype.uncork=function(){var t=this._writableState;t.corked&&(t.corked--,t.writing||t.corked||t.finished||t.bufferProcessing||!t.bufferedRequest||P(this,t))},b.prototype.setDefaultEncoding=function(t){if("string"==typeof t&&(t=t.toLowerCase()),!(["hex","utf8","utf-8","ascii","binary","base64","ucs2","ucs-2","utf16le","utf-16le","raw"].indexOf((t+"").toLowerCase())>-1))throw new TypeError("Unknown encoding: "+t);return this._writableState.defaultEncoding=t,this},Object.defineProperty(b.prototype,"writableHighWaterMark",{enumerable:!1,get:function(){return this._writableState.highWaterMark}}),b.prototype._write=function(t,e,r){r(new Error("_write() is not implemented"))},b.prototype._writev=null,b.prototype.end=function(t,e,r){var n=this._writableState;"function"==typeof t?(r=t,t=null,e=null):"function"==typeof e&&(r=e,e=null),null!==t&&void 0!==t&&this.write(t,e),n.corked&&(n.corked=1,this.uncork()),n.ending||n.finished||function(t,e,r){e.ending=!0,O(t,e),r&&(e.finished?i.nextTick(r):t.once("finish",r));e.ended=!0,t.writable=!1}(this,n,r)},Object.defineProperty(b.prototype,"destroyed",{get:function(){return void 0!==this._writableState&&this._writableState.destroyed},set:function(t){this._writableState&&(this._writableState.destroyed=t)}}),b.prototype.destroy=y.destroy,b.prototype._undestroy=y.undestroy,b.prototype._destroy=function(t,e){this.end(),e(t)}}).call(this,r(29),r(48).setImmediate,r(12))},function(t,e,r){(function(t){var n=Function.prototype.apply;function o(t,e){this._id=t,this._clearFn=e}e.setTimeout=function(){return new o(n.call(setTimeout,window,arguments),clearTimeout)},e.setInterval=function(){return new o(n.call(setInterval,window,arguments),clearInterval)},e.clearTimeout=e.clearInterval=function(t){t&&t.close()},o.prototype.unref=o.prototype.ref=function(){},o.prototype.close=function(){this._clearFn.call(window,this._id)},e.enroll=function(t,e){clearTimeout(t._idleTimeoutId),t._idleTimeout=e},e.unenroll=function(t){clearTimeout(t._idleTimeoutId),t._idleTimeout=-1},e._unrefActive=e.active=function(t){clearTimeout(t._idleTimeoutId);var e=t._idleTimeout;e>=0&&(t._idleTimeoutId=setTimeout(function(){t._onTimeout&&t._onTimeout()},e))},r(49),e.setImmediate="undefined"!=typeof self&&self.setImmediate||void 0!==t&&t.setImmediate||this&&this.setImmediate,e.clearImmediate="undefined"!=typeof self&&self.clearImmediate||void 0!==t&&t.clearImmediate||this&&this.clearImmediate}).call(this,r(12))},function(t,e,r){(function(t,e){!function(t,r){"use strict";if(!t.setImmediate){var n,o,i,s,a,u=1,l={},f=!1,h=t.document,c=Object.getPrototypeOf&&Object.getPrototypeOf(t);c=c&&c.setTimeout?c:t,"[object process]"==={}.toString.call(t.process)?n=function(t){e.nextTick(function(){d(t)})}:!function(){if(t.postMessage&&!t.importScripts){var e=!0,r=t.onmessage;return t.onmessage=function(){e=!1},t.postMessage("","*"),t.onmessage=r,e}}()?t.MessageChannel?((i=new MessageChannel).port1.onmessage=function(t){d(t.data)},n=function(t){i.port2.postMessage(t)}):h&&"onreadystatechange"in h.createElement("script")?(o=h.documentElement,n=function(t){var e=h.createElement("script");e.onreadystatechange=function(){d(t),e.onreadystatechange=null,o.removeChild(e),e=null},o.appendChild(e)}):n=function(t){setTimeout(d,0,t)}:(s="setImmediate$"+Math.random()+"$",a=function(e){e.source===t&&"string"==typeof e.data&&0===e.data.indexOf(s)&&d(+e.data.slice(s.length))},t.addEventListener?t.addEventListener("message",a,!1):t.attachEvent("onmessage",a),n=function(e){t.postMessage(s+e,"*")}),c.setImmediate=function(t){"function"!=typeof t&&(t=new Function(""+t));for(var e=new Array(arguments.length-1),r=0;r<e.length;r++)e[r]=arguments[r+1];var o={callback:t,args:e};return l[u]=o,n(u),u++},c.clearImmediate=p}function p(t){delete l[t]}function d(t){if(f)setTimeout(d,0,t);else{var e=l[t];if(e){f=!0;try{!function(t){var e=t.callback,n=t.args;switch(n.length){case 0:e();break;case 1:e(n[0]);break;case 2:e(n[0],n[1]);break;case 3:e(n[0],n[1],n[2]);break;default:e.apply(r,n)}}(e)}finally{p(t),f=!1}}}}}("undefined"==typeof self?void 0===t?this:t:self)}).call(this,r(12),r(29))},function(t,e,r){(function(e){function r(t){try{if(!e.localStorage)return!1}catch(t){return!1}var r=e.localStorage[t];return null!=r&&"true"===String(r).toLowerCase()}t.exports=function(t,e){if(r("noDeprecation"))return t;var n=!1;return function(){if(!n){if(r("throwDeprecation"))throw new Error(e);r("traceDeprecation")?console.trace(e):console.warn(e),n=!0}return t.apply(this,arguments)}}}).call(this,r(12))},function(t,e,r){"use strict";var n=r(40).Buffer,o=n.isEncoding||function(t){switch((t=""+t)&&t.toLowerCase()){case"hex":case"utf8":case"utf-8":case"ascii":case"binary":case"base64":case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":case"raw":return!0;default:return!1}};function i(t){var e;switch(this.encoding=function(t){var e=function(t){if(!t)return"utf8";for(var e;;)switch(t){case"utf8":case"utf-8":return"utf8";case"ucs2":case"ucs-2":case"utf16le":case"utf-16le":return"utf16le";case"latin1":case"binary":return"latin1";case"base64":case"ascii":case"hex":return t;default:if(e)return;t=(""+t).toLowerCase(),e=!0}}(t);if("string"!=typeof e&&(n.isEncoding===o||!o(t)))throw new Error("Unknown encoding: "+t);return e||t}(t),this.encoding){case"utf16le":this.text=u,this.end=l,e=4;break;case"utf8":this.fillLast=a,e=4;break;case"base64":this.text=f,this.end=h,e=3;break;default:return this.write=c,void(this.end=p)}this.lastNeed=0,this.lastTotal=0,this.lastChar=n.allocUnsafe(e)}function s(t){return t<=127?0:t>>5==6?2:t>>4==14?3:t>>3==30?4:t>>6==2?-1:-2}function a(t){var e=this.lastTotal-this.lastNeed,r=function(t,e,r){if(128!=(192&e[0]))return t.lastNeed=0,"�";if(t.lastNeed>1&&e.length>1){if(128!=(192&e[1]))return t.lastNeed=1,"�";if(t.lastNeed>2&&e.length>2&&128!=(192&e[2]))return t.lastNeed=2,"�"}}(this,t);return void 0!==r?r:this.lastNeed<=t.length?(t.copy(this.lastChar,e,0,this.lastNeed),this.lastChar.toString(this.encoding,0,this.lastTotal)):(t.copy(this.lastChar,e,0,t.length),void(this.lastNeed-=t.length))}function u(t,e){if((t.length-e)%2==0){var r=t.toString("utf16le",e);if(r){var n=r.charCodeAt(r.length-1);if(n>=55296&&n<=56319)return this.lastNeed=2,this.lastTotal=4,this.lastChar[0]=t[t.length-2],this.lastChar[1]=t[t.length-1],r.slice(0,-1)}return r}return this.lastNeed=1,this.lastTotal=2,this.lastChar[0]=t[t.length-1],t.toString("utf16le",e,t.length-1)}function l(t){var e=t&&t.length?this.write(t):"";if(this.lastNeed){var r=this.lastTotal-this.lastNeed;return e+this.lastChar.toString("utf16le",0,r)}return e}function f(t,e){var r=(t.length-e)%3;return 0===r?t.toString("base64",e):(this.lastNeed=3-r,this.lastTotal=3,1===r?this.lastChar[0]=t[t.length-1]:(this.lastChar[0]=t[t.length-2],this.lastChar[1]=t[t.length-1]),t.toString("base64",e,t.length-r))}function h(t){var e=t&&t.length?this.write(t):"";return this.lastNeed?e+this.lastChar.toString("base64",0,3-this.lastNeed):e}function c(t){return t.toString(this.encoding)}function p(t){return t&&t.length?this.write(t):""}e.StringDecoder=i,i.prototype.write=function(t){if(0===t.length)return"";var e,r;if(this.lastNeed){if(void 0===(e=this.fillLast(t)))return"";r=this.lastNeed,this.lastNeed=0}else r=0;return r<t.length?e?e+this.text(t,r):this.text(t,r):e||""},i.prototype.end=function(t){var e=t&&t.length?this.write(t):"";return this.lastNeed?e+"�":e},i.prototype.text=function(t,e){var r=function(t,e,r){var n=e.length-1;if(n<r)return 0;var o=s(e[n]);if(o>=0)return o>0&&(t.lastNeed=o-1),o;if(--n<r||-2===o)return 0;if((o=s(e[n]))>=0)return o>0&&(t.lastNeed=o-2),o;if(--n<r||-2===o)return 0;if((o=s(e[n]))>=0)return o>0&&(2===o?o=0:t.lastNeed=o-3),o;return 0}(this,t,e);if(!this.lastNeed)return t.toString("utf8",e);this.lastTotal=r;var n=t.length-(r-this.lastNeed);return t.copy(this.lastChar,0,n),t.toString("utf8",e,n)},i.prototype.fillLast=function(t){if(this.lastNeed<=t.length)return t.copy(this.lastChar,this.lastTotal-this.lastNeed,0,this.lastNeed),this.lastChar.toString(this.encoding,0,this.lastTotal);t.copy(this.lastChar,this.lastTotal-this.lastNeed,0,t.length),this.lastNeed-=t.length}},function(t,e,r){"use strict";t.exports=i;var n=r(46),o=r(41);function i(t){if(!(this instanceof i))return new i(t);n.call(this,t),this._transformState={afterTransform:function(t,e){var r=this._transformState;r.transforming=!1;var n=r.writecb;if(!n)return this.emit("error",new Error("write callback called multiple times"));r.writechunk=null,r.writecb=null,null!=e&&this.push(e),n(t);var o=this._readableState;o.reading=!1,(o.needReadable||o.length<o.highWaterMark)&&this._read(o.highWaterMark)}.bind(this),needTransform:!1,transforming:!1,writecb:null,writechunk:null,writeencoding:null},this._readableState.needReadable=!0,this._readableState.sync=!1,t&&("function"==typeof t.transform&&(this._transform=t.transform),"function"==typeof t.flush&&(this._flush=t.flush)),this.on("prefinish",s)}function s(){var t=this;"function"==typeof this._flush?this._flush(function(e,r){a(t,e,r)}):a(this,null,null)}function a(t,e,r){if(e)return t.emit("error",e);if(null!=r&&t.push(r),t._writableState.length)throw new Error("Calling transform done when ws.length != 0");if(t._transformState.transforming)throw new Error("Calling transform done when still transforming");return t.push(null)}o.inherits=r(34),o.inherits(i,n),i.prototype.push=function(t,e){return this._transformState.needTransform=!1,n.prototype.push.call(this,t,e)},i.prototype._transform=function(t,e,r){throw new Error("_transform() is not implemented")},i.prototype._write=function(t,e,r){var n=this._transformState;if(n.writecb=r,n.writechunk=t,n.writeencoding=e,!n.transforming){var o=this._readableState;(n.needTransform||o.needReadable||o.length<o.highWaterMark)&&this._read(o.highWaterMark)}},i.prototype._read=function(t){var e=this._transformState;null!==e.writechunk&&e.writecb&&!e.transforming?(e.transforming=!0,this._transform(e.writechunk,e.writeencoding,e.afterTransform)):e.needTransform=!0},i.prototype._destroy=function(t,e){var r=this;n.prototype._destroy.call(this,t,function(t){e(t),r.emit("close")})}},function(t,e,r){"use strict";t.exports=i;var n=r(52),o=r(41);function i(t){if(!(this instanceof i))return new i(t);n.call(this,t)}o.inherits=r(34),o.inherits(i,n),i.prototype._transform=function(t,e,r){r(null,t)}}])});
+protobuf.build = "minimal";
+
+// Serialization
+protobuf.Writer       = __webpack_require__(12);
+protobuf.BufferWriter = __webpack_require__(22);
+protobuf.Reader       = __webpack_require__(23);
+protobuf.BufferReader = __webpack_require__(24);
+
+// Utility
+protobuf.util         = __webpack_require__(13);
+protobuf.rpc          = __webpack_require__(25);
+protobuf.roots        = __webpack_require__(27);
+protobuf.configure    = configure;
+
+/* istanbul ignore next */
+/**
+ * Reconfigures the library according to the environment.
+ * @returns {undefined}
+ */
+function configure() {
+    protobuf.util._configure();
+    protobuf.Writer._configure(protobuf.BufferWriter);
+    protobuf.Reader._configure(protobuf.BufferReader);
+}
+
+// Set up buffer utility according to the environment
+configure();
+
+
+/***/ }),
+/* 12 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = Writer;
+
+var util      = __webpack_require__(13);
+
+var BufferWriter; // cyclic
+
+var LongBits  = util.LongBits,
+    base64    = util.base64,
+    utf8      = util.utf8;
+
+/**
+ * Constructs a new writer operation instance.
+ * @classdesc Scheduled writer operation.
+ * @constructor
+ * @param {function(*, Uint8Array, number)} fn Function to call
+ * @param {number} len Value byte length
+ * @param {*} val Value to write
+ * @ignore
+ */
+function Op(fn, len, val) {
+
+    /**
+     * Function to call.
+     * @type {function(Uint8Array, number, *)}
+     */
+    this.fn = fn;
+
+    /**
+     * Value byte length.
+     * @type {number}
+     */
+    this.len = len;
+
+    /**
+     * Next operation.
+     * @type {Writer.Op|undefined}
+     */
+    this.next = undefined;
+
+    /**
+     * Value to write.
+     * @type {*}
+     */
+    this.val = val; // type varies
+}
+
+/* istanbul ignore next */
+function noop() {} // eslint-disable-line no-empty-function
+
+/**
+ * Constructs a new writer state instance.
+ * @classdesc Copied writer state.
+ * @memberof Writer
+ * @constructor
+ * @param {Writer} writer Writer to copy state from
+ * @ignore
+ */
+function State(writer) {
+
+    /**
+     * Current head.
+     * @type {Writer.Op}
+     */
+    this.head = writer.head;
+
+    /**
+     * Current tail.
+     * @type {Writer.Op}
+     */
+    this.tail = writer.tail;
+
+    /**
+     * Current buffer length.
+     * @type {number}
+     */
+    this.len = writer.len;
+
+    /**
+     * Next state.
+     * @type {State|null}
+     */
+    this.next = writer.states;
+}
+
+/**
+ * Constructs a new writer instance.
+ * @classdesc Wire format writer using `Uint8Array` if available, otherwise `Array`.
+ * @constructor
+ */
+function Writer() {
+
+    /**
+     * Current length.
+     * @type {number}
+     */
+    this.len = 0;
+
+    /**
+     * Operations head.
+     * @type {Object}
+     */
+    this.head = new Op(noop, 0, 0);
+
+    /**
+     * Operations tail
+     * @type {Object}
+     */
+    this.tail = this.head;
+
+    /**
+     * Linked forked states.
+     * @type {Object|null}
+     */
+    this.states = null;
+
+    // When a value is written, the writer calculates its byte length and puts it into a linked
+    // list of operations to perform when finish() is called. This both allows us to allocate
+    // buffers of the exact required size and reduces the amount of work we have to do compared
+    // to first calculating over objects and then encoding over objects. In our case, the encoding
+    // part is just a linked list walk calling operations with already prepared values.
+}
+
+var create = function create() {
+    return util.Buffer
+        ? function create_buffer_setup() {
+            return (Writer.create = function create_buffer() {
+                return new BufferWriter();
+            })();
+        }
+        /* istanbul ignore next */
+        : function create_array() {
+            return new Writer();
+        };
+};
+
+/**
+ * Creates a new writer.
+ * @function
+ * @returns {BufferWriter|Writer} A {@link BufferWriter} when Buffers are supported, otherwise a {@link Writer}
+ */
+Writer.create = create();
+
+/**
+ * Allocates a buffer of the specified size.
+ * @param {number} size Buffer size
+ * @returns {Uint8Array} Buffer
+ */
+Writer.alloc = function alloc(size) {
+    return new util.Array(size);
+};
+
+// Use Uint8Array buffer pool in the browser, just like node does with buffers
+/* istanbul ignore else */
+if (util.Array !== Array)
+    Writer.alloc = util.pool(Writer.alloc, util.Array.prototype.subarray);
+
+/**
+ * Pushes a new operation to the queue.
+ * @param {function(Uint8Array, number, *)} fn Function to call
+ * @param {number} len Value byte length
+ * @param {number} val Value to write
+ * @returns {Writer} `this`
+ * @private
+ */
+Writer.prototype._push = function push(fn, len, val) {
+    this.tail = this.tail.next = new Op(fn, len, val);
+    this.len += len;
+    return this;
+};
+
+function writeByte(val, buf, pos) {
+    buf[pos] = val & 255;
+}
+
+function writeVarint32(val, buf, pos) {
+    while (val > 127) {
+        buf[pos++] = val & 127 | 128;
+        val >>>= 7;
+    }
+    buf[pos] = val;
+}
+
+/**
+ * Constructs a new varint writer operation instance.
+ * @classdesc Scheduled varint writer operation.
+ * @extends Op
+ * @constructor
+ * @param {number} len Value byte length
+ * @param {number} val Value to write
+ * @ignore
+ */
+function VarintOp(len, val) {
+    this.len = len;
+    this.next = undefined;
+    this.val = val;
+}
+
+VarintOp.prototype = Object.create(Op.prototype);
+VarintOp.prototype.fn = writeVarint32;
+
+/**
+ * Writes an unsigned 32 bit value as a varint.
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.uint32 = function write_uint32(value) {
+    // here, the call to this.push has been inlined and a varint specific Op subclass is used.
+    // uint32 is by far the most frequently used operation and benefits significantly from this.
+    this.len += (this.tail = this.tail.next = new VarintOp(
+        (value = value >>> 0)
+                < 128       ? 1
+        : value < 16384     ? 2
+        : value < 2097152   ? 3
+        : value < 268435456 ? 4
+        :                     5,
+    value)).len;
+    return this;
+};
+
+/**
+ * Writes a signed 32 bit value as a varint.
+ * @function
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.int32 = function write_int32(value) {
+    return value < 0
+        ? this._push(writeVarint64, 10, LongBits.fromNumber(value)) // 10 bytes per spec
+        : this.uint32(value);
+};
+
+/**
+ * Writes a 32 bit value as a varint, zig-zag encoded.
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.sint32 = function write_sint32(value) {
+    return this.uint32((value << 1 ^ value >> 31) >>> 0);
+};
+
+function writeVarint64(val, buf, pos) {
+    while (val.hi) {
+        buf[pos++] = val.lo & 127 | 128;
+        val.lo = (val.lo >>> 7 | val.hi << 25) >>> 0;
+        val.hi >>>= 7;
+    }
+    while (val.lo > 127) {
+        buf[pos++] = val.lo & 127 | 128;
+        val.lo = val.lo >>> 7;
+    }
+    buf[pos++] = val.lo;
+}
+
+/**
+ * Writes an unsigned 64 bit value as a varint.
+ * @param {Long|number|string} value Value to write
+ * @returns {Writer} `this`
+ * @throws {TypeError} If `value` is a string and no long library is present.
+ */
+Writer.prototype.uint64 = function write_uint64(value) {
+    var bits = LongBits.from(value);
+    return this._push(writeVarint64, bits.length(), bits);
+};
+
+/**
+ * Writes a signed 64 bit value as a varint.
+ * @function
+ * @param {Long|number|string} value Value to write
+ * @returns {Writer} `this`
+ * @throws {TypeError} If `value` is a string and no long library is present.
+ */
+Writer.prototype.int64 = Writer.prototype.uint64;
+
+/**
+ * Writes a signed 64 bit value as a varint, zig-zag encoded.
+ * @param {Long|number|string} value Value to write
+ * @returns {Writer} `this`
+ * @throws {TypeError} If `value` is a string and no long library is present.
+ */
+Writer.prototype.sint64 = function write_sint64(value) {
+    var bits = LongBits.from(value).zzEncode();
+    return this._push(writeVarint64, bits.length(), bits);
+};
+
+/**
+ * Writes a boolish value as a varint.
+ * @param {boolean} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.bool = function write_bool(value) {
+    return this._push(writeByte, 1, value ? 1 : 0);
+};
+
+function writeFixed32(val, buf, pos) {
+    buf[pos    ] =  val         & 255;
+    buf[pos + 1] =  val >>> 8   & 255;
+    buf[pos + 2] =  val >>> 16  & 255;
+    buf[pos + 3] =  val >>> 24;
+}
+
+/**
+ * Writes an unsigned 32 bit value as fixed 32 bits.
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.fixed32 = function write_fixed32(value) {
+    return this._push(writeFixed32, 4, value >>> 0);
+};
+
+/**
+ * Writes a signed 32 bit value as fixed 32 bits.
+ * @function
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.sfixed32 = Writer.prototype.fixed32;
+
+/**
+ * Writes an unsigned 64 bit value as fixed 64 bits.
+ * @param {Long|number|string} value Value to write
+ * @returns {Writer} `this`
+ * @throws {TypeError} If `value` is a string and no long library is present.
+ */
+Writer.prototype.fixed64 = function write_fixed64(value) {
+    var bits = LongBits.from(value);
+    return this._push(writeFixed32, 4, bits.lo)._push(writeFixed32, 4, bits.hi);
+};
+
+/**
+ * Writes a signed 64 bit value as fixed 64 bits.
+ * @function
+ * @param {Long|number|string} value Value to write
+ * @returns {Writer} `this`
+ * @throws {TypeError} If `value` is a string and no long library is present.
+ */
+Writer.prototype.sfixed64 = Writer.prototype.fixed64;
+
+/**
+ * Writes a float (32 bit).
+ * @function
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.float = function write_float(value) {
+    return this._push(util.float.writeFloatLE, 4, value);
+};
+
+/**
+ * Writes a double (64 bit float).
+ * @function
+ * @param {number} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.double = function write_double(value) {
+    return this._push(util.float.writeDoubleLE, 8, value);
+};
+
+var writeBytes = util.Array.prototype.set
+    ? function writeBytes_set(val, buf, pos) {
+        buf.set(val, pos); // also works for plain array values
+    }
+    /* istanbul ignore next */
+    : function writeBytes_for(val, buf, pos) {
+        for (var i = 0; i < val.length; ++i)
+            buf[pos + i] = val[i];
+    };
+
+/**
+ * Writes a sequence of bytes.
+ * @param {Uint8Array|string} value Buffer or base64 encoded string to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.bytes = function write_bytes(value) {
+    var len = value.length >>> 0;
+    if (!len)
+        return this._push(writeByte, 1, 0);
+    if (util.isString(value)) {
+        var buf = Writer.alloc(len = base64.length(value));
+        base64.decode(value, buf, 0);
+        value = buf;
+    }
+    return this.uint32(len)._push(writeBytes, len, value);
+};
+
+/**
+ * Writes a string.
+ * @param {string} value Value to write
+ * @returns {Writer} `this`
+ */
+Writer.prototype.string = function write_string(value) {
+    var len = utf8.length(value);
+    return len
+        ? this.uint32(len)._push(utf8.write, len, value)
+        : this._push(writeByte, 1, 0);
+};
+
+/**
+ * Forks this writer's state by pushing it to a stack.
+ * Calling {@link Writer#reset|reset} or {@link Writer#ldelim|ldelim} resets the writer to the previous state.
+ * @returns {Writer} `this`
+ */
+Writer.prototype.fork = function fork() {
+    this.states = new State(this);
+    this.head = this.tail = new Op(noop, 0, 0);
+    this.len = 0;
+    return this;
+};
+
+/**
+ * Resets this instance to the last state.
+ * @returns {Writer} `this`
+ */
+Writer.prototype.reset = function reset() {
+    if (this.states) {
+        this.head   = this.states.head;
+        this.tail   = this.states.tail;
+        this.len    = this.states.len;
+        this.states = this.states.next;
+    } else {
+        this.head = this.tail = new Op(noop, 0, 0);
+        this.len  = 0;
+    }
+    return this;
+};
+
+/**
+ * Resets to the last state and appends the fork state's current write length as a varint followed by its operations.
+ * @returns {Writer} `this`
+ */
+Writer.prototype.ldelim = function ldelim() {
+    var head = this.head,
+        tail = this.tail,
+        len  = this.len;
+    this.reset().uint32(len);
+    if (len) {
+        this.tail.next = head.next; // skip noop
+        this.tail = tail;
+        this.len += len;
+    }
+    return this;
+};
+
+/**
+ * Finishes the write operation.
+ * @returns {Uint8Array} Finished buffer
+ */
+Writer.prototype.finish = function finish() {
+    var head = this.head.next, // skip noop
+        buf  = this.constructor.alloc(this.len),
+        pos  = 0;
+    while (head) {
+        head.fn(head.val, buf, pos);
+        pos += head.len;
+        head = head.next;
+    }
+    // this.head = this.tail = null;
+    return buf;
+};
+
+Writer._configure = function(BufferWriter_) {
+    BufferWriter = BufferWriter_;
+    Writer.create = create();
+    BufferWriter._configure();
+};
+
+
+/***/ }),
+/* 13 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var util = exports;
+
+// used to return a Promise where callback is omitted
+util.asPromise = __webpack_require__(14);
+
+// converts to / from base64 encoded strings
+util.base64 = __webpack_require__(15);
+
+// base class of rpc.Service
+util.EventEmitter = __webpack_require__(16);
+
+// float handling accross browsers
+util.float = __webpack_require__(17);
+
+// requires modules optionally and hides the call from bundlers
+util.inquire = __webpack_require__(18);
+
+// converts to / from utf8 encoded strings
+util.utf8 = __webpack_require__(19);
+
+// provides a node-like buffer pool in the browser
+util.pool = __webpack_require__(20);
+
+// utility to work with the low and high bits of a 64 bit value
+util.LongBits = __webpack_require__(21);
+
+/**
+ * Whether running within node or not.
+ * @memberof util
+ * @type {boolean}
+ */
+util.isNode = Boolean(typeof __webpack_require__.g !== "undefined"
+                   && __webpack_require__.g
+                   && __webpack_require__.g.process
+                   && __webpack_require__.g.process.versions
+                   && __webpack_require__.g.process.versions.node);
+
+/**
+ * Global object reference.
+ * @memberof util
+ * @type {Object}
+ */
+util.global = util.isNode && __webpack_require__.g
+           || typeof window !== "undefined" && window
+           || typeof self   !== "undefined" && self
+           || this; // eslint-disable-line no-invalid-this
+
+/**
+ * An immuable empty array.
+ * @memberof util
+ * @type {Array.<*>}
+ * @const
+ */
+util.emptyArray = Object.freeze ? Object.freeze([]) : /* istanbul ignore next */ []; // used on prototypes
+
+/**
+ * An immutable empty object.
+ * @type {Object}
+ * @const
+ */
+util.emptyObject = Object.freeze ? Object.freeze({}) : /* istanbul ignore next */ {}; // used on prototypes
+
+/**
+ * Tests if the specified value is an integer.
+ * @function
+ * @param {*} value Value to test
+ * @returns {boolean} `true` if the value is an integer
+ */
+util.isInteger = Number.isInteger || /* istanbul ignore next */ function isInteger(value) {
+    return typeof value === "number" && isFinite(value) && Math.floor(value) === value;
+};
+
+/**
+ * Tests if the specified value is a string.
+ * @param {*} value Value to test
+ * @returns {boolean} `true` if the value is a string
+ */
+util.isString = function isString(value) {
+    return typeof value === "string" || value instanceof String;
+};
+
+/**
+ * Tests if the specified value is a non-null object.
+ * @param {*} value Value to test
+ * @returns {boolean} `true` if the value is a non-null object
+ */
+util.isObject = function isObject(value) {
+    return value && typeof value === "object";
+};
+
+/**
+ * Checks if a property on a message is considered to be present.
+ * This is an alias of {@link util.isSet}.
+ * @function
+ * @param {Object} obj Plain object or message instance
+ * @param {string} prop Property name
+ * @returns {boolean} `true` if considered to be present, otherwise `false`
+ */
+util.isset =
+
+/**
+ * Checks if a property on a message is considered to be present.
+ * @param {Object} obj Plain object or message instance
+ * @param {string} prop Property name
+ * @returns {boolean} `true` if considered to be present, otherwise `false`
+ */
+util.isSet = function isSet(obj, prop) {
+    var value = obj[prop];
+    if (value != null && obj.hasOwnProperty(prop)) // eslint-disable-line eqeqeq, no-prototype-builtins
+        return typeof value !== "object" || (Array.isArray(value) ? value.length : Object.keys(value).length) > 0;
+    return false;
+};
+
+/**
+ * Any compatible Buffer instance.
+ * This is a minimal stand-alone definition of a Buffer instance. The actual type is that exported by node's typings.
+ * @interface Buffer
+ * @extends Uint8Array
+ */
+
+/**
+ * Node's Buffer class if available.
+ * @type {Constructor<Buffer>}
+ */
+util.Buffer = (function() {
+    try {
+        var Buffer = util.inquire("buffer").Buffer;
+        // refuse to use non-node buffers if not explicitly assigned (perf reasons):
+        return Buffer.prototype.utf8Write ? Buffer : /* istanbul ignore next */ null;
+    } catch (e) {
+        /* istanbul ignore next */
+        return null;
+    }
+})();
+
+// Internal alias of or polyfull for Buffer.from.
+util._Buffer_from = null;
+
+// Internal alias of or polyfill for Buffer.allocUnsafe.
+util._Buffer_allocUnsafe = null;
+
+/**
+ * Creates a new buffer of whatever type supported by the environment.
+ * @param {number|number[]} [sizeOrArray=0] Buffer size or number array
+ * @returns {Uint8Array|Buffer} Buffer
+ */
+util.newBuffer = function newBuffer(sizeOrArray) {
+    /* istanbul ignore next */
+    return typeof sizeOrArray === "number"
+        ? util.Buffer
+            ? util._Buffer_allocUnsafe(sizeOrArray)
+            : new util.Array(sizeOrArray)
+        : util.Buffer
+            ? util._Buffer_from(sizeOrArray)
+            : typeof Uint8Array === "undefined"
+                ? sizeOrArray
+                : new Uint8Array(sizeOrArray);
+};
+
+/**
+ * Array implementation used in the browser. `Uint8Array` if supported, otherwise `Array`.
+ * @type {Constructor<Uint8Array>}
+ */
+util.Array = typeof Uint8Array !== "undefined" ? Uint8Array /* istanbul ignore next */ : Array;
+
+/**
+ * Any compatible Long instance.
+ * This is a minimal stand-alone definition of a Long instance. The actual type is that exported by long.js.
+ * @interface Long
+ * @property {number} low Low bits
+ * @property {number} high High bits
+ * @property {boolean} unsigned Whether unsigned or not
+ */
+
+/**
+ * Long.js's Long class if available.
+ * @type {Constructor<Long>}
+ */
+util.Long = /* istanbul ignore next */ util.global.dcodeIO && /* istanbul ignore next */ util.global.dcodeIO.Long
+         || /* istanbul ignore next */ util.global.Long
+         || util.inquire("long");
+
+/**
+ * Regular expression used to verify 2 bit (`bool`) map keys.
+ * @type {RegExp}
+ * @const
+ */
+util.key2Re = /^true|false|0|1$/;
+
+/**
+ * Regular expression used to verify 32 bit (`int32` etc.) map keys.
+ * @type {RegExp}
+ * @const
+ */
+util.key32Re = /^-?(?:0|[1-9][0-9]*)$/;
+
+/**
+ * Regular expression used to verify 64 bit (`int64` etc.) map keys.
+ * @type {RegExp}
+ * @const
+ */
+util.key64Re = /^(?:[\\x00-\\xff]{8}|-?(?:0|[1-9][0-9]*))$/;
+
+/**
+ * Converts a number or long to an 8 characters long hash string.
+ * @param {Long|number} value Value to convert
+ * @returns {string} Hash
+ */
+util.longToHash = function longToHash(value) {
+    return value
+        ? util.LongBits.from(value).toHash()
+        : util.LongBits.zeroHash;
+};
+
+/**
+ * Converts an 8 characters long hash string to a long or number.
+ * @param {string} hash Hash
+ * @param {boolean} [unsigned=false] Whether unsigned or not
+ * @returns {Long|number} Original value
+ */
+util.longFromHash = function longFromHash(hash, unsigned) {
+    var bits = util.LongBits.fromHash(hash);
+    if (util.Long)
+        return util.Long.fromBits(bits.lo, bits.hi, unsigned);
+    return bits.toNumber(Boolean(unsigned));
+};
+
+/**
+ * Merges the properties of the source object into the destination object.
+ * @memberof util
+ * @param {Object.<string,*>} dst Destination object
+ * @param {Object.<string,*>} src Source object
+ * @param {boolean} [ifNotSet=false] Merges only if the key is not already set
+ * @returns {Object.<string,*>} Destination object
+ */
+function merge(dst, src, ifNotSet) { // used by converters
+    for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
+        if (dst[keys[i]] === undefined || !ifNotSet)
+            dst[keys[i]] = src[keys[i]];
+    return dst;
+}
+
+util.merge = merge;
+
+/**
+ * Converts the first character of a string to lower case.
+ * @param {string} str String to convert
+ * @returns {string} Converted string
+ */
+util.lcFirst = function lcFirst(str) {
+    return str.charAt(0).toLowerCase() + str.substring(1);
+};
+
+/**
+ * Creates a custom error constructor.
+ * @memberof util
+ * @param {string} name Error name
+ * @returns {Constructor<Error>} Custom error constructor
+ */
+function newError(name) {
+
+    function CustomError(message, properties) {
+
+        if (!(this instanceof CustomError))
+            return new CustomError(message, properties);
+
+        // Error.call(this, message);
+        // ^ just returns a new error instance because the ctor can be called as a function
+
+        Object.defineProperty(this, "message", { get: function() { return message; } });
+
+        /* istanbul ignore next */
+        if (Error.captureStackTrace) // node
+            Error.captureStackTrace(this, CustomError);
+        else
+            Object.defineProperty(this, "stack", { value: new Error().stack || "" });
+
+        if (properties)
+            merge(this, properties);
+    }
+
+    (CustomError.prototype = Object.create(Error.prototype)).constructor = CustomError;
+
+    Object.defineProperty(CustomError.prototype, "name", { get: function() { return name; } });
+
+    CustomError.prototype.toString = function toString() {
+        return this.name + ": " + this.message;
+    };
+
+    return CustomError;
+}
+
+util.newError = newError;
+
+/**
+ * Constructs a new protocol error.
+ * @classdesc Error subclass indicating a protocol specifc error.
+ * @memberof util
+ * @extends Error
+ * @template T extends Message<T>
+ * @constructor
+ * @param {string} message Error message
+ * @param {Object.<string,*>} [properties] Additional properties
+ * @example
+ * try {
+ *     MyMessage.decode(someBuffer); // throws if required fields are missing
+ * } catch (e) {
+ *     if (e instanceof ProtocolError && e.instance)
+ *         console.log("decoded so far: " + JSON.stringify(e.instance));
+ * }
+ */
+util.ProtocolError = newError("ProtocolError");
+
+/**
+ * So far decoded message instance.
+ * @name util.ProtocolError#instance
+ * @type {Message<T>}
+ */
+
+/**
+ * A OneOf getter as returned by {@link util.oneOfGetter}.
+ * @typedef OneOfGetter
+ * @type {function}
+ * @returns {string|undefined} Set field name, if any
+ */
+
+/**
+ * Builds a getter for a oneof's present field name.
+ * @param {string[]} fieldNames Field names
+ * @returns {OneOfGetter} Unbound getter
+ */
+util.oneOfGetter = function getOneOf(fieldNames) {
+    var fieldMap = {};
+    for (var i = 0; i < fieldNames.length; ++i)
+        fieldMap[fieldNames[i]] = 1;
+
+    /**
+     * @returns {string|undefined} Set field name, if any
+     * @this Object
+     * @ignore
+     */
+    return function() { // eslint-disable-line consistent-return
+        for (var keys = Object.keys(this), i = keys.length - 1; i > -1; --i)
+            if (fieldMap[keys[i]] === 1 && this[keys[i]] !== undefined && this[keys[i]] !== null)
+                return keys[i];
+    };
+};
+
+/**
+ * A OneOf setter as returned by {@link util.oneOfSetter}.
+ * @typedef OneOfSetter
+ * @type {function}
+ * @param {string|undefined} value Field name
+ * @returns {undefined}
+ */
+
+/**
+ * Builds a setter for a oneof's present field name.
+ * @param {string[]} fieldNames Field names
+ * @returns {OneOfSetter} Unbound setter
+ */
+util.oneOfSetter = function setOneOf(fieldNames) {
+
+    /**
+     * @param {string} name Field name
+     * @returns {undefined}
+     * @this Object
+     * @ignore
+     */
+    return function(name) {
+        for (var i = 0; i < fieldNames.length; ++i)
+            if (fieldNames[i] !== name)
+                delete this[fieldNames[i]];
+    };
+};
+
+/**
+ * Default conversion options used for {@link Message#toJSON} implementations.
+ *
+ * These options are close to proto3's JSON mapping with the exception that internal types like Any are handled just like messages. More precisely:
+ *
+ * - Longs become strings
+ * - Enums become string keys
+ * - Bytes become base64 encoded strings
+ * - (Sub-)Messages become plain objects
+ * - Maps become plain objects with all string keys
+ * - Repeated fields become arrays
+ * - NaN and Infinity for float and double fields become strings
+ *
+ * @type {IConversionOptions}
+ * @see https://developers.google.com/protocol-buffers/docs/proto3?hl=en#json
+ */
+util.toJSONOptions = {
+    longs: String,
+    enums: String,
+    bytes: String,
+    json: true
+};
+
+// Sets up buffer utility according to the environment (called in index-minimal)
+util._configure = function() {
+    var Buffer = util.Buffer;
+    /* istanbul ignore if */
+    if (!Buffer) {
+        util._Buffer_from = util._Buffer_allocUnsafe = null;
+        return;
+    }
+    // because node 4.x buffers are incompatible & immutable
+    // see: https://github.com/dcodeIO/protobuf.js/pull/665
+    util._Buffer_from = Buffer.from !== Uint8Array.from && Buffer.from ||
+        /* istanbul ignore next */
+        function Buffer_from(value, encoding) {
+            return new Buffer(value, encoding);
+        };
+    util._Buffer_allocUnsafe = Buffer.allocUnsafe ||
+        /* istanbul ignore next */
+        function Buffer_allocUnsafe(size) {
+            return new Buffer(size);
+        };
+};
+
+
+/***/ }),
+/* 14 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = asPromise;
+
+/**
+ * Callback as used by {@link util.asPromise}.
+ * @typedef asPromiseCallback
+ * @type {function}
+ * @param {Error|null} error Error, if any
+ * @param {...*} params Additional arguments
+ * @returns {undefined}
+ */
+
+/**
+ * Returns a promise from a node-style callback function.
+ * @memberof util
+ * @param {asPromiseCallback} fn Function to call
+ * @param {*} ctx Function context
+ * @param {...*} params Function arguments
+ * @returns {Promise<*>} Promisified function
+ */
+function asPromise(fn, ctx/*, varargs */) {
+    var params  = new Array(arguments.length - 1),
+        offset  = 0,
+        index   = 2,
+        pending = true;
+    while (index < arguments.length)
+        params[offset++] = arguments[index++];
+    return new Promise(function executor(resolve, reject) {
+        params[offset] = function callback(err/*, varargs */) {
+            if (pending) {
+                pending = false;
+                if (err)
+                    reject(err);
+                else {
+                    var params = new Array(arguments.length - 1),
+                        offset = 0;
+                    while (offset < params.length)
+                        params[offset++] = arguments[offset];
+                    resolve.apply(null, params);
+                }
+            }
+        };
+        try {
+            fn.apply(ctx || null, params);
+        } catch (err) {
+            if (pending) {
+                pending = false;
+                reject(err);
+            }
+        }
+    });
+}
+
+
+/***/ }),
+/* 15 */
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+/**
+ * A minimal base64 implementation for number arrays.
+ * @memberof util
+ * @namespace
+ */
+var base64 = exports;
+
+/**
+ * Calculates the byte length of a base64 encoded string.
+ * @param {string} string Base64 encoded string
+ * @returns {number} Byte length
+ */
+base64.length = function length(string) {
+    var p = string.length;
+    if (!p)
+        return 0;
+    var n = 0;
+    while (--p % 4 > 1 && string.charAt(p) === "=")
+        ++n;
+    return Math.ceil(string.length * 3) / 4 - n;
+};
+
+// Base64 encoding table
+var b64 = new Array(64);
+
+// Base64 decoding table
+var s64 = new Array(123);
+
+// 65..90, 97..122, 48..57, 43, 47
+for (var i = 0; i < 64;)
+    s64[b64[i] = i < 26 ? i + 65 : i < 52 ? i + 71 : i < 62 ? i - 4 : i - 59 | 43] = i++;
+
+/**
+ * Encodes a buffer to a base64 encoded string.
+ * @param {Uint8Array} buffer Source buffer
+ * @param {number} start Source start
+ * @param {number} end Source end
+ * @returns {string} Base64 encoded string
+ */
+base64.encode = function encode(buffer, start, end) {
+    var parts = null,
+        chunk = [];
+    var i = 0, // output index
+        j = 0, // goto index
+        t;     // temporary
+    while (start < end) {
+        var b = buffer[start++];
+        switch (j) {
+            case 0:
+                chunk[i++] = b64[b >> 2];
+                t = (b & 3) << 4;
+                j = 1;
+                break;
+            case 1:
+                chunk[i++] = b64[t | b >> 4];
+                t = (b & 15) << 2;
+                j = 2;
+                break;
+            case 2:
+                chunk[i++] = b64[t | b >> 6];
+                chunk[i++] = b64[b & 63];
+                j = 0;
+                break;
+        }
+        if (i > 8191) {
+            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk));
+            i = 0;
+        }
+    }
+    if (j) {
+        chunk[i++] = b64[t];
+        chunk[i++] = 61;
+        if (j === 1)
+            chunk[i++] = 61;
+    }
+    if (parts) {
+        if (i)
+            parts.push(String.fromCharCode.apply(String, chunk.slice(0, i)));
+        return parts.join("");
+    }
+    return String.fromCharCode.apply(String, chunk.slice(0, i));
+};
+
+var invalidEncoding = "invalid encoding";
+
+/**
+ * Decodes a base64 encoded string to a buffer.
+ * @param {string} string Source string
+ * @param {Uint8Array} buffer Destination buffer
+ * @param {number} offset Destination offset
+ * @returns {number} Number of bytes written
+ * @throws {Error} If encoding is invalid
+ */
+base64.decode = function decode(string, buffer, offset) {
+    var start = offset;
+    var j = 0, // goto index
+        t;     // temporary
+    for (var i = 0; i < string.length;) {
+        var c = string.charCodeAt(i++);
+        if (c === 61 && j > 1)
+            break;
+        if ((c = s64[c]) === undefined)
+            throw Error(invalidEncoding);
+        switch (j) {
+            case 0:
+                t = c;
+                j = 1;
+                break;
+            case 1:
+                buffer[offset++] = t << 2 | (c & 48) >> 4;
+                t = c;
+                j = 2;
+                break;
+            case 2:
+                buffer[offset++] = (t & 15) << 4 | (c & 60) >> 2;
+                t = c;
+                j = 3;
+                break;
+            case 3:
+                buffer[offset++] = (t & 3) << 6 | c;
+                j = 0;
+                break;
+        }
+    }
+    if (j === 1)
+        throw Error(invalidEncoding);
+    return offset - start;
+};
+
+/**
+ * Tests if the specified string appears to be base64 encoded.
+ * @param {string} string String to test
+ * @returns {boolean} `true` if probably base64 encoded, otherwise false
+ */
+base64.test = function test(string) {
+    return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(string);
+};
+
+
+/***/ }),
+/* 16 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = EventEmitter;
+
+/**
+ * Constructs a new event emitter instance.
+ * @classdesc A minimal event emitter.
+ * @memberof util
+ * @constructor
+ */
+function EventEmitter() {
+
+    /**
+     * Registered listeners.
+     * @type {Object.<string,*>}
+     * @private
+     */
+    this._listeners = {};
+}
+
+/**
+ * Registers an event listener.
+ * @param {string} evt Event name
+ * @param {function} fn Listener
+ * @param {*} [ctx] Listener context
+ * @returns {util.EventEmitter} `this`
+ */
+EventEmitter.prototype.on = function on(evt, fn, ctx) {
+    (this._listeners[evt] || (this._listeners[evt] = [])).push({
+        fn  : fn,
+        ctx : ctx || this
+    });
+    return this;
+};
+
+/**
+ * Removes an event listener or any matching listeners if arguments are omitted.
+ * @param {string} [evt] Event name. Removes all listeners if omitted.
+ * @param {function} [fn] Listener to remove. Removes all listeners of `evt` if omitted.
+ * @returns {util.EventEmitter} `this`
+ */
+EventEmitter.prototype.off = function off(evt, fn) {
+    if (evt === undefined)
+        this._listeners = {};
+    else {
+        if (fn === undefined)
+            this._listeners[evt] = [];
+        else {
+            var listeners = this._listeners[evt];
+            for (var i = 0; i < listeners.length;)
+                if (listeners[i].fn === fn)
+                    listeners.splice(i, 1);
+                else
+                    ++i;
+        }
+    }
+    return this;
+};
+
+/**
+ * Emits an event by calling its listeners with the specified arguments.
+ * @param {string} evt Event name
+ * @param {...*} args Arguments
+ * @returns {util.EventEmitter} `this`
+ */
+EventEmitter.prototype.emit = function emit(evt) {
+    var listeners = this._listeners[evt];
+    if (listeners) {
+        var args = [],
+            i = 1;
+        for (; i < arguments.length;)
+            args.push(arguments[i++]);
+        for (i = 0; i < listeners.length;)
+            listeners[i].fn.apply(listeners[i++].ctx, args);
+    }
+    return this;
+};
+
+
+/***/ }),
+/* 17 */
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = factory(factory);
+
+/**
+ * Reads / writes floats / doubles from / to buffers.
+ * @name util.float
+ * @namespace
+ */
+
+/**
+ * Writes a 32 bit float to a buffer using little endian byte order.
+ * @name util.float.writeFloatLE
+ * @function
+ * @param {number} val Value to write
+ * @param {Uint8Array} buf Target buffer
+ * @param {number} pos Target buffer offset
+ * @returns {undefined}
+ */
+
+/**
+ * Writes a 32 bit float to a buffer using big endian byte order.
+ * @name util.float.writeFloatBE
+ * @function
+ * @param {number} val Value to write
+ * @param {Uint8Array} buf Target buffer
+ * @param {number} pos Target buffer offset
+ * @returns {undefined}
+ */
+
+/**
+ * Reads a 32 bit float from a buffer using little endian byte order.
+ * @name util.float.readFloatLE
+ * @function
+ * @param {Uint8Array} buf Source buffer
+ * @param {number} pos Source buffer offset
+ * @returns {number} Value read
+ */
+
+/**
+ * Reads a 32 bit float from a buffer using big endian byte order.
+ * @name util.float.readFloatBE
+ * @function
+ * @param {Uint8Array} buf Source buffer
+ * @param {number} pos Source buffer offset
+ * @returns {number} Value read
+ */
+
+/**
+ * Writes a 64 bit double to a buffer using little endian byte order.
+ * @name util.float.writeDoubleLE
+ * @function
+ * @param {number} val Value to write
+ * @param {Uint8Array} buf Target buffer
+ * @param {number} pos Target buffer offset
+ * @returns {undefined}
+ */
+
+/**
+ * Writes a 64 bit double to a buffer using big endian byte order.
+ * @name util.float.writeDoubleBE
+ * @function
+ * @param {number} val Value to write
+ * @param {Uint8Array} buf Target buffer
+ * @param {number} pos Target buffer offset
+ * @returns {undefined}
+ */
+
+/**
+ * Reads a 64 bit double from a buffer using little endian byte order.
+ * @name util.float.readDoubleLE
+ * @function
+ * @param {Uint8Array} buf Source buffer
+ * @param {number} pos Source buffer offset
+ * @returns {number} Value read
+ */
+
+/**
+ * Reads a 64 bit double from a buffer using big endian byte order.
+ * @name util.float.readDoubleBE
+ * @function
+ * @param {Uint8Array} buf Source buffer
+ * @param {number} pos Source buffer offset
+ * @returns {number} Value read
+ */
+
+// Factory function for the purpose of node-based testing in modified global environments
+function factory(exports) {
+
+    // float: typed array
+    if (typeof Float32Array !== "undefined") (function() {
+
+        var f32 = new Float32Array([ -0 ]),
+            f8b = new Uint8Array(f32.buffer),
+            le  = f8b[3] === 128;
+
+        function writeFloat_f32_cpy(val, buf, pos) {
+            f32[0] = val;
+            buf[pos    ] = f8b[0];
+            buf[pos + 1] = f8b[1];
+            buf[pos + 2] = f8b[2];
+            buf[pos + 3] = f8b[3];
+        }
+
+        function writeFloat_f32_rev(val, buf, pos) {
+            f32[0] = val;
+            buf[pos    ] = f8b[3];
+            buf[pos + 1] = f8b[2];
+            buf[pos + 2] = f8b[1];
+            buf[pos + 3] = f8b[0];
+        }
+
+        /* istanbul ignore next */
+        exports.writeFloatLE = le ? writeFloat_f32_cpy : writeFloat_f32_rev;
+        /* istanbul ignore next */
+        exports.writeFloatBE = le ? writeFloat_f32_rev : writeFloat_f32_cpy;
+
+        function readFloat_f32_cpy(buf, pos) {
+            f8b[0] = buf[pos    ];
+            f8b[1] = buf[pos + 1];
+            f8b[2] = buf[pos + 2];
+            f8b[3] = buf[pos + 3];
+            return f32[0];
+        }
+
+        function readFloat_f32_rev(buf, pos) {
+            f8b[3] = buf[pos    ];
+            f8b[2] = buf[pos + 1];
+            f8b[1] = buf[pos + 2];
+            f8b[0] = buf[pos + 3];
+            return f32[0];
+        }
+
+        /* istanbul ignore next */
+        exports.readFloatLE = le ? readFloat_f32_cpy : readFloat_f32_rev;
+        /* istanbul ignore next */
+        exports.readFloatBE = le ? readFloat_f32_rev : readFloat_f32_cpy;
+
+    // float: ieee754
+    })(); else (function() {
+
+        function writeFloat_ieee754(writeUint, val, buf, pos) {
+            var sign = val < 0 ? 1 : 0;
+            if (sign)
+                val = -val;
+            if (val === 0)
+                writeUint(1 / val > 0 ? /* positive */ 0 : /* negative 0 */ 2147483648, buf, pos);
+            else if (isNaN(val))
+                writeUint(2143289344, buf, pos);
+            else if (val > 3.4028234663852886e+38) // +-Infinity
+                writeUint((sign << 31 | 2139095040) >>> 0, buf, pos);
+            else if (val < 1.1754943508222875e-38) // denormal
+                writeUint((sign << 31 | Math.round(val / 1.401298464324817e-45)) >>> 0, buf, pos);
+            else {
+                var exponent = Math.floor(Math.log(val) / Math.LN2),
+                    mantissa = Math.round(val * Math.pow(2, -exponent) * 8388608) & 8388607;
+                writeUint((sign << 31 | exponent + 127 << 23 | mantissa) >>> 0, buf, pos);
+            }
+        }
+
+        exports.writeFloatLE = writeFloat_ieee754.bind(null, writeUintLE);
+        exports.writeFloatBE = writeFloat_ieee754.bind(null, writeUintBE);
+
+        function readFloat_ieee754(readUint, buf, pos) {
+            var uint = readUint(buf, pos),
+                sign = (uint >> 31) * 2 + 1,
+                exponent = uint >>> 23 & 255,
+                mantissa = uint & 8388607;
+            return exponent === 255
+                ? mantissa
+                ? NaN
+                : sign * Infinity
+                : exponent === 0 // denormal
+                ? sign * 1.401298464324817e-45 * mantissa
+                : sign * Math.pow(2, exponent - 150) * (mantissa + 8388608);
+        }
+
+        exports.readFloatLE = readFloat_ieee754.bind(null, readUintLE);
+        exports.readFloatBE = readFloat_ieee754.bind(null, readUintBE);
+
+    })();
+
+    // double: typed array
+    if (typeof Float64Array !== "undefined") (function() {
+
+        var f64 = new Float64Array([-0]),
+            f8b = new Uint8Array(f64.buffer),
+            le  = f8b[7] === 128;
+
+        function writeDouble_f64_cpy(val, buf, pos) {
+            f64[0] = val;
+            buf[pos    ] = f8b[0];
+            buf[pos + 1] = f8b[1];
+            buf[pos + 2] = f8b[2];
+            buf[pos + 3] = f8b[3];
+            buf[pos + 4] = f8b[4];
+            buf[pos + 5] = f8b[5];
+            buf[pos + 6] = f8b[6];
+            buf[pos + 7] = f8b[7];
+        }
+
+        function writeDouble_f64_rev(val, buf, pos) {
+            f64[0] = val;
+            buf[pos    ] = f8b[7];
+            buf[pos + 1] = f8b[6];
+            buf[pos + 2] = f8b[5];
+            buf[pos + 3] = f8b[4];
+            buf[pos + 4] = f8b[3];
+            buf[pos + 5] = f8b[2];
+            buf[pos + 6] = f8b[1];
+            buf[pos + 7] = f8b[0];
+        }
+
+        /* istanbul ignore next */
+        exports.writeDoubleLE = le ? writeDouble_f64_cpy : writeDouble_f64_rev;
+        /* istanbul ignore next */
+        exports.writeDoubleBE = le ? writeDouble_f64_rev : writeDouble_f64_cpy;
+
+        function readDouble_f64_cpy(buf, pos) {
+            f8b[0] = buf[pos    ];
+            f8b[1] = buf[pos + 1];
+            f8b[2] = buf[pos + 2];
+            f8b[3] = buf[pos + 3];
+            f8b[4] = buf[pos + 4];
+            f8b[5] = buf[pos + 5];
+            f8b[6] = buf[pos + 6];
+            f8b[7] = buf[pos + 7];
+            return f64[0];
+        }
+
+        function readDouble_f64_rev(buf, pos) {
+            f8b[7] = buf[pos    ];
+            f8b[6] = buf[pos + 1];
+            f8b[5] = buf[pos + 2];
+            f8b[4] = buf[pos + 3];
+            f8b[3] = buf[pos + 4];
+            f8b[2] = buf[pos + 5];
+            f8b[1] = buf[pos + 6];
+            f8b[0] = buf[pos + 7];
+            return f64[0];
+        }
+
+        /* istanbul ignore next */
+        exports.readDoubleLE = le ? readDouble_f64_cpy : readDouble_f64_rev;
+        /* istanbul ignore next */
+        exports.readDoubleBE = le ? readDouble_f64_rev : readDouble_f64_cpy;
+
+    // double: ieee754
+    })(); else (function() {
+
+        function writeDouble_ieee754(writeUint, off0, off1, val, buf, pos) {
+            var sign = val < 0 ? 1 : 0;
+            if (sign)
+                val = -val;
+            if (val === 0) {
+                writeUint(0, buf, pos + off0);
+                writeUint(1 / val > 0 ? /* positive */ 0 : /* negative 0 */ 2147483648, buf, pos + off1);
+            } else if (isNaN(val)) {
+                writeUint(0, buf, pos + off0);
+                writeUint(2146959360, buf, pos + off1);
+            } else if (val > 1.7976931348623157e+308) { // +-Infinity
+                writeUint(0, buf, pos + off0);
+                writeUint((sign << 31 | 2146435072) >>> 0, buf, pos + off1);
+            } else {
+                var mantissa;
+                if (val < 2.2250738585072014e-308) { // denormal
+                    mantissa = val / 5e-324;
+                    writeUint(mantissa >>> 0, buf, pos + off0);
+                    writeUint((sign << 31 | mantissa / 4294967296) >>> 0, buf, pos + off1);
+                } else {
+                    var exponent = Math.floor(Math.log(val) / Math.LN2);
+                    if (exponent === 1024)
+                        exponent = 1023;
+                    mantissa = val * Math.pow(2, -exponent);
+                    writeUint(mantissa * 4503599627370496 >>> 0, buf, pos + off0);
+                    writeUint((sign << 31 | exponent + 1023 << 20 | mantissa * 1048576 & 1048575) >>> 0, buf, pos + off1);
+                }
+            }
+        }
+
+        exports.writeDoubleLE = writeDouble_ieee754.bind(null, writeUintLE, 0, 4);
+        exports.writeDoubleBE = writeDouble_ieee754.bind(null, writeUintBE, 4, 0);
+
+        function readDouble_ieee754(readUint, off0, off1, buf, pos) {
+            var lo = readUint(buf, pos + off0),
+                hi = readUint(buf, pos + off1);
+            var sign = (hi >> 31) * 2 + 1,
+                exponent = hi >>> 20 & 2047,
+                mantissa = 4294967296 * (hi & 1048575) + lo;
+            return exponent === 2047
+                ? mantissa
+                ? NaN
+                : sign * Infinity
+                : exponent === 0 // denormal
+                ? sign * 5e-324 * mantissa
+                : sign * Math.pow(2, exponent - 1075) * (mantissa + 4503599627370496);
+        }
+
+        exports.readDoubleLE = readDouble_ieee754.bind(null, readUintLE, 0, 4);
+        exports.readDoubleBE = readDouble_ieee754.bind(null, readUintBE, 4, 0);
+
+    })();
+
+    return exports;
+}
+
+// uint helpers
+
+function writeUintLE(val, buf, pos) {
+    buf[pos    ] =  val        & 255;
+    buf[pos + 1] =  val >>> 8  & 255;
+    buf[pos + 2] =  val >>> 16 & 255;
+    buf[pos + 3] =  val >>> 24;
+}
+
+function writeUintBE(val, buf, pos) {
+    buf[pos    ] =  val >>> 24;
+    buf[pos + 1] =  val >>> 16 & 255;
+    buf[pos + 2] =  val >>> 8  & 255;
+    buf[pos + 3] =  val        & 255;
+}
+
+function readUintLE(buf, pos) {
+    return (buf[pos    ]
+          | buf[pos + 1] << 8
+          | buf[pos + 2] << 16
+          | buf[pos + 3] << 24) >>> 0;
+}
+
+function readUintBE(buf, pos) {
+    return (buf[pos    ] << 24
+          | buf[pos + 1] << 16
+          | buf[pos + 2] << 8
+          | buf[pos + 3]) >>> 0;
+}
+
+
+/***/ }),
+/* 18 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = inquire;
+
+/**
+ * Requires a module only if available.
+ * @memberof util
+ * @param {string} moduleName Module to require
+ * @returns {?Object} Required module if available and not empty, otherwise `null`
+ */
+function inquire(moduleName) {
+    try {
+        var mod = eval("quire".replace(/^/,"re"))(moduleName); // eslint-disable-line no-eval
+        if (mod && (mod.length || Object.keys(mod).length))
+            return mod;
+    } catch (e) {} // eslint-disable-line no-empty
+    return null;
+}
+
+
+/***/ }),
+/* 19 */
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+/**
+ * A minimal UTF8 implementation for number arrays.
+ * @memberof util
+ * @namespace
+ */
+var utf8 = exports;
+
+/**
+ * Calculates the UTF8 byte length of a string.
+ * @param {string} string String
+ * @returns {number} Byte length
+ */
+utf8.length = function utf8_length(string) {
+    var len = 0,
+        c = 0;
+    for (var i = 0; i < string.length; ++i) {
+        c = string.charCodeAt(i);
+        if (c < 128)
+            len += 1;
+        else if (c < 2048)
+            len += 2;
+        else if ((c & 0xFC00) === 0xD800 && (string.charCodeAt(i + 1) & 0xFC00) === 0xDC00) {
+            ++i;
+            len += 4;
+        } else
+            len += 3;
+    }
+    return len;
+};
+
+/**
+ * Reads UTF8 bytes as a string.
+ * @param {Uint8Array} buffer Source buffer
+ * @param {number} start Source start
+ * @param {number} end Source end
+ * @returns {string} String read
+ */
+utf8.read = function utf8_read(buffer, start, end) {
+    var len = end - start;
+    if (len < 1)
+        return "";
+    var parts = null,
+        chunk = [],
+        i = 0, // char offset
+        t;     // temporary
+    while (start < end) {
+        t = buffer[start++];
+        if (t < 128)
+            chunk[i++] = t;
+        else if (t > 191 && t < 224)
+            chunk[i++] = (t & 31) << 6 | buffer[start++] & 63;
+        else if (t > 239 && t < 365) {
+            t = ((t & 7) << 18 | (buffer[start++] & 63) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63) - 0x10000;
+            chunk[i++] = 0xD800 + (t >> 10);
+            chunk[i++] = 0xDC00 + (t & 1023);
+        } else
+            chunk[i++] = (t & 15) << 12 | (buffer[start++] & 63) << 6 | buffer[start++] & 63;
+        if (i > 8191) {
+            (parts || (parts = [])).push(String.fromCharCode.apply(String, chunk));
+            i = 0;
+        }
+    }
+    if (parts) {
+        if (i)
+            parts.push(String.fromCharCode.apply(String, chunk.slice(0, i)));
+        return parts.join("");
+    }
+    return String.fromCharCode.apply(String, chunk.slice(0, i));
+};
+
+/**
+ * Writes a string as UTF8 bytes.
+ * @param {string} string Source string
+ * @param {Uint8Array} buffer Destination buffer
+ * @param {number} offset Destination offset
+ * @returns {number} Bytes written
+ */
+utf8.write = function utf8_write(string, buffer, offset) {
+    var start = offset,
+        c1, // character 1
+        c2; // character 2
+    for (var i = 0; i < string.length; ++i) {
+        c1 = string.charCodeAt(i);
+        if (c1 < 128) {
+            buffer[offset++] = c1;
+        } else if (c1 < 2048) {
+            buffer[offset++] = c1 >> 6       | 192;
+            buffer[offset++] = c1       & 63 | 128;
+        } else if ((c1 & 0xFC00) === 0xD800 && ((c2 = string.charCodeAt(i + 1)) & 0xFC00) === 0xDC00) {
+            c1 = 0x10000 + ((c1 & 0x03FF) << 10) + (c2 & 0x03FF);
+            ++i;
+            buffer[offset++] = c1 >> 18      | 240;
+            buffer[offset++] = c1 >> 12 & 63 | 128;
+            buffer[offset++] = c1 >> 6  & 63 | 128;
+            buffer[offset++] = c1       & 63 | 128;
+        } else {
+            buffer[offset++] = c1 >> 12      | 224;
+            buffer[offset++] = c1 >> 6  & 63 | 128;
+            buffer[offset++] = c1       & 63 | 128;
+        }
+    }
+    return offset - start;
+};
+
+
+/***/ }),
+/* 20 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = pool;
+
+/**
+ * An allocator as used by {@link util.pool}.
+ * @typedef PoolAllocator
+ * @type {function}
+ * @param {number} size Buffer size
+ * @returns {Uint8Array} Buffer
+ */
+
+/**
+ * A slicer as used by {@link util.pool}.
+ * @typedef PoolSlicer
+ * @type {function}
+ * @param {number} start Start offset
+ * @param {number} end End offset
+ * @returns {Uint8Array} Buffer slice
+ * @this {Uint8Array}
+ */
+
+/**
+ * A general purpose buffer pool.
+ * @memberof util
+ * @function
+ * @param {PoolAllocator} alloc Allocator
+ * @param {PoolSlicer} slice Slicer
+ * @param {number} [size=8192] Slab size
+ * @returns {PoolAllocator} Pooled allocator
+ */
+function pool(alloc, slice, size) {
+    var SIZE   = size || 8192;
+    var MAX    = SIZE >>> 1;
+    var slab   = null;
+    var offset = SIZE;
+    return function pool_alloc(size) {
+        if (size < 1 || size > MAX)
+            return alloc(size);
+        if (offset + size > SIZE) {
+            slab = alloc(SIZE);
+            offset = 0;
+        }
+        var buf = slice.call(slab, offset, offset += size);
+        if (offset & 7) // align to 32 bit
+            offset = (offset | 7) + 1;
+        return buf;
+    };
+}
+
+
+/***/ }),
+/* 21 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = LongBits;
+
+var util = __webpack_require__(13);
+
+/**
+ * Constructs new long bits.
+ * @classdesc Helper class for working with the low and high bits of a 64 bit value.
+ * @memberof util
+ * @constructor
+ * @param {number} lo Low 32 bits, unsigned
+ * @param {number} hi High 32 bits, unsigned
+ */
+function LongBits(lo, hi) {
+
+    // note that the casts below are theoretically unnecessary as of today, but older statically
+    // generated converter code might still call the ctor with signed 32bits. kept for compat.
+
+    /**
+     * Low bits.
+     * @type {number}
+     */
+    this.lo = lo >>> 0;
+
+    /**
+     * High bits.
+     * @type {number}
+     */
+    this.hi = hi >>> 0;
+}
+
+/**
+ * Zero bits.
+ * @memberof util.LongBits
+ * @type {util.LongBits}
+ */
+var zero = LongBits.zero = new LongBits(0, 0);
+
+zero.toNumber = function() { return 0; };
+zero.zzEncode = zero.zzDecode = function() { return this; };
+zero.length = function() { return 1; };
+
+/**
+ * Zero hash.
+ * @memberof util.LongBits
+ * @type {string}
+ */
+var zeroHash = LongBits.zeroHash = "\0\0\0\0\0\0\0\0";
+
+/**
+ * Constructs new long bits from the specified number.
+ * @param {number} value Value
+ * @returns {util.LongBits} Instance
+ */
+LongBits.fromNumber = function fromNumber(value) {
+    if (value === 0)
+        return zero;
+    var sign = value < 0;
+    if (sign)
+        value = -value;
+    var lo = value >>> 0,
+        hi = (value - lo) / 4294967296 >>> 0;
+    if (sign) {
+        hi = ~hi >>> 0;
+        lo = ~lo >>> 0;
+        if (++lo > 4294967295) {
+            lo = 0;
+            if (++hi > 4294967295)
+                hi = 0;
+        }
+    }
+    return new LongBits(lo, hi);
+};
+
+/**
+ * Constructs new long bits from a number, long or string.
+ * @param {Long|number|string} value Value
+ * @returns {util.LongBits} Instance
+ */
+LongBits.from = function from(value) {
+    if (typeof value === "number")
+        return LongBits.fromNumber(value);
+    if (util.isString(value)) {
+        /* istanbul ignore else */
+        if (util.Long)
+            value = util.Long.fromString(value);
+        else
+            return LongBits.fromNumber(parseInt(value, 10));
+    }
+    return value.low || value.high ? new LongBits(value.low >>> 0, value.high >>> 0) : zero;
+};
+
+/**
+ * Converts this long bits to a possibly unsafe JavaScript number.
+ * @param {boolean} [unsigned=false] Whether unsigned or not
+ * @returns {number} Possibly unsafe number
+ */
+LongBits.prototype.toNumber = function toNumber(unsigned) {
+    if (!unsigned && this.hi >>> 31) {
+        var lo = ~this.lo + 1 >>> 0,
+            hi = ~this.hi     >>> 0;
+        if (!lo)
+            hi = hi + 1 >>> 0;
+        return -(lo + hi * 4294967296);
+    }
+    return this.lo + this.hi * 4294967296;
+};
+
+/**
+ * Converts this long bits to a long.
+ * @param {boolean} [unsigned=false] Whether unsigned or not
+ * @returns {Long} Long
+ */
+LongBits.prototype.toLong = function toLong(unsigned) {
+    return util.Long
+        ? new util.Long(this.lo | 0, this.hi | 0, Boolean(unsigned))
+        /* istanbul ignore next */
+        : { low: this.lo | 0, high: this.hi | 0, unsigned: Boolean(unsigned) };
+};
+
+var charCodeAt = String.prototype.charCodeAt;
+
+/**
+ * Constructs new long bits from the specified 8 characters long hash.
+ * @param {string} hash Hash
+ * @returns {util.LongBits} Bits
+ */
+LongBits.fromHash = function fromHash(hash) {
+    if (hash === zeroHash)
+        return zero;
+    return new LongBits(
+        ( charCodeAt.call(hash, 0)
+        | charCodeAt.call(hash, 1) << 8
+        | charCodeAt.call(hash, 2) << 16
+        | charCodeAt.call(hash, 3) << 24) >>> 0
+    ,
+        ( charCodeAt.call(hash, 4)
+        | charCodeAt.call(hash, 5) << 8
+        | charCodeAt.call(hash, 6) << 16
+        | charCodeAt.call(hash, 7) << 24) >>> 0
+    );
+};
+
+/**
+ * Converts this long bits to a 8 characters long hash.
+ * @returns {string} Hash
+ */
+LongBits.prototype.toHash = function toHash() {
+    return String.fromCharCode(
+        this.lo        & 255,
+        this.lo >>> 8  & 255,
+        this.lo >>> 16 & 255,
+        this.lo >>> 24      ,
+        this.hi        & 255,
+        this.hi >>> 8  & 255,
+        this.hi >>> 16 & 255,
+        this.hi >>> 24
+    );
+};
+
+/**
+ * Zig-zag encodes this long bits.
+ * @returns {util.LongBits} `this`
+ */
+LongBits.prototype.zzEncode = function zzEncode() {
+    var mask =   this.hi >> 31;
+    this.hi  = ((this.hi << 1 | this.lo >>> 31) ^ mask) >>> 0;
+    this.lo  = ( this.lo << 1                   ^ mask) >>> 0;
+    return this;
+};
+
+/**
+ * Zig-zag decodes this long bits.
+ * @returns {util.LongBits} `this`
+ */
+LongBits.prototype.zzDecode = function zzDecode() {
+    var mask = -(this.lo & 1);
+    this.lo  = ((this.lo >>> 1 | this.hi << 31) ^ mask) >>> 0;
+    this.hi  = ( this.hi >>> 1                  ^ mask) >>> 0;
+    return this;
+};
+
+/**
+ * Calculates the length of this longbits when encoded as a varint.
+ * @returns {number} Length
+ */
+LongBits.prototype.length = function length() {
+    var part0 =  this.lo,
+        part1 = (this.lo >>> 28 | this.hi << 4) >>> 0,
+        part2 =  this.hi >>> 24;
+    return part2 === 0
+         ? part1 === 0
+           ? part0 < 16384
+             ? part0 < 128 ? 1 : 2
+             : part0 < 2097152 ? 3 : 4
+           : part1 < 16384
+             ? part1 < 128 ? 5 : 6
+             : part1 < 2097152 ? 7 : 8
+         : part2 < 128 ? 9 : 10;
+};
+
+
+/***/ }),
+/* 22 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = BufferWriter;
+
+// extends Writer
+var Writer = __webpack_require__(12);
+(BufferWriter.prototype = Object.create(Writer.prototype)).constructor = BufferWriter;
+
+var util = __webpack_require__(13);
+
+/**
+ * Constructs a new buffer writer instance.
+ * @classdesc Wire format writer using node buffers.
+ * @extends Writer
+ * @constructor
+ */
+function BufferWriter() {
+    Writer.call(this);
+}
+
+BufferWriter._configure = function () {
+    /**
+     * Allocates a buffer of the specified size.
+     * @function
+     * @param {number} size Buffer size
+     * @returns {Buffer} Buffer
+     */
+    BufferWriter.alloc = util._Buffer_allocUnsafe;
+
+    BufferWriter.writeBytesBuffer = util.Buffer && util.Buffer.prototype instanceof Uint8Array && util.Buffer.prototype.set.name === "set"
+        ? function writeBytesBuffer_set(val, buf, pos) {
+          buf.set(val, pos); // faster than copy (requires node >= 4 where Buffers extend Uint8Array and set is properly inherited)
+          // also works for plain array values
+        }
+        /* istanbul ignore next */
+        : function writeBytesBuffer_copy(val, buf, pos) {
+          if (val.copy) // Buffer values
+            val.copy(buf, pos, 0, val.length);
+          else for (var i = 0; i < val.length;) // plain array values
+            buf[pos++] = val[i++];
+        };
+};
+
+
+/**
+ * @override
+ */
+BufferWriter.prototype.bytes = function write_bytes_buffer(value) {
+    if (util.isString(value))
+        value = util._Buffer_from(value, "base64");
+    var len = value.length >>> 0;
+    this.uint32(len);
+    if (len)
+        this._push(BufferWriter.writeBytesBuffer, len, value);
+    return this;
+};
+
+function writeStringBuffer(val, buf, pos) {
+    if (val.length < 40) // plain js is faster for short strings (probably due to redundant assertions)
+        util.utf8.write(val, buf, pos);
+    else if (buf.utf8Write)
+        buf.utf8Write(val, pos);
+    else
+        buf.write(val, pos);
+}
+
+/**
+ * @override
+ */
+BufferWriter.prototype.string = function write_string_buffer(value) {
+    var len = util.Buffer.byteLength(value);
+    this.uint32(len);
+    if (len)
+        this._push(writeStringBuffer, len, value);
+    return this;
+};
+
+
+/**
+ * Finishes the write operation.
+ * @name BufferWriter#finish
+ * @function
+ * @returns {Buffer} Finished buffer
+ */
+
+BufferWriter._configure();
+
+
+/***/ }),
+/* 23 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = Reader;
+
+var util      = __webpack_require__(13);
+
+var BufferReader; // cyclic
+
+var LongBits  = util.LongBits,
+    utf8      = util.utf8;
+
+/* istanbul ignore next */
+function indexOutOfRange(reader, writeLength) {
+    return RangeError("index out of range: " + reader.pos + " + " + (writeLength || 1) + " > " + reader.len);
+}
+
+/**
+ * Constructs a new reader instance using the specified buffer.
+ * @classdesc Wire format reader using `Uint8Array` if available, otherwise `Array`.
+ * @constructor
+ * @param {Uint8Array} buffer Buffer to read from
+ */
+function Reader(buffer) {
+
+    /**
+     * Read buffer.
+     * @type {Uint8Array}
+     */
+    this.buf = buffer;
+
+    /**
+     * Read buffer position.
+     * @type {number}
+     */
+    this.pos = 0;
+
+    /**
+     * Read buffer length.
+     * @type {number}
+     */
+    this.len = buffer.length;
+}
+
+var create_array = typeof Uint8Array !== "undefined"
+    ? function create_typed_array(buffer) {
+        if (buffer instanceof Uint8Array || Array.isArray(buffer))
+            return new Reader(buffer);
+        throw Error("illegal buffer");
+    }
+    /* istanbul ignore next */
+    : function create_array(buffer) {
+        if (Array.isArray(buffer))
+            return new Reader(buffer);
+        throw Error("illegal buffer");
+    };
+
+var create = function create() {
+    return util.Buffer
+        ? function create_buffer_setup(buffer) {
+            return (Reader.create = function create_buffer(buffer) {
+                return util.Buffer.isBuffer(buffer)
+                    ? new BufferReader(buffer)
+                    /* istanbul ignore next */
+                    : create_array(buffer);
+            })(buffer);
+        }
+        /* istanbul ignore next */
+        : create_array;
+};
+
+/**
+ * Creates a new reader using the specified buffer.
+ * @function
+ * @param {Uint8Array|Buffer} buffer Buffer to read from
+ * @returns {Reader|BufferReader} A {@link BufferReader} if `buffer` is a Buffer, otherwise a {@link Reader}
+ * @throws {Error} If `buffer` is not a valid buffer
+ */
+Reader.create = create();
+
+Reader.prototype._slice = util.Array.prototype.subarray || /* istanbul ignore next */ util.Array.prototype.slice;
+
+/**
+ * Reads a varint as an unsigned 32 bit value.
+ * @function
+ * @returns {number} Value read
+ */
+Reader.prototype.uint32 = (function read_uint32_setup() {
+    var value = 4294967295; // optimizer type-hint, tends to deopt otherwise (?!)
+    return function read_uint32() {
+        value = (         this.buf[this.pos] & 127       ) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) <<  7) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) << 14) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) << 21) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] &  15) << 28) >>> 0; if (this.buf[this.pos++] < 128) return value;
+
+        /* istanbul ignore if */
+        if ((this.pos += 5) > this.len) {
+            this.pos = this.len;
+            throw indexOutOfRange(this, 10);
+        }
+        return value;
+    };
+})();
+
+/**
+ * Reads a varint as a signed 32 bit value.
+ * @returns {number} Value read
+ */
+Reader.prototype.int32 = function read_int32() {
+    return this.uint32() | 0;
+};
+
+/**
+ * Reads a zig-zag encoded varint as a signed 32 bit value.
+ * @returns {number} Value read
+ */
+Reader.prototype.sint32 = function read_sint32() {
+    var value = this.uint32();
+    return value >>> 1 ^ -(value & 1) | 0;
+};
+
+/* eslint-disable no-invalid-this */
+
+function readLongVarint() {
+    // tends to deopt with local vars for octet etc.
+    var bits = new LongBits(0, 0);
+    var i = 0;
+    if (this.len - this.pos > 4) { // fast route (lo)
+        for (; i < 4; ++i) {
+            // 1st..4th
+            bits.lo = (bits.lo | (this.buf[this.pos] & 127) << i * 7) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+        // 5th
+        bits.lo = (bits.lo | (this.buf[this.pos] & 127) << 28) >>> 0;
+        bits.hi = (bits.hi | (this.buf[this.pos] & 127) >>  4) >>> 0;
+        if (this.buf[this.pos++] < 128)
+            return bits;
+        i = 0;
+    } else {
+        for (; i < 3; ++i) {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+            // 1st..3th
+            bits.lo = (bits.lo | (this.buf[this.pos] & 127) << i * 7) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+        // 4th
+        bits.lo = (bits.lo | (this.buf[this.pos++] & 127) << i * 7) >>> 0;
+        return bits;
+    }
+    if (this.len - this.pos > 4) { // fast route (hi)
+        for (; i < 5; ++i) {
+            // 6th..10th
+            bits.hi = (bits.hi | (this.buf[this.pos] & 127) << i * 7 + 3) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+    } else {
+        for (; i < 5; ++i) {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+            // 6th..10th
+            bits.hi = (bits.hi | (this.buf[this.pos] & 127) << i * 7 + 3) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+    }
+    /* istanbul ignore next */
+    throw Error("invalid varint encoding");
+}
+
+/* eslint-enable no-invalid-this */
+
+/**
+ * Reads a varint as a signed 64 bit value.
+ * @name Reader#int64
+ * @function
+ * @returns {Long} Value read
+ */
+
+/**
+ * Reads a varint as an unsigned 64 bit value.
+ * @name Reader#uint64
+ * @function
+ * @returns {Long} Value read
+ */
+
+/**
+ * Reads a zig-zag encoded varint as a signed 64 bit value.
+ * @name Reader#sint64
+ * @function
+ * @returns {Long} Value read
+ */
+
+/**
+ * Reads a varint as a boolean.
+ * @returns {boolean} Value read
+ */
+Reader.prototype.bool = function read_bool() {
+    return this.uint32() !== 0;
+};
+
+function readFixed32_end(buf, end) { // note that this uses `end`, not `pos`
+    return (buf[end - 4]
+          | buf[end - 3] << 8
+          | buf[end - 2] << 16
+          | buf[end - 1] << 24) >>> 0;
+}
+
+/**
+ * Reads fixed 32 bits as an unsigned 32 bit integer.
+ * @returns {number} Value read
+ */
+Reader.prototype.fixed32 = function read_fixed32() {
+
+    /* istanbul ignore if */
+    if (this.pos + 4 > this.len)
+        throw indexOutOfRange(this, 4);
+
+    return readFixed32_end(this.buf, this.pos += 4);
+};
+
+/**
+ * Reads fixed 32 bits as a signed 32 bit integer.
+ * @returns {number} Value read
+ */
+Reader.prototype.sfixed32 = function read_sfixed32() {
+
+    /* istanbul ignore if */
+    if (this.pos + 4 > this.len)
+        throw indexOutOfRange(this, 4);
+
+    return readFixed32_end(this.buf, this.pos += 4) | 0;
+};
+
+/* eslint-disable no-invalid-this */
+
+function readFixed64(/* this: Reader */) {
+
+    /* istanbul ignore if */
+    if (this.pos + 8 > this.len)
+        throw indexOutOfRange(this, 8);
+
+    return new LongBits(readFixed32_end(this.buf, this.pos += 4), readFixed32_end(this.buf, this.pos += 4));
+}
+
+/* eslint-enable no-invalid-this */
+
+/**
+ * Reads fixed 64 bits.
+ * @name Reader#fixed64
+ * @function
+ * @returns {Long} Value read
+ */
+
+/**
+ * Reads zig-zag encoded fixed 64 bits.
+ * @name Reader#sfixed64
+ * @function
+ * @returns {Long} Value read
+ */
+
+/**
+ * Reads a float (32 bit) as a number.
+ * @function
+ * @returns {number} Value read
+ */
+Reader.prototype.float = function read_float() {
+
+    /* istanbul ignore if */
+    if (this.pos + 4 > this.len)
+        throw indexOutOfRange(this, 4);
+
+    var value = util.float.readFloatLE(this.buf, this.pos);
+    this.pos += 4;
+    return value;
+};
+
+/**
+ * Reads a double (64 bit float) as a number.
+ * @function
+ * @returns {number} Value read
+ */
+Reader.prototype.double = function read_double() {
+
+    /* istanbul ignore if */
+    if (this.pos + 8 > this.len)
+        throw indexOutOfRange(this, 4);
+
+    var value = util.float.readDoubleLE(this.buf, this.pos);
+    this.pos += 8;
+    return value;
+};
+
+/**
+ * Reads a sequence of bytes preceeded by its length as a varint.
+ * @returns {Uint8Array} Value read
+ */
+Reader.prototype.bytes = function read_bytes() {
+    var length = this.uint32(),
+        start  = this.pos,
+        end    = this.pos + length;
+
+    /* istanbul ignore if */
+    if (end > this.len)
+        throw indexOutOfRange(this, length);
+
+    this.pos += length;
+    if (Array.isArray(this.buf)) // plain array
+        return this.buf.slice(start, end);
+    return start === end // fix for IE 10/Win8 and others' subarray returning array of size 1
+        ? new this.buf.constructor(0)
+        : this._slice.call(this.buf, start, end);
+};
+
+/**
+ * Reads a string preceeded by its byte length as a varint.
+ * @returns {string} Value read
+ */
+Reader.prototype.string = function read_string() {
+    var bytes = this.bytes();
+    return utf8.read(bytes, 0, bytes.length);
+};
+
+/**
+ * Skips the specified number of bytes if specified, otherwise skips a varint.
+ * @param {number} [length] Length if known, otherwise a varint is assumed
+ * @returns {Reader} `this`
+ */
+Reader.prototype.skip = function skip(length) {
+    if (typeof length === "number") {
+        /* istanbul ignore if */
+        if (this.pos + length > this.len)
+            throw indexOutOfRange(this, length);
+        this.pos += length;
+    } else {
+        do {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+        } while (this.buf[this.pos++] & 128);
+    }
+    return this;
+};
+
+/**
+ * Skips the next element of the specified wire type.
+ * @param {number} wireType Wire type received
+ * @returns {Reader} `this`
+ */
+Reader.prototype.skipType = function(wireType) {
+    switch (wireType) {
+        case 0:
+            this.skip();
+            break;
+        case 1:
+            this.skip(8);
+            break;
+        case 2:
+            this.skip(this.uint32());
+            break;
+        case 3:
+            while ((wireType = this.uint32() & 7) !== 4) {
+                this.skipType(wireType);
+            }
+            break;
+        case 5:
+            this.skip(4);
+            break;
+
+        /* istanbul ignore next */
+        default:
+            throw Error("invalid wire type " + wireType + " at offset " + this.pos);
+    }
+    return this;
+};
+
+Reader._configure = function(BufferReader_) {
+    BufferReader = BufferReader_;
+    Reader.create = create();
+    BufferReader._configure();
+
+    var fn = util.Long ? "toLong" : /* istanbul ignore next */ "toNumber";
+    util.merge(Reader.prototype, {
+
+        int64: function read_int64() {
+            return readLongVarint.call(this)[fn](false);
+        },
+
+        uint64: function read_uint64() {
+            return readLongVarint.call(this)[fn](true);
+        },
+
+        sint64: function read_sint64() {
+            return readLongVarint.call(this).zzDecode()[fn](false);
+        },
+
+        fixed64: function read_fixed64() {
+            return readFixed64.call(this)[fn](true);
+        },
+
+        sfixed64: function read_sfixed64() {
+            return readFixed64.call(this)[fn](false);
+        }
+
+    });
+};
+
+
+/***/ }),
+/* 24 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = BufferReader;
+
+// extends Reader
+var Reader = __webpack_require__(23);
+(BufferReader.prototype = Object.create(Reader.prototype)).constructor = BufferReader;
+
+var util = __webpack_require__(13);
+
+/**
+ * Constructs a new buffer reader instance.
+ * @classdesc Wire format reader using node buffers.
+ * @extends Reader
+ * @constructor
+ * @param {Buffer} buffer Buffer to read from
+ */
+function BufferReader(buffer) {
+    Reader.call(this, buffer);
+
+    /**
+     * Read buffer.
+     * @name BufferReader#buf
+     * @type {Buffer}
+     */
+}
+
+BufferReader._configure = function () {
+    /* istanbul ignore else */
+    if (util.Buffer)
+        BufferReader.prototype._slice = util.Buffer.prototype.slice;
+};
+
+
+/**
+ * @override
+ */
+BufferReader.prototype.string = function read_string_buffer() {
+    var len = this.uint32(); // modifies pos
+    return this.buf.utf8Slice
+        ? this.buf.utf8Slice(this.pos, this.pos = Math.min(this.pos + len, this.len))
+        : this.buf.toString("utf-8", this.pos, this.pos = Math.min(this.pos + len, this.len));
+};
+
+/**
+ * Reads a sequence of bytes preceeded by its length as a varint.
+ * @name BufferReader#bytes
+ * @function
+ * @returns {Buffer} Value read
+ */
+
+BufferReader._configure();
+
+
+/***/ }),
+/* 25 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+
+/**
+ * Streaming RPC helpers.
+ * @namespace
+ */
+var rpc = exports;
+
+/**
+ * RPC implementation passed to {@link Service#create} performing a service request on network level, i.e. by utilizing http requests or websockets.
+ * @typedef RPCImpl
+ * @type {function}
+ * @param {Method|rpc.ServiceMethod<Message<{}>,Message<{}>>} method Reflected or static method being called
+ * @param {Uint8Array} requestData Request data
+ * @param {RPCImplCallback} callback Callback function
+ * @returns {undefined}
+ * @example
+ * function rpcImpl(method, requestData, callback) {
+ *     if (protobuf.util.lcFirst(method.name) !== "myMethod") // compatible with static code
+ *         throw Error("no such method");
+ *     asynchronouslyObtainAResponse(requestData, function(err, responseData) {
+ *         callback(err, responseData);
+ *     });
+ * }
+ */
+
+/**
+ * Node-style callback as used by {@link RPCImpl}.
+ * @typedef RPCImplCallback
+ * @type {function}
+ * @param {Error|null} error Error, if any, otherwise `null`
+ * @param {Uint8Array|null} [response] Response data or `null` to signal end of stream, if there hasn't been an error
+ * @returns {undefined}
+ */
+
+rpc.Service = __webpack_require__(26);
+
+
+/***/ }),
+/* 26 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+module.exports = Service;
+
+var util = __webpack_require__(13);
+
+// Extends EventEmitter
+(Service.prototype = Object.create(util.EventEmitter.prototype)).constructor = Service;
+
+/**
+ * A service method callback as used by {@link rpc.ServiceMethod|ServiceMethod}.
+ *
+ * Differs from {@link RPCImplCallback} in that it is an actual callback of a service method which may not return `response = null`.
+ * @typedef rpc.ServiceMethodCallback
+ * @template TRes extends Message<TRes>
+ * @type {function}
+ * @param {Error|null} error Error, if any
+ * @param {TRes} [response] Response message
+ * @returns {undefined}
+ */
+
+/**
+ * A service method part of a {@link rpc.Service} as created by {@link Service.create}.
+ * @typedef rpc.ServiceMethod
+ * @template TReq extends Message<TReq>
+ * @template TRes extends Message<TRes>
+ * @type {function}
+ * @param {TReq|Properties<TReq>} request Request message or plain object
+ * @param {rpc.ServiceMethodCallback<TRes>} [callback] Node-style callback called with the error, if any, and the response message
+ * @returns {Promise<Message<TRes>>} Promise if `callback` has been omitted, otherwise `undefined`
+ */
+
+/**
+ * Constructs a new RPC service instance.
+ * @classdesc An RPC service as returned by {@link Service#create}.
+ * @exports rpc.Service
+ * @extends util.EventEmitter
+ * @constructor
+ * @param {RPCImpl} rpcImpl RPC implementation
+ * @param {boolean} [requestDelimited=false] Whether requests are length-delimited
+ * @param {boolean} [responseDelimited=false] Whether responses are length-delimited
+ */
+function Service(rpcImpl, requestDelimited, responseDelimited) {
+
+    if (typeof rpcImpl !== "function")
+        throw TypeError("rpcImpl must be a function");
+
+    util.EventEmitter.call(this);
+
+    /**
+     * RPC implementation. Becomes `null` once the service is ended.
+     * @type {RPCImpl|null}
+     */
+    this.rpcImpl = rpcImpl;
+
+    /**
+     * Whether requests are length-delimited.
+     * @type {boolean}
+     */
+    this.requestDelimited = Boolean(requestDelimited);
+
+    /**
+     * Whether responses are length-delimited.
+     * @type {boolean}
+     */
+    this.responseDelimited = Boolean(responseDelimited);
+}
+
+/**
+ * Calls a service method through {@link rpc.Service#rpcImpl|rpcImpl}.
+ * @param {Method|rpc.ServiceMethod<TReq,TRes>} method Reflected or static method
+ * @param {Constructor<TReq>} requestCtor Request constructor
+ * @param {Constructor<TRes>} responseCtor Response constructor
+ * @param {TReq|Properties<TReq>} request Request message or plain object
+ * @param {rpc.ServiceMethodCallback<TRes>} callback Service callback
+ * @returns {undefined}
+ * @template TReq extends Message<TReq>
+ * @template TRes extends Message<TRes>
+ */
+Service.prototype.rpcCall = function rpcCall(method, requestCtor, responseCtor, request, callback) {
+
+    if (!request)
+        throw TypeError("request must be specified");
+
+    var self = this;
+    if (!callback)
+        return util.asPromise(rpcCall, self, method, requestCtor, responseCtor, request);
+
+    if (!self.rpcImpl) {
+        setTimeout(function() { callback(Error("already ended")); }, 0);
+        return undefined;
+    }
+
+    try {
+        return self.rpcImpl(
+            method,
+            requestCtor[self.requestDelimited ? "encodeDelimited" : "encode"](request).finish(),
+            function rpcCallback(err, response) {
+
+                if (err) {
+                    self.emit("error", err, method);
+                    return callback(err);
+                }
+
+                if (response === null) {
+                    self.end(/* endedByRPC */ true);
+                    return undefined;
+                }
+
+                if (!(response instanceof responseCtor)) {
+                    try {
+                        response = responseCtor[self.responseDelimited ? "decodeDelimited" : "decode"](response);
+                    } catch (err) {
+                        self.emit("error", err, method);
+                        return callback(err);
+                    }
+                }
+
+                self.emit("data", response, method);
+                return callback(null, response);
+            }
+        );
+    } catch (err) {
+        self.emit("error", err, method);
+        setTimeout(function() { callback(err); }, 0);
+        return undefined;
+    }
+};
+
+/**
+ * Ends this service and emits the `end` event.
+ * @param {boolean} [endedByRPC=false] Whether the service has been ended by the RPC implementation.
+ * @returns {rpc.Service} `this`
+ */
+Service.prototype.end = function end(endedByRPC) {
+    if (this.rpcImpl) {
+        if (!endedByRPC) // signal end to rpcImpl
+            this.rpcImpl(null, null, null);
+        this.rpcImpl = null;
+        this.emit("end").off();
+    }
+    return this;
+};
+
+
+/***/ }),
+/* 27 */
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = {};
+
+/**
+ * Named roots.
+ * This is where pbjs stores generated structures (the option `-r, --root` specifies a name).
+ * Can also be used manually to make roots available accross modules.
+ * @name roots
+ * @type {Object.<string,Root>}
+ * @example
+ * // pbjs -r myroot -o compiled.js ...
+ *
+ * // in another module:
+ * require("./compiled.js");
+ *
+ * // in any subsequent module:
+ * var root = protobuf.roots["myroot"];
+ */
+
+
+/***/ }),
+/* 28 */
+/***/ ((module) => {
+
+module.exports = window.FormData
+
+
+/***/ }),
+/* 29 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = stringToStream
+
+const stream = __webpack_require__(30)
+
+class StringStream extends stream.Readable {
+  constructor (str, encoding) {
+    super()
+    this._str = str
+    this._encoding = encoding || 'utf8'
+  }
+
+  _read () {
+    if (!this.ended) {
+      process.nextTick(() => {
+        this.push(Buffer.from(this._str, this._encoding))
+        this.push(null)
+      })
+      this.ended = true
+    }
+  }
+}
+
+function stringToStream (str, encoding) {
+  return new StringStream(str, encoding)
+}
+
+
+/***/ }),
+/* 30 */
+/***/ ((module, exports, __webpack_require__) => {
+
+exports = module.exports = __webpack_require__(31);
+exports.Stream = exports;
+exports.Readable = exports;
+exports.Writable = __webpack_require__(42);
+exports.Duplex = __webpack_require__(41);
+exports.Transform = __webpack_require__(49);
+exports.PassThrough = __webpack_require__(50);
+exports.finished = __webpack_require__(47);
+exports.pipeline = __webpack_require__(51);
+
+
+/***/ }),
+/* 31 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+module.exports = Readable;
+/*<replacement>*/
+
+var Duplex;
+/*</replacement>*/
+
+Readable.ReadableState = ReadableState;
+/*<replacement>*/
+
+var EE = __webpack_require__(32).EventEmitter;
+
+var EElistenerCount = function EElistenerCount(emitter, type) {
+  return emitter.listeners(type).length;
+};
+/*</replacement>*/
+
+/*<replacement>*/
+
+
+var Stream = __webpack_require__(33);
+/*</replacement>*/
+
+
+var Buffer = Object(function webpackMissingModule() { var e = new Error("Cannot find module 'buffer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }());
+
+var OurUint8Array = __webpack_require__.g.Uint8Array || function () {};
+
+function _uint8ArrayToBuffer(chunk) {
+  return Buffer.from(chunk);
+}
+
+function _isUint8Array(obj) {
+  return Buffer.isBuffer(obj) || obj instanceof OurUint8Array;
+}
+/*<replacement>*/
+
+
+var debugUtil = __webpack_require__(34);
+
+var debug;
+
+if (debugUtil && debugUtil.debuglog) {
+  debug = debugUtil.debuglog('stream');
+} else {
+  debug = function debug() {};
+}
+/*</replacement>*/
+
+
+var BufferList = __webpack_require__(35);
+
+var destroyImpl = __webpack_require__(37);
+
+var _require = __webpack_require__(38),
+    getHighWaterMark = _require.getHighWaterMark;
+
+var _require$codes = __webpack_require__(39).codes,
+    ERR_INVALID_ARG_TYPE = _require$codes.ERR_INVALID_ARG_TYPE,
+    ERR_STREAM_PUSH_AFTER_EOF = _require$codes.ERR_STREAM_PUSH_AFTER_EOF,
+    ERR_METHOD_NOT_IMPLEMENTED = _require$codes.ERR_METHOD_NOT_IMPLEMENTED,
+    ERR_STREAM_UNSHIFT_AFTER_END_EVENT = _require$codes.ERR_STREAM_UNSHIFT_AFTER_END_EVENT; // Lazy loaded to improve the startup performance.
+
+
+var StringDecoder;
+var createReadableStreamAsyncIterator;
+var from;
+
+__webpack_require__(40)(Readable, Stream);
+
+var errorOrDestroy = destroyImpl.errorOrDestroy;
+var kProxyEvents = ['error', 'close', 'destroy', 'pause', 'resume'];
+
+function prependListener(emitter, event, fn) {
+  // Sadly this is not cacheable as some libraries bundle their own
+  // event emitter implementation with them.
+  if (typeof emitter.prependListener === 'function') return emitter.prependListener(event, fn); // This is a hack to make sure that our error handler is attached before any
+  // userland ones.  NEVER DO THIS. This is here only because this code needs
+  // to continue to work with older versions of Node.js that do not include
+  // the prependListener() method. The goal is to eventually remove this hack.
+
+  if (!emitter._events || !emitter._events[event]) emitter.on(event, fn);else if (Array.isArray(emitter._events[event])) emitter._events[event].unshift(fn);else emitter._events[event] = [fn, emitter._events[event]];
+}
+
+function ReadableState(options, stream, isDuplex) {
+  Duplex = Duplex || __webpack_require__(41);
+  options = options || {}; // Duplex streams are both readable and writable, but share
+  // the same options object.
+  // However, some cases require setting options to different
+  // values for the readable and the writable sides of the duplex stream.
+  // These options can be provided separately as readableXXX and writableXXX.
+
+  if (typeof isDuplex !== 'boolean') isDuplex = stream instanceof Duplex; // object stream flag. Used to make read(n) ignore n and to
+  // make all the buffer merging and length checks go away
+
+  this.objectMode = !!options.objectMode;
+  if (isDuplex) this.objectMode = this.objectMode || !!options.readableObjectMode; // the point at which it stops calling _read() to fill the buffer
+  // Note: 0 is a valid value, means "don't call _read preemptively ever"
+
+  this.highWaterMark = getHighWaterMark(this, options, 'readableHighWaterMark', isDuplex); // A linked list is used to store data chunks instead of an array because the
+  // linked list can remove elements from the beginning faster than
+  // array.shift()
+
+  this.buffer = new BufferList();
+  this.length = 0;
+  this.pipes = null;
+  this.pipesCount = 0;
+  this.flowing = null;
+  this.ended = false;
+  this.endEmitted = false;
+  this.reading = false; // a flag to be able to tell if the event 'readable'/'data' is emitted
+  // immediately, or on a later tick.  We set this to true at first, because
+  // any actions that shouldn't happen until "later" should generally also
+  // not happen before the first read call.
+
+  this.sync = true; // whenever we return null, then we set a flag to say
+  // that we're awaiting a 'readable' event emission.
+
+  this.needReadable = false;
+  this.emittedReadable = false;
+  this.readableListening = false;
+  this.resumeScheduled = false;
+  this.paused = true; // Should close be emitted on destroy. Defaults to true.
+
+  this.emitClose = options.emitClose !== false; // Should .destroy() be called after 'end' (and potentially 'finish')
+
+  this.autoDestroy = !!options.autoDestroy; // has it been destroyed
+
+  this.destroyed = false; // Crypto is kind of old and crusty.  Historically, its default string
+  // encoding is 'binary' so we have to make this configurable.
+  // Everything else in the universe uses 'utf8', though.
+
+  this.defaultEncoding = options.defaultEncoding || 'utf8'; // the number of writers that are awaiting a drain event in .pipe()s
+
+  this.awaitDrain = 0; // if true, a maybeReadMore has been scheduled
+
+  this.readingMore = false;
+  this.decoder = null;
+  this.encoding = null;
+
+  if (options.encoding) {
+    if (!StringDecoder) StringDecoder = __webpack_require__(44).StringDecoder;
+    this.decoder = new StringDecoder(options.encoding);
+    this.encoding = options.encoding;
+  }
+}
+
+function Readable(options) {
+  Duplex = Duplex || __webpack_require__(41);
+  if (!(this instanceof Readable)) return new Readable(options); // Checking for a Stream.Duplex instance is faster here instead of inside
+  // the ReadableState constructor, at least with V8 6.5
+
+  var isDuplex = this instanceof Duplex;
+  this._readableState = new ReadableState(options, this, isDuplex); // legacy
+
+  this.readable = true;
+
+  if (options) {
+    if (typeof options.read === 'function') this._read = options.read;
+    if (typeof options.destroy === 'function') this._destroy = options.destroy;
+  }
+
+  Stream.call(this);
+}
+
+Object.defineProperty(Readable.prototype, 'destroyed', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    if (this._readableState === undefined) {
+      return false;
+    }
+
+    return this._readableState.destroyed;
+  },
+  set: function set(value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (!this._readableState) {
+      return;
+    } // backward compatibility, the user is explicitly
+    // managing destroyed
+
+
+    this._readableState.destroyed = value;
+  }
+});
+Readable.prototype.destroy = destroyImpl.destroy;
+Readable.prototype._undestroy = destroyImpl.undestroy;
+
+Readable.prototype._destroy = function (err, cb) {
+  cb(err);
+}; // Manually shove something into the read() buffer.
+// This returns true if the highWaterMark has not been hit yet,
+// similar to how Writable.write() returns true if you should
+// write() some more.
+
+
+Readable.prototype.push = function (chunk, encoding) {
+  var state = this._readableState;
+  var skipChunkCheck;
+
+  if (!state.objectMode) {
+    if (typeof chunk === 'string') {
+      encoding = encoding || state.defaultEncoding;
+
+      if (encoding !== state.encoding) {
+        chunk = Buffer.from(chunk, encoding);
+        encoding = '';
+      }
+
+      skipChunkCheck = true;
+    }
+  } else {
+    skipChunkCheck = true;
+  }
+
+  return readableAddChunk(this, chunk, encoding, false, skipChunkCheck);
+}; // Unshift should *always* be something directly out of read()
+
+
+Readable.prototype.unshift = function (chunk) {
+  return readableAddChunk(this, chunk, null, true, false);
+};
+
+function readableAddChunk(stream, chunk, encoding, addToFront, skipChunkCheck) {
+  debug('readableAddChunk', chunk);
+  var state = stream._readableState;
+
+  if (chunk === null) {
+    state.reading = false;
+    onEofChunk(stream, state);
+  } else {
+    var er;
+    if (!skipChunkCheck) er = chunkInvalid(state, chunk);
+
+    if (er) {
+      errorOrDestroy(stream, er);
+    } else if (state.objectMode || chunk && chunk.length > 0) {
+      if (typeof chunk !== 'string' && !state.objectMode && Object.getPrototypeOf(chunk) !== Buffer.prototype) {
+        chunk = _uint8ArrayToBuffer(chunk);
+      }
+
+      if (addToFront) {
+        if (state.endEmitted) errorOrDestroy(stream, new ERR_STREAM_UNSHIFT_AFTER_END_EVENT());else addChunk(stream, state, chunk, true);
+      } else if (state.ended) {
+        errorOrDestroy(stream, new ERR_STREAM_PUSH_AFTER_EOF());
+      } else if (state.destroyed) {
+        return false;
+      } else {
+        state.reading = false;
+
+        if (state.decoder && !encoding) {
+          chunk = state.decoder.write(chunk);
+          if (state.objectMode || chunk.length !== 0) addChunk(stream, state, chunk, false);else maybeReadMore(stream, state);
+        } else {
+          addChunk(stream, state, chunk, false);
+        }
+      }
+    } else if (!addToFront) {
+      state.reading = false;
+      maybeReadMore(stream, state);
+    }
+  } // We can push more data if we are below the highWaterMark.
+  // Also, if we have no data yet, we can stand some more bytes.
+  // This is to work around cases where hwm=0, such as the repl.
+
+
+  return !state.ended && (state.length < state.highWaterMark || state.length === 0);
+}
+
+function addChunk(stream, state, chunk, addToFront) {
+  if (state.flowing && state.length === 0 && !state.sync) {
+    state.awaitDrain = 0;
+    stream.emit('data', chunk);
+  } else {
+    // update the buffer info.
+    state.length += state.objectMode ? 1 : chunk.length;
+    if (addToFront) state.buffer.unshift(chunk);else state.buffer.push(chunk);
+    if (state.needReadable) emitReadable(stream);
+  }
+
+  maybeReadMore(stream, state);
+}
+
+function chunkInvalid(state, chunk) {
+  var er;
+
+  if (!_isUint8Array(chunk) && typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
+    er = new ERR_INVALID_ARG_TYPE('chunk', ['string', 'Buffer', 'Uint8Array'], chunk);
+  }
+
+  return er;
+}
+
+Readable.prototype.isPaused = function () {
+  return this._readableState.flowing === false;
+}; // backwards compatibility.
+
+
+Readable.prototype.setEncoding = function (enc) {
+  if (!StringDecoder) StringDecoder = __webpack_require__(44).StringDecoder;
+  var decoder = new StringDecoder(enc);
+  this._readableState.decoder = decoder; // If setEncoding(null), decoder.encoding equals utf8
+
+  this._readableState.encoding = this._readableState.decoder.encoding; // Iterate over current buffer to convert already stored Buffers:
+
+  var p = this._readableState.buffer.head;
+  var content = '';
+
+  while (p !== null) {
+    content += decoder.write(p.data);
+    p = p.next;
+  }
+
+  this._readableState.buffer.clear();
+
+  if (content !== '') this._readableState.buffer.push(content);
+  this._readableState.length = content.length;
+  return this;
+}; // Don't raise the hwm > 1GB
+
+
+var MAX_HWM = 0x40000000;
+
+function computeNewHighWaterMark(n) {
+  if (n >= MAX_HWM) {
+    // TODO(ronag): Throw ERR_VALUE_OUT_OF_RANGE.
+    n = MAX_HWM;
+  } else {
+    // Get the next highest power of 2 to prevent increasing hwm excessively in
+    // tiny amounts
+    n--;
+    n |= n >>> 1;
+    n |= n >>> 2;
+    n |= n >>> 4;
+    n |= n >>> 8;
+    n |= n >>> 16;
+    n++;
+  }
+
+  return n;
+} // This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+
+
+function howMuchToRead(n, state) {
+  if (n <= 0 || state.length === 0 && state.ended) return 0;
+  if (state.objectMode) return 1;
+
+  if (n !== n) {
+    // Only flow one buffer at a time
+    if (state.flowing && state.length) return state.buffer.head.data.length;else return state.length;
+  } // If we're asking for more than the current hwm, then raise the hwm.
+
+
+  if (n > state.highWaterMark) state.highWaterMark = computeNewHighWaterMark(n);
+  if (n <= state.length) return n; // Don't have enough
+
+  if (!state.ended) {
+    state.needReadable = true;
+    return 0;
+  }
+
+  return state.length;
+} // you can override either this method, or the async _read(n) below.
+
+
+Readable.prototype.read = function (n) {
+  debug('read', n);
+  n = parseInt(n, 10);
+  var state = this._readableState;
+  var nOrig = n;
+  if (n !== 0) state.emittedReadable = false; // if we're doing read(0) to trigger a readable event, but we
+  // already have a bunch of data in the buffer, then just trigger
+  // the 'readable' event and move on.
+
+  if (n === 0 && state.needReadable && ((state.highWaterMark !== 0 ? state.length >= state.highWaterMark : state.length > 0) || state.ended)) {
+    debug('read: emitReadable', state.length, state.ended);
+    if (state.length === 0 && state.ended) endReadable(this);else emitReadable(this);
+    return null;
+  }
+
+  n = howMuchToRead(n, state); // if we've ended, and we're now clear, then finish it up.
+
+  if (n === 0 && state.ended) {
+    if (state.length === 0) endReadable(this);
+    return null;
+  } // All the actual chunk generation logic needs to be
+  // *below* the call to _read.  The reason is that in certain
+  // synthetic stream cases, such as passthrough streams, _read
+  // may be a completely synchronous operation which may change
+  // the state of the read buffer, providing enough data when
+  // before there was *not* enough.
+  //
+  // So, the steps are:
+  // 1. Figure out what the state of things will be after we do
+  // a read from the buffer.
+  //
+  // 2. If that resulting state will trigger a _read, then call _read.
+  // Note that this may be asynchronous, or synchronous.  Yes, it is
+  // deeply ugly to write APIs this way, but that still doesn't mean
+  // that the Readable class should behave improperly, as streams are
+  // designed to be sync/async agnostic.
+  // Take note if the _read call is sync or async (ie, if the read call
+  // has returned yet), so that we know whether or not it's safe to emit
+  // 'readable' etc.
+  //
+  // 3. Actually pull the requested chunks out of the buffer and return.
+  // if we need a readable event, then we need to do some reading.
+
+
+  var doRead = state.needReadable;
+  debug('need readable', doRead); // if we currently have less than the highWaterMark, then also read some
+
+  if (state.length === 0 || state.length - n < state.highWaterMark) {
+    doRead = true;
+    debug('length less than watermark', doRead);
+  } // however, if we've ended, then there's no point, and if we're already
+  // reading, then it's unnecessary.
+
+
+  if (state.ended || state.reading) {
+    doRead = false;
+    debug('reading or ended', doRead);
+  } else if (doRead) {
+    debug('do read');
+    state.reading = true;
+    state.sync = true; // if the length is currently zero, then we *need* a readable event.
+
+    if (state.length === 0) state.needReadable = true; // call internal read method
+
+    this._read(state.highWaterMark);
+
+    state.sync = false; // If _read pushed data synchronously, then `reading` will be false,
+    // and we need to re-evaluate how much data we can return to the user.
+
+    if (!state.reading) n = howMuchToRead(nOrig, state);
+  }
+
+  var ret;
+  if (n > 0) ret = fromList(n, state);else ret = null;
+
+  if (ret === null) {
+    state.needReadable = state.length <= state.highWaterMark;
+    n = 0;
+  } else {
+    state.length -= n;
+    state.awaitDrain = 0;
+  }
+
+  if (state.length === 0) {
+    // If we have nothing in the buffer, then we want to know
+    // as soon as we *do* get something into the buffer.
+    if (!state.ended) state.needReadable = true; // If we tried to read() past the EOF, then emit end on the next tick.
+
+    if (nOrig !== n && state.ended) endReadable(this);
+  }
+
+  if (ret !== null) this.emit('data', ret);
+  return ret;
+};
+
+function onEofChunk(stream, state) {
+  debug('onEofChunk');
+  if (state.ended) return;
+
+  if (state.decoder) {
+    var chunk = state.decoder.end();
+
+    if (chunk && chunk.length) {
+      state.buffer.push(chunk);
+      state.length += state.objectMode ? 1 : chunk.length;
+    }
+  }
+
+  state.ended = true;
+
+  if (state.sync) {
+    // if we are sync, wait until next tick to emit the data.
+    // Otherwise we risk emitting data in the flow()
+    // the readable code triggers during a read() call
+    emitReadable(stream);
+  } else {
+    // emit 'readable' now to make sure it gets picked up.
+    state.needReadable = false;
+
+    if (!state.emittedReadable) {
+      state.emittedReadable = true;
+      emitReadable_(stream);
+    }
+  }
+} // Don't emit readable right away in sync mode, because this can trigger
+// another read() call => stack overflow.  This way, it might trigger
+// a nextTick recursion warning, but that's not so bad.
+
+
+function emitReadable(stream) {
+  var state = stream._readableState;
+  debug('emitReadable', state.needReadable, state.emittedReadable);
+  state.needReadable = false;
+
+  if (!state.emittedReadable) {
+    debug('emitReadable', state.flowing);
+    state.emittedReadable = true;
+    process.nextTick(emitReadable_, stream);
+  }
+}
+
+function emitReadable_(stream) {
+  var state = stream._readableState;
+  debug('emitReadable_', state.destroyed, state.length, state.ended);
+
+  if (!state.destroyed && (state.length || state.ended)) {
+    stream.emit('readable');
+    state.emittedReadable = false;
+  } // The stream needs another readable event if
+  // 1. It is not flowing, as the flow mechanism will take
+  //    care of it.
+  // 2. It is not ended.
+  // 3. It is below the highWaterMark, so we can schedule
+  //    another readable later.
+
+
+  state.needReadable = !state.flowing && !state.ended && state.length <= state.highWaterMark;
+  flow(stream);
+} // at this point, the user has presumably seen the 'readable' event,
+// and called read() to consume some data.  that may have triggered
+// in turn another _read(n) call, in which case reading = true if
+// it's in progress.
+// However, if we're not ended, or reading, and the length < hwm,
+// then go ahead and try to read some more preemptively.
+
+
+function maybeReadMore(stream, state) {
+  if (!state.readingMore) {
+    state.readingMore = true;
+    process.nextTick(maybeReadMore_, stream, state);
+  }
+}
+
+function maybeReadMore_(stream, state) {
+  // Attempt to read more data if we should.
+  //
+  // The conditions for reading more data are (one of):
+  // - Not enough data buffered (state.length < state.highWaterMark). The loop
+  //   is responsible for filling the buffer with enough data if such data
+  //   is available. If highWaterMark is 0 and we are not in the flowing mode
+  //   we should _not_ attempt to buffer any extra data. We'll get more data
+  //   when the stream consumer calls read() instead.
+  // - No data in the buffer, and the stream is in flowing mode. In this mode
+  //   the loop below is responsible for ensuring read() is called. Failing to
+  //   call read here would abort the flow and there's no other mechanism for
+  //   continuing the flow if the stream consumer has just subscribed to the
+  //   'data' event.
+  //
+  // In addition to the above conditions to keep reading data, the following
+  // conditions prevent the data from being read:
+  // - The stream has ended (state.ended).
+  // - There is already a pending 'read' operation (state.reading). This is a
+  //   case where the the stream has called the implementation defined _read()
+  //   method, but they are processing the call asynchronously and have _not_
+  //   called push() with new data. In this case we skip performing more
+  //   read()s. The execution ends in this method again after the _read() ends
+  //   up calling push() with more data.
+  while (!state.reading && !state.ended && (state.length < state.highWaterMark || state.flowing && state.length === 0)) {
+    var len = state.length;
+    debug('maybeReadMore read 0');
+    stream.read(0);
+    if (len === state.length) // didn't get any data, stop spinning.
+      break;
+  }
+
+  state.readingMore = false;
+} // abstract method.  to be overridden in specific implementation classes.
+// call cb(er, data) where data is <= n in length.
+// for virtual (non-string, non-buffer) streams, "length" is somewhat
+// arbitrary, and perhaps not very meaningful.
+
+
+Readable.prototype._read = function (n) {
+  errorOrDestroy(this, new ERR_METHOD_NOT_IMPLEMENTED('_read()'));
+};
+
+Readable.prototype.pipe = function (dest, pipeOpts) {
+  var src = this;
+  var state = this._readableState;
+
+  switch (state.pipesCount) {
+    case 0:
+      state.pipes = dest;
+      break;
+
+    case 1:
+      state.pipes = [state.pipes, dest];
+      break;
+
+    default:
+      state.pipes.push(dest);
+      break;
+  }
+
+  state.pipesCount += 1;
+  debug('pipe count=%d opts=%j', state.pipesCount, pipeOpts);
+  var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== process.stdout && dest !== process.stderr;
+  var endFn = doEnd ? onend : unpipe;
+  if (state.endEmitted) process.nextTick(endFn);else src.once('end', endFn);
+  dest.on('unpipe', onunpipe);
+
+  function onunpipe(readable, unpipeInfo) {
+    debug('onunpipe');
+
+    if (readable === src) {
+      if (unpipeInfo && unpipeInfo.hasUnpiped === false) {
+        unpipeInfo.hasUnpiped = true;
+        cleanup();
+      }
+    }
+  }
+
+  function onend() {
+    debug('onend');
+    dest.end();
+  } // when the dest drains, it reduces the awaitDrain counter
+  // on the source.  This would be more elegant with a .once()
+  // handler in flow(), but adding and removing repeatedly is
+  // too slow.
+
+
+  var ondrain = pipeOnDrain(src);
+  dest.on('drain', ondrain);
+  var cleanedUp = false;
+
+  function cleanup() {
+    debug('cleanup'); // cleanup event handlers once the pipe is broken
+
+    dest.removeListener('close', onclose);
+    dest.removeListener('finish', onfinish);
+    dest.removeListener('drain', ondrain);
+    dest.removeListener('error', onerror);
+    dest.removeListener('unpipe', onunpipe);
+    src.removeListener('end', onend);
+    src.removeListener('end', unpipe);
+    src.removeListener('data', ondata);
+    cleanedUp = true; // if the reader is waiting for a drain event from this
+    // specific writer, then it would cause it to never start
+    // flowing again.
+    // So, if this is awaiting a drain, then we just call it now.
+    // If we don't know, then assume that we are waiting for one.
+
+    if (state.awaitDrain && (!dest._writableState || dest._writableState.needDrain)) ondrain();
+  }
+
+  src.on('data', ondata);
+
+  function ondata(chunk) {
+    debug('ondata');
+    var ret = dest.write(chunk);
+    debug('dest.write', ret);
+
+    if (ret === false) {
+      // If the user unpiped during `dest.write()`, it is possible
+      // to get stuck in a permanently paused state if that write
+      // also returned false.
+      // => Check whether `dest` is still a piping destination.
+      if ((state.pipesCount === 1 && state.pipes === dest || state.pipesCount > 1 && indexOf(state.pipes, dest) !== -1) && !cleanedUp) {
+        debug('false write response, pause', state.awaitDrain);
+        state.awaitDrain++;
+      }
+
+      src.pause();
+    }
+  } // if the dest has an error, then stop piping into it.
+  // however, don't suppress the throwing behavior for this.
+
+
+  function onerror(er) {
+    debug('onerror', er);
+    unpipe();
+    dest.removeListener('error', onerror);
+    if (EElistenerCount(dest, 'error') === 0) errorOrDestroy(dest, er);
+  } // Make sure our error handler is attached before userland ones.
+
+
+  prependListener(dest, 'error', onerror); // Both close and finish should trigger unpipe, but only once.
+
+  function onclose() {
+    dest.removeListener('finish', onfinish);
+    unpipe();
+  }
+
+  dest.once('close', onclose);
+
+  function onfinish() {
+    debug('onfinish');
+    dest.removeListener('close', onclose);
+    unpipe();
+  }
+
+  dest.once('finish', onfinish);
+
+  function unpipe() {
+    debug('unpipe');
+    src.unpipe(dest);
+  } // tell the dest that it's being piped to
+
+
+  dest.emit('pipe', src); // start the flow if it hasn't been started already.
+
+  if (!state.flowing) {
+    debug('pipe resume');
+    src.resume();
+  }
+
+  return dest;
+};
+
+function pipeOnDrain(src) {
+  return function pipeOnDrainFunctionResult() {
+    var state = src._readableState;
+    debug('pipeOnDrain', state.awaitDrain);
+    if (state.awaitDrain) state.awaitDrain--;
+
+    if (state.awaitDrain === 0 && EElistenerCount(src, 'data')) {
+      state.flowing = true;
+      flow(src);
+    }
+  };
+}
+
+Readable.prototype.unpipe = function (dest) {
+  var state = this._readableState;
+  var unpipeInfo = {
+    hasUnpiped: false
+  }; // if we're not piping anywhere, then do nothing.
+
+  if (state.pipesCount === 0) return this; // just one destination.  most common case.
+
+  if (state.pipesCount === 1) {
+    // passed in one, but it's not the right one.
+    if (dest && dest !== state.pipes) return this;
+    if (!dest) dest = state.pipes; // got a match.
+
+    state.pipes = null;
+    state.pipesCount = 0;
+    state.flowing = false;
+    if (dest) dest.emit('unpipe', this, unpipeInfo);
+    return this;
+  } // slow case. multiple pipe destinations.
+
+
+  if (!dest) {
+    // remove all.
+    var dests = state.pipes;
+    var len = state.pipesCount;
+    state.pipes = null;
+    state.pipesCount = 0;
+    state.flowing = false;
+
+    for (var i = 0; i < len; i++) {
+      dests[i].emit('unpipe', this, {
+        hasUnpiped: false
+      });
+    }
+
+    return this;
+  } // try to find the right one.
+
+
+  var index = indexOf(state.pipes, dest);
+  if (index === -1) return this;
+  state.pipes.splice(index, 1);
+  state.pipesCount -= 1;
+  if (state.pipesCount === 1) state.pipes = state.pipes[0];
+  dest.emit('unpipe', this, unpipeInfo);
+  return this;
+}; // set up data events if they are asked for
+// Ensure readable listeners eventually get something
+
+
+Readable.prototype.on = function (ev, fn) {
+  var res = Stream.prototype.on.call(this, ev, fn);
+  var state = this._readableState;
+
+  if (ev === 'data') {
+    // update readableListening so that resume() may be a no-op
+    // a few lines down. This is needed to support once('readable').
+    state.readableListening = this.listenerCount('readable') > 0; // Try start flowing on next tick if stream isn't explicitly paused
+
+    if (state.flowing !== false) this.resume();
+  } else if (ev === 'readable') {
+    if (!state.endEmitted && !state.readableListening) {
+      state.readableListening = state.needReadable = true;
+      state.flowing = false;
+      state.emittedReadable = false;
+      debug('on readable', state.length, state.reading);
+
+      if (state.length) {
+        emitReadable(this);
+      } else if (!state.reading) {
+        process.nextTick(nReadingNextTick, this);
+      }
+    }
+  }
+
+  return res;
+};
+
+Readable.prototype.addListener = Readable.prototype.on;
+
+Readable.prototype.removeListener = function (ev, fn) {
+  var res = Stream.prototype.removeListener.call(this, ev, fn);
+
+  if (ev === 'readable') {
+    // We need to check if there is someone still listening to
+    // readable and reset the state. However this needs to happen
+    // after readable has been emitted but before I/O (nextTick) to
+    // support once('readable', fn) cycles. This means that calling
+    // resume within the same tick will have no
+    // effect.
+    process.nextTick(updateReadableListening, this);
+  }
+
+  return res;
+};
+
+Readable.prototype.removeAllListeners = function (ev) {
+  var res = Stream.prototype.removeAllListeners.apply(this, arguments);
+
+  if (ev === 'readable' || ev === undefined) {
+    // We need to check if there is someone still listening to
+    // readable and reset the state. However this needs to happen
+    // after readable has been emitted but before I/O (nextTick) to
+    // support once('readable', fn) cycles. This means that calling
+    // resume within the same tick will have no
+    // effect.
+    process.nextTick(updateReadableListening, this);
+  }
+
+  return res;
+};
+
+function updateReadableListening(self) {
+  var state = self._readableState;
+  state.readableListening = self.listenerCount('readable') > 0;
+
+  if (state.resumeScheduled && !state.paused) {
+    // flowing needs to be set to true now, otherwise
+    // the upcoming resume will not flow.
+    state.flowing = true; // crude way to check if we should resume
+  } else if (self.listenerCount('data') > 0) {
+    self.resume();
+  }
+}
+
+function nReadingNextTick(self) {
+  debug('readable nexttick read 0');
+  self.read(0);
+} // pause() and resume() are remnants of the legacy readable stream API
+// If the user uses them, then switch into old mode.
+
+
+Readable.prototype.resume = function () {
+  var state = this._readableState;
+
+  if (!state.flowing) {
+    debug('resume'); // we flow only if there is no one listening
+    // for readable, but we still have to call
+    // resume()
+
+    state.flowing = !state.readableListening;
+    resume(this, state);
+  }
+
+  state.paused = false;
+  return this;
+};
+
+function resume(stream, state) {
+  if (!state.resumeScheduled) {
+    state.resumeScheduled = true;
+    process.nextTick(resume_, stream, state);
+  }
+}
+
+function resume_(stream, state) {
+  debug('resume', state.reading);
+
+  if (!state.reading) {
+    stream.read(0);
+  }
+
+  state.resumeScheduled = false;
+  stream.emit('resume');
+  flow(stream);
+  if (state.flowing && !state.reading) stream.read(0);
+}
+
+Readable.prototype.pause = function () {
+  debug('call pause flowing=%j', this._readableState.flowing);
+
+  if (this._readableState.flowing !== false) {
+    debug('pause');
+    this._readableState.flowing = false;
+    this.emit('pause');
+  }
+
+  this._readableState.paused = true;
+  return this;
+};
+
+function flow(stream) {
+  var state = stream._readableState;
+  debug('flow', state.flowing);
+
+  while (state.flowing && stream.read() !== null) {
+    ;
+  }
+} // wrap an old-style stream as the async data source.
+// This is *not* part of the readable stream interface.
+// It is an ugly unfortunate mess of history.
+
+
+Readable.prototype.wrap = function (stream) {
+  var _this = this;
+
+  var state = this._readableState;
+  var paused = false;
+  stream.on('end', function () {
+    debug('wrapped end');
+
+    if (state.decoder && !state.ended) {
+      var chunk = state.decoder.end();
+      if (chunk && chunk.length) _this.push(chunk);
+    }
+
+    _this.push(null);
+  });
+  stream.on('data', function (chunk) {
+    debug('wrapped data');
+    if (state.decoder) chunk = state.decoder.write(chunk); // don't skip over falsy values in objectMode
+
+    if (state.objectMode && (chunk === null || chunk === undefined)) return;else if (!state.objectMode && (!chunk || !chunk.length)) return;
+
+    var ret = _this.push(chunk);
+
+    if (!ret) {
+      paused = true;
+      stream.pause();
+    }
+  }); // proxy all the other methods.
+  // important when wrapping filters and duplexes.
+
+  for (var i in stream) {
+    if (this[i] === undefined && typeof stream[i] === 'function') {
+      this[i] = function methodWrap(method) {
+        return function methodWrapReturnFunction() {
+          return stream[method].apply(stream, arguments);
+        };
+      }(i);
+    }
+  } // proxy certain important events.
+
+
+  for (var n = 0; n < kProxyEvents.length; n++) {
+    stream.on(kProxyEvents[n], this.emit.bind(this, kProxyEvents[n]));
+  } // when we try to consume some more bytes, simply unpause the
+  // underlying stream.
+
+
+  this._read = function (n) {
+    debug('wrapped _read', n);
+
+    if (paused) {
+      paused = false;
+      stream.resume();
+    }
+  };
+
+  return this;
+};
+
+if (typeof Symbol === 'function') {
+  Readable.prototype[Symbol.asyncIterator] = function () {
+    if (createReadableStreamAsyncIterator === undefined) {
+      createReadableStreamAsyncIterator = __webpack_require__(46);
+    }
+
+    return createReadableStreamAsyncIterator(this);
+  };
+}
+
+Object.defineProperty(Readable.prototype, 'readableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._readableState.highWaterMark;
+  }
+});
+Object.defineProperty(Readable.prototype, 'readableBuffer', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._readableState && this._readableState.buffer;
+  }
+});
+Object.defineProperty(Readable.prototype, 'readableFlowing', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._readableState.flowing;
+  },
+  set: function set(state) {
+    if (this._readableState) {
+      this._readableState.flowing = state;
+    }
+  }
+}); // exposed for testing purposes only.
+
+Readable._fromList = fromList;
+Object.defineProperty(Readable.prototype, 'readableLength', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._readableState.length;
+  }
+}); // Pluck off n bytes from an array of buffers.
+// Length is the combined lengths of all the buffers in the list.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+
+function fromList(n, state) {
+  // nothing buffered
+  if (state.length === 0) return null;
+  var ret;
+  if (state.objectMode) ret = state.buffer.shift();else if (!n || n >= state.length) {
+    // read it all, truncate the list
+    if (state.decoder) ret = state.buffer.join('');else if (state.buffer.length === 1) ret = state.buffer.first();else ret = state.buffer.concat(state.length);
+    state.buffer.clear();
+  } else {
+    // read part of list
+    ret = state.buffer.consume(n, state.decoder);
+  }
+  return ret;
+}
+
+function endReadable(stream) {
+  var state = stream._readableState;
+  debug('endReadable', state.endEmitted);
+
+  if (!state.endEmitted) {
+    state.ended = true;
+    process.nextTick(endReadableNT, state, stream);
+  }
+}
+
+function endReadableNT(state, stream) {
+  debug('endReadableNT', state.endEmitted, state.length); // Check that we didn't get one last unshift.
+
+  if (!state.endEmitted && state.length === 0) {
+    state.endEmitted = true;
+    stream.readable = false;
+    stream.emit('end');
+
+    if (state.autoDestroy) {
+      // In case of duplex streams we need a way to detect
+      // if the writable side is ready for autoDestroy as well
+      var wState = stream._writableState;
+
+      if (!wState || wState.autoDestroy && wState.finished) {
+        stream.destroy();
+      }
+    }
+  }
+}
+
+if (typeof Symbol === 'function') {
+  Readable.from = function (iterable, opts) {
+    if (from === undefined) {
+      from = __webpack_require__(48);
+    }
+
+    return from(Readable, iterable, opts);
+  };
+}
+
+function indexOf(xs, x) {
+  for (var i = 0, l = xs.length; i < l; i++) {
+    if (xs[i] === x) return i;
+  }
+
+  return -1;
+}
+
+/***/ }),
+/* 32 */
+/***/ ((module) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+var R = typeof Reflect === 'object' ? Reflect : null
+var ReflectApply = R && typeof R.apply === 'function'
+  ? R.apply
+  : function ReflectApply(target, receiver, args) {
+    return Function.prototype.apply.call(target, receiver, args);
+  }
+
+var ReflectOwnKeys
+if (R && typeof R.ownKeys === 'function') {
+  ReflectOwnKeys = R.ownKeys
+} else if (Object.getOwnPropertySymbols) {
+  ReflectOwnKeys = function ReflectOwnKeys(target) {
+    return Object.getOwnPropertyNames(target)
+      .concat(Object.getOwnPropertySymbols(target));
+  };
+} else {
+  ReflectOwnKeys = function ReflectOwnKeys(target) {
+    return Object.getOwnPropertyNames(target);
+  };
+}
+
+function ProcessEmitWarning(warning) {
+  if (console && console.warn) console.warn(warning);
+}
+
+var NumberIsNaN = Number.isNaN || function NumberIsNaN(value) {
+  return value !== value;
+}
+
+function EventEmitter() {
+  EventEmitter.init.call(this);
+}
+module.exports = EventEmitter;
+module.exports.once = once;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._eventsCount = 0;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+var defaultMaxListeners = 10;
+
+function checkListener(listener) {
+  if (typeof listener !== 'function') {
+    throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
+  }
+}
+
+Object.defineProperty(EventEmitter, 'defaultMaxListeners', {
+  enumerable: true,
+  get: function() {
+    return defaultMaxListeners;
+  },
+  set: function(arg) {
+    if (typeof arg !== 'number' || arg < 0 || NumberIsNaN(arg)) {
+      throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + '.');
+    }
+    defaultMaxListeners = arg;
+  }
+});
+
+EventEmitter.init = function() {
+
+  if (this._events === undefined ||
+      this._events === Object.getPrototypeOf(this)._events) {
+    this._events = Object.create(null);
+    this._eventsCount = 0;
+  }
+
+  this._maxListeners = this._maxListeners || undefined;
+};
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+  if (typeof n !== 'number' || n < 0 || NumberIsNaN(n)) {
+    throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + '.');
+  }
+  this._maxListeners = n;
+  return this;
+};
+
+function _getMaxListeners(that) {
+  if (that._maxListeners === undefined)
+    return EventEmitter.defaultMaxListeners;
+  return that._maxListeners;
+}
+
+EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+  return _getMaxListeners(this);
+};
+
+EventEmitter.prototype.emit = function emit(type) {
+  var args = [];
+  for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
+  var doError = (type === 'error');
+
+  var events = this._events;
+  if (events !== undefined)
+    doError = (doError && events.error === undefined);
+  else if (!doError)
+    return false;
+
+  // If there is no 'error' event listener then throw.
+  if (doError) {
+    var er;
+    if (args.length > 0)
+      er = args[0];
+    if (er instanceof Error) {
+      // Note: The comments on the `throw` lines are intentional, they show
+      // up in Node's output if this results in an unhandled exception.
+      throw er; // Unhandled 'error' event
+    }
+    // At least give some kind of context to the user
+    var err = new Error('Unhandled error.' + (er ? ' (' + er.message + ')' : ''));
+    err.context = er;
+    throw err; // Unhandled 'error' event
+  }
+
+  var handler = events[type];
+
+  if (handler === undefined)
+    return false;
+
+  if (typeof handler === 'function') {
+    ReflectApply(handler, this, args);
+  } else {
+    var len = handler.length;
+    var listeners = arrayClone(handler, len);
+    for (var i = 0; i < len; ++i)
+      ReflectApply(listeners[i], this, args);
+  }
+
+  return true;
+};
+
+function _addListener(target, type, listener, prepend) {
+  var m;
+  var events;
+  var existing;
+
+  checkListener(listener);
+
+  events = target._events;
+  if (events === undefined) {
+    events = target._events = Object.create(null);
+    target._eventsCount = 0;
+  } else {
+    // To avoid recursion in the case that type === "newListener"! Before
+    // adding it to the listeners, first emit "newListener".
+    if (events.newListener !== undefined) {
+      target.emit('newListener', type,
+                  listener.listener ? listener.listener : listener);
+
+      // Re-assign `events` because a newListener handler could have caused the
+      // this._events to be assigned to a new object
+      events = target._events;
+    }
+    existing = events[type];
+  }
+
+  if (existing === undefined) {
+    // Optimize the case of one listener. Don't need the extra array object.
+    existing = events[type] = listener;
+    ++target._eventsCount;
+  } else {
+    if (typeof existing === 'function') {
+      // Adding the second element, need to change to array.
+      existing = events[type] =
+        prepend ? [listener, existing] : [existing, listener];
+      // If we've already got an array, just append.
+    } else if (prepend) {
+      existing.unshift(listener);
+    } else {
+      existing.push(listener);
+    }
+
+    // Check for listener leak
+    m = _getMaxListeners(target);
+    if (m > 0 && existing.length > m && !existing.warned) {
+      existing.warned = true;
+      // No error code for this since it is a Warning
+      // eslint-disable-next-line no-restricted-syntax
+      var w = new Error('Possible EventEmitter memory leak detected. ' +
+                          existing.length + ' ' + String(type) + ' listeners ' +
+                          'added. Use emitter.setMaxListeners() to ' +
+                          'increase limit');
+      w.name = 'MaxListenersExceededWarning';
+      w.emitter = target;
+      w.type = type;
+      w.count = existing.length;
+      ProcessEmitWarning(w);
+    }
+  }
+
+  return target;
+}
+
+EventEmitter.prototype.addListener = function addListener(type, listener) {
+  return _addListener(this, type, listener, false);
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.prependListener =
+    function prependListener(type, listener) {
+      return _addListener(this, type, listener, true);
+    };
+
+function onceWrapper() {
+  if (!this.fired) {
+    this.target.removeListener(this.type, this.wrapFn);
+    this.fired = true;
+    if (arguments.length === 0)
+      return this.listener.call(this.target);
+    return this.listener.apply(this.target, arguments);
+  }
+}
+
+function _onceWrap(target, type, listener) {
+  var state = { fired: false, wrapFn: undefined, target: target, type: type, listener: listener };
+  var wrapped = onceWrapper.bind(state);
+  wrapped.listener = listener;
+  state.wrapFn = wrapped;
+  return wrapped;
+}
+
+EventEmitter.prototype.once = function once(type, listener) {
+  checkListener(listener);
+  this.on(type, _onceWrap(this, type, listener));
+  return this;
+};
+
+EventEmitter.prototype.prependOnceListener =
+    function prependOnceListener(type, listener) {
+      checkListener(listener);
+      this.prependListener(type, _onceWrap(this, type, listener));
+      return this;
+    };
+
+// Emits a 'removeListener' event if and only if the listener was removed.
+EventEmitter.prototype.removeListener =
+    function removeListener(type, listener) {
+      var list, events, position, i, originalListener;
+
+      checkListener(listener);
+
+      events = this._events;
+      if (events === undefined)
+        return this;
+
+      list = events[type];
+      if (list === undefined)
+        return this;
+
+      if (list === listener || list.listener === listener) {
+        if (--this._eventsCount === 0)
+          this._events = Object.create(null);
+        else {
+          delete events[type];
+          if (events.removeListener)
+            this.emit('removeListener', type, list.listener || listener);
+        }
+      } else if (typeof list !== 'function') {
+        position = -1;
+
+        for (i = list.length - 1; i >= 0; i--) {
+          if (list[i] === listener || list[i].listener === listener) {
+            originalListener = list[i].listener;
+            position = i;
+            break;
+          }
+        }
+
+        if (position < 0)
+          return this;
+
+        if (position === 0)
+          list.shift();
+        else {
+          spliceOne(list, position);
+        }
+
+        if (list.length === 1)
+          events[type] = list[0];
+
+        if (events.removeListener !== undefined)
+          this.emit('removeListener', type, originalListener || listener);
+      }
+
+      return this;
+    };
+
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+
+EventEmitter.prototype.removeAllListeners =
+    function removeAllListeners(type) {
+      var listeners, events, i;
+
+      events = this._events;
+      if (events === undefined)
+        return this;
+
+      // not listening for removeListener, no need to emit
+      if (events.removeListener === undefined) {
+        if (arguments.length === 0) {
+          this._events = Object.create(null);
+          this._eventsCount = 0;
+        } else if (events[type] !== undefined) {
+          if (--this._eventsCount === 0)
+            this._events = Object.create(null);
+          else
+            delete events[type];
+        }
+        return this;
+      }
+
+      // emit removeListener for all listeners on all events
+      if (arguments.length === 0) {
+        var keys = Object.keys(events);
+        var key;
+        for (i = 0; i < keys.length; ++i) {
+          key = keys[i];
+          if (key === 'removeListener') continue;
+          this.removeAllListeners(key);
+        }
+        this.removeAllListeners('removeListener');
+        this._events = Object.create(null);
+        this._eventsCount = 0;
+        return this;
+      }
+
+      listeners = events[type];
+
+      if (typeof listeners === 'function') {
+        this.removeListener(type, listeners);
+      } else if (listeners !== undefined) {
+        // LIFO order
+        for (i = listeners.length - 1; i >= 0; i--) {
+          this.removeListener(type, listeners[i]);
+        }
+      }
+
+      return this;
+    };
+
+function _listeners(target, type, unwrap) {
+  var events = target._events;
+
+  if (events === undefined)
+    return [];
+
+  var evlistener = events[type];
+  if (evlistener === undefined)
+    return [];
+
+  if (typeof evlistener === 'function')
+    return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+
+  return unwrap ?
+    unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+}
+
+EventEmitter.prototype.listeners = function listeners(type) {
+  return _listeners(this, type, true);
+};
+
+EventEmitter.prototype.rawListeners = function rawListeners(type) {
+  return _listeners(this, type, false);
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  if (typeof emitter.listenerCount === 'function') {
+    return emitter.listenerCount(type);
+  } else {
+    return listenerCount.call(emitter, type);
+  }
+};
+
+EventEmitter.prototype.listenerCount = listenerCount;
+function listenerCount(type) {
+  var events = this._events;
+
+  if (events !== undefined) {
+    var evlistener = events[type];
+
+    if (typeof evlistener === 'function') {
+      return 1;
+    } else if (evlistener !== undefined) {
+      return evlistener.length;
+    }
+  }
+
+  return 0;
+}
+
+EventEmitter.prototype.eventNames = function eventNames() {
+  return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
+};
+
+function arrayClone(arr, n) {
+  var copy = new Array(n);
+  for (var i = 0; i < n; ++i)
+    copy[i] = arr[i];
+  return copy;
+}
+
+function spliceOne(list, index) {
+  for (; index + 1 < list.length; index++)
+    list[index] = list[index + 1];
+  list.pop();
+}
+
+function unwrapListeners(arr) {
+  var ret = new Array(arr.length);
+  for (var i = 0; i < ret.length; ++i) {
+    ret[i] = arr[i].listener || arr[i];
+  }
+  return ret;
+}
+
+function once(emitter, name) {
+  return new Promise(function (resolve, reject) {
+    function errorListener(err) {
+      emitter.removeListener(name, resolver);
+      reject(err);
+    }
+
+    function resolver() {
+      if (typeof emitter.removeListener === 'function') {
+        emitter.removeListener('error', errorListener);
+      }
+      resolve([].slice.call(arguments));
+    };
+
+    eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
+    if (name !== 'error') {
+      addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
+    }
+  });
+}
+
+function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+  if (typeof emitter.on === 'function') {
+    eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
+  }
+}
+
+function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+  if (typeof emitter.on === 'function') {
+    if (flags.once) {
+      emitter.once(name, listener);
+    } else {
+      emitter.on(name, listener);
+    }
+  } else if (typeof emitter.addEventListener === 'function') {
+    // EventTarget does not have `error` event semantics like Node
+    // EventEmitters, we do not listen for `error` events here.
+    emitter.addEventListener(name, function wrapListener(arg) {
+      // IE does not have builtin `{ once: true }` support so we
+      // have to do it manually.
+      if (flags.once) {
+        emitter.removeEventListener(name, wrapListener);
+      }
+      listener(arg);
+    });
+  } else {
+    throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+  }
+}
+
+
+/***/ }),
+/* 33 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__(32).EventEmitter;
+
+
+/***/ }),
+/* 34 */
+/***/ (() => {
+
+/* (ignored) */
+
+/***/ }),
+/* 35 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var _require = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'buffer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }())),
+    Buffer = _require.Buffer;
+
+var _require2 = __webpack_require__(36),
+    inspect = _require2.inspect;
+
+var custom = inspect && inspect.custom || 'inspect';
+
+function copyBuffer(src, target, offset) {
+  Buffer.prototype.copy.call(src, target, offset);
+}
+
+module.exports =
+/*#__PURE__*/
+function () {
+  function BufferList() {
+    _classCallCheck(this, BufferList);
+
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
+  }
+
+  _createClass(BufferList, [{
+    key: "push",
+    value: function push(v) {
+      var entry = {
+        data: v,
+        next: null
+      };
+      if (this.length > 0) this.tail.next = entry;else this.head = entry;
+      this.tail = entry;
+      ++this.length;
+    }
+  }, {
+    key: "unshift",
+    value: function unshift(v) {
+      var entry = {
+        data: v,
+        next: this.head
+      };
+      if (this.length === 0) this.tail = entry;
+      this.head = entry;
+      ++this.length;
+    }
+  }, {
+    key: "shift",
+    value: function shift() {
+      if (this.length === 0) return;
+      var ret = this.head.data;
+      if (this.length === 1) this.head = this.tail = null;else this.head = this.head.next;
+      --this.length;
+      return ret;
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      this.head = this.tail = null;
+      this.length = 0;
+    }
+  }, {
+    key: "join",
+    value: function join(s) {
+      if (this.length === 0) return '';
+      var p = this.head;
+      var ret = '' + p.data;
+
+      while (p = p.next) {
+        ret += s + p.data;
+      }
+
+      return ret;
+    }
+  }, {
+    key: "concat",
+    value: function concat(n) {
+      if (this.length === 0) return Buffer.alloc(0);
+      var ret = Buffer.allocUnsafe(n >>> 0);
+      var p = this.head;
+      var i = 0;
+
+      while (p) {
+        copyBuffer(p.data, ret, i);
+        i += p.data.length;
+        p = p.next;
+      }
+
+      return ret;
+    } // Consumes a specified amount of bytes or characters from the buffered data.
+
+  }, {
+    key: "consume",
+    value: function consume(n, hasStrings) {
+      var ret;
+
+      if (n < this.head.data.length) {
+        // `slice` is the same for buffers and strings.
+        ret = this.head.data.slice(0, n);
+        this.head.data = this.head.data.slice(n);
+      } else if (n === this.head.data.length) {
+        // First chunk is a perfect match.
+        ret = this.shift();
+      } else {
+        // Result spans more than one buffer.
+        ret = hasStrings ? this._getString(n) : this._getBuffer(n);
+      }
+
+      return ret;
+    }
+  }, {
+    key: "first",
+    value: function first() {
+      return this.head.data;
+    } // Consumes a specified amount of characters from the buffered data.
+
+  }, {
+    key: "_getString",
+    value: function _getString(n) {
+      var p = this.head;
+      var c = 1;
+      var ret = p.data;
+      n -= ret.length;
+
+      while (p = p.next) {
+        var str = p.data;
+        var nb = n > str.length ? str.length : n;
+        if (nb === str.length) ret += str;else ret += str.slice(0, n);
+        n -= nb;
+
+        if (n === 0) {
+          if (nb === str.length) {
+            ++c;
+            if (p.next) this.head = p.next;else this.head = this.tail = null;
+          } else {
+            this.head = p;
+            p.data = str.slice(nb);
+          }
+
+          break;
+        }
+
+        ++c;
+      }
+
+      this.length -= c;
+      return ret;
+    } // Consumes a specified amount of bytes from the buffered data.
+
+  }, {
+    key: "_getBuffer",
+    value: function _getBuffer(n) {
+      var ret = Buffer.allocUnsafe(n);
+      var p = this.head;
+      var c = 1;
+      p.data.copy(ret);
+      n -= p.data.length;
+
+      while (p = p.next) {
+        var buf = p.data;
+        var nb = n > buf.length ? buf.length : n;
+        buf.copy(ret, ret.length - n, 0, nb);
+        n -= nb;
+
+        if (n === 0) {
+          if (nb === buf.length) {
+            ++c;
+            if (p.next) this.head = p.next;else this.head = this.tail = null;
+          } else {
+            this.head = p;
+            p.data = buf.slice(nb);
+          }
+
+          break;
+        }
+
+        ++c;
+      }
+
+      this.length -= c;
+      return ret;
+    } // Make sure the linked list only shows the minimal necessary information.
+
+  }, {
+    key: custom,
+    value: function value(_, options) {
+      return inspect(this, _objectSpread({}, options, {
+        // Only inspect one level.
+        depth: 0,
+        // It should not recurse.
+        customInspect: false
+      }));
+    }
+  }]);
+
+  return BufferList;
+}();
+
+/***/ }),
+/* 36 */
+/***/ (() => {
+
+/* (ignored) */
+
+/***/ }),
+/* 37 */
+/***/ ((module) => {
+
+"use strict";
+ // undocumented cb() API, needed for core, not for public API
+
+function destroy(err, cb) {
+  var _this = this;
+
+  var readableDestroyed = this._readableState && this._readableState.destroyed;
+  var writableDestroyed = this._writableState && this._writableState.destroyed;
+
+  if (readableDestroyed || writableDestroyed) {
+    if (cb) {
+      cb(err);
+    } else if (err) {
+      if (!this._writableState) {
+        process.nextTick(emitErrorNT, this, err);
+      } else if (!this._writableState.errorEmitted) {
+        this._writableState.errorEmitted = true;
+        process.nextTick(emitErrorNT, this, err);
+      }
+    }
+
+    return this;
+  } // we set destroyed to true before firing error callbacks in order
+  // to make it re-entrance safe in case destroy() is called within callbacks
+
+
+  if (this._readableState) {
+    this._readableState.destroyed = true;
+  } // if this is a duplex stream mark the writable part as destroyed as well
+
+
+  if (this._writableState) {
+    this._writableState.destroyed = true;
+  }
+
+  this._destroy(err || null, function (err) {
+    if (!cb && err) {
+      if (!_this._writableState) {
+        process.nextTick(emitErrorAndCloseNT, _this, err);
+      } else if (!_this._writableState.errorEmitted) {
+        _this._writableState.errorEmitted = true;
+        process.nextTick(emitErrorAndCloseNT, _this, err);
+      } else {
+        process.nextTick(emitCloseNT, _this);
+      }
+    } else if (cb) {
+      process.nextTick(emitCloseNT, _this);
+      cb(err);
+    } else {
+      process.nextTick(emitCloseNT, _this);
+    }
+  });
+
+  return this;
+}
+
+function emitErrorAndCloseNT(self, err) {
+  emitErrorNT(self, err);
+  emitCloseNT(self);
+}
+
+function emitCloseNT(self) {
+  if (self._writableState && !self._writableState.emitClose) return;
+  if (self._readableState && !self._readableState.emitClose) return;
+  self.emit('close');
+}
+
+function undestroy() {
+  if (this._readableState) {
+    this._readableState.destroyed = false;
+    this._readableState.reading = false;
+    this._readableState.ended = false;
+    this._readableState.endEmitted = false;
+  }
+
+  if (this._writableState) {
+    this._writableState.destroyed = false;
+    this._writableState.ended = false;
+    this._writableState.ending = false;
+    this._writableState.finalCalled = false;
+    this._writableState.prefinished = false;
+    this._writableState.finished = false;
+    this._writableState.errorEmitted = false;
+  }
+}
+
+function emitErrorNT(self, err) {
+  self.emit('error', err);
+}
+
+function errorOrDestroy(stream, err) {
+  // We have tests that rely on errors being emitted
+  // in the same tick, so changing this is semver major.
+  // For now when you opt-in to autoDestroy we allow
+  // the error to be emitted nextTick. In a future
+  // semver major update we should change the default to this.
+  var rState = stream._readableState;
+  var wState = stream._writableState;
+  if (rState && rState.autoDestroy || wState && wState.autoDestroy) stream.destroy(err);else stream.emit('error', err);
+}
+
+module.exports = {
+  destroy: destroy,
+  undestroy: undestroy,
+  errorOrDestroy: errorOrDestroy
+};
+
+/***/ }),
+/* 38 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var ERR_INVALID_OPT_VALUE = __webpack_require__(39).codes.ERR_INVALID_OPT_VALUE;
+
+function highWaterMarkFrom(options, isDuplex, duplexKey) {
+  return options.highWaterMark != null ? options.highWaterMark : isDuplex ? options[duplexKey] : null;
+}
+
+function getHighWaterMark(state, options, duplexKey, isDuplex) {
+  var hwm = highWaterMarkFrom(options, isDuplex, duplexKey);
+
+  if (hwm != null) {
+    if (!(isFinite(hwm) && Math.floor(hwm) === hwm) || hwm < 0) {
+      var name = isDuplex ? duplexKey : 'highWaterMark';
+      throw new ERR_INVALID_OPT_VALUE(name, hwm);
+    }
+
+    return Math.floor(hwm);
+  } // Default value
+
+
+  return state.objectMode ? 16 : 16 * 1024;
+}
+
+module.exports = {
+  getHighWaterMark: getHighWaterMark
+};
+
+/***/ }),
+/* 39 */
+/***/ ((module) => {
+
+"use strict";
+
+
+function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; subClass.__proto__ = superClass; }
+
+var codes = {};
+
+function createErrorType(code, message, Base) {
+  if (!Base) {
+    Base = Error;
+  }
+
+  function getMessage(arg1, arg2, arg3) {
+    if (typeof message === 'string') {
+      return message;
+    } else {
+      return message(arg1, arg2, arg3);
+    }
+  }
+
+  var NodeError =
+  /*#__PURE__*/
+  function (_Base) {
+    _inheritsLoose(NodeError, _Base);
+
+    function NodeError(arg1, arg2, arg3) {
+      return _Base.call(this, getMessage(arg1, arg2, arg3)) || this;
+    }
+
+    return NodeError;
+  }(Base);
+
+  NodeError.prototype.name = Base.name;
+  NodeError.prototype.code = code;
+  codes[code] = NodeError;
+} // https://github.com/nodejs/node/blob/v10.8.0/lib/internal/errors.js
+
+
+function oneOf(expected, thing) {
+  if (Array.isArray(expected)) {
+    var len = expected.length;
+    expected = expected.map(function (i) {
+      return String(i);
+    });
+
+    if (len > 2) {
+      return "one of ".concat(thing, " ").concat(expected.slice(0, len - 1).join(', '), ", or ") + expected[len - 1];
+    } else if (len === 2) {
+      return "one of ".concat(thing, " ").concat(expected[0], " or ").concat(expected[1]);
+    } else {
+      return "of ".concat(thing, " ").concat(expected[0]);
+    }
+  } else {
+    return "of ".concat(thing, " ").concat(String(expected));
+  }
+} // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
+
+
+function startsWith(str, search, pos) {
+  return str.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+} // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith
+
+
+function endsWith(str, search, this_len) {
+  if (this_len === undefined || this_len > str.length) {
+    this_len = str.length;
+  }
+
+  return str.substring(this_len - search.length, this_len) === search;
+} // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes
+
+
+function includes(str, search, start) {
+  if (typeof start !== 'number') {
+    start = 0;
+  }
+
+  if (start + search.length > str.length) {
+    return false;
+  } else {
+    return str.indexOf(search, start) !== -1;
+  }
+}
+
+createErrorType('ERR_INVALID_OPT_VALUE', function (name, value) {
+  return 'The value "' + value + '" is invalid for option "' + name + '"';
+}, TypeError);
+createErrorType('ERR_INVALID_ARG_TYPE', function (name, expected, actual) {
+  // determiner: 'must be' or 'must not be'
+  var determiner;
+
+  if (typeof expected === 'string' && startsWith(expected, 'not ')) {
+    determiner = 'must not be';
+    expected = expected.replace(/^not /, '');
+  } else {
+    determiner = 'must be';
+  }
+
+  var msg;
+
+  if (endsWith(name, ' argument')) {
+    // For cases like 'first argument'
+    msg = "The ".concat(name, " ").concat(determiner, " ").concat(oneOf(expected, 'type'));
+  } else {
+    var type = includes(name, '.') ? 'property' : 'argument';
+    msg = "The \"".concat(name, "\" ").concat(type, " ").concat(determiner, " ").concat(oneOf(expected, 'type'));
+  }
+
+  msg += ". Received type ".concat(typeof actual);
+  return msg;
+}, TypeError);
+createErrorType('ERR_STREAM_PUSH_AFTER_EOF', 'stream.push() after EOF');
+createErrorType('ERR_METHOD_NOT_IMPLEMENTED', function (name) {
+  return 'The ' + name + ' method is not implemented';
+});
+createErrorType('ERR_STREAM_PREMATURE_CLOSE', 'Premature close');
+createErrorType('ERR_STREAM_DESTROYED', function (name) {
+  return 'Cannot call ' + name + ' after a stream was destroyed';
+});
+createErrorType('ERR_MULTIPLE_CALLBACK', 'Callback called multiple times');
+createErrorType('ERR_STREAM_CANNOT_PIPE', 'Cannot pipe, not readable');
+createErrorType('ERR_STREAM_WRITE_AFTER_END', 'write after end');
+createErrorType('ERR_STREAM_NULL_VALUES', 'May not write null values to stream', TypeError);
+createErrorType('ERR_UNKNOWN_ENCODING', function (arg) {
+  return 'Unknown encoding: ' + arg;
+}, TypeError);
+createErrorType('ERR_STREAM_UNSHIFT_AFTER_END_EVENT', 'stream.unshift() after end event');
+module.exports.codes = codes;
+
+
+/***/ }),
+/* 40 */
+/***/ ((module) => {
+
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      })
+    }
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      var TempCtor = function () {}
+      TempCtor.prototype = superCtor.prototype
+      ctor.prototype = new TempCtor()
+      ctor.prototype.constructor = ctor
+    }
+  }
+}
+
+
+/***/ }),
+/* 41 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+// a duplex stream is just a stream that is both readable and writable.
+// Since JS doesn't have multiple prototypal inheritance, this class
+// prototypally inherits from Readable, and then parasitically from
+// Writable.
+
+/*<replacement>*/
+
+var objectKeys = Object.keys || function (obj) {
+  var keys = [];
+
+  for (var key in obj) {
+    keys.push(key);
+  }
+
+  return keys;
+};
+/*</replacement>*/
+
+
+module.exports = Duplex;
+
+var Readable = __webpack_require__(31);
+
+var Writable = __webpack_require__(42);
+
+__webpack_require__(40)(Duplex, Readable);
+
+{
+  // Allow the keys array to be GC'ed.
+  var keys = objectKeys(Writable.prototype);
+
+  for (var v = 0; v < keys.length; v++) {
+    var method = keys[v];
+    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
+  }
+}
+
+function Duplex(options) {
+  if (!(this instanceof Duplex)) return new Duplex(options);
+  Readable.call(this, options);
+  Writable.call(this, options);
+  this.allowHalfOpen = true;
+
+  if (options) {
+    if (options.readable === false) this.readable = false;
+    if (options.writable === false) this.writable = false;
+
+    if (options.allowHalfOpen === false) {
+      this.allowHalfOpen = false;
+      this.once('end', onend);
+    }
+  }
+}
+
+Object.defineProperty(Duplex.prototype, 'writableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState.highWaterMark;
+  }
+});
+Object.defineProperty(Duplex.prototype, 'writableBuffer', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState && this._writableState.getBuffer();
+  }
+});
+Object.defineProperty(Duplex.prototype, 'writableLength', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState.length;
+  }
+}); // the no-half-open enforcer
+
+function onend() {
+  // If the writable side ended, then we're ok.
+  if (this._writableState.ended) return; // no more data can be written.
+  // But allow more writes to happen in this tick.
+
+  process.nextTick(onEndNT, this);
+}
+
+function onEndNT(self) {
+  self.end();
+}
+
+Object.defineProperty(Duplex.prototype, 'destroyed', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    if (this._readableState === undefined || this._writableState === undefined) {
+      return false;
+    }
+
+    return this._readableState.destroyed && this._writableState.destroyed;
+  },
+  set: function set(value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (this._readableState === undefined || this._writableState === undefined) {
+      return;
+    } // backward compatibility, the user is explicitly
+    // managing destroyed
+
+
+    this._readableState.destroyed = value;
+    this._writableState.destroyed = value;
+  }
+});
+
+/***/ }),
+/* 42 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+// A bit simpler than readable streams.
+// Implement an async ._write(chunk, encoding, cb), and it'll handle all
+// the drain event emission and buffering.
+
+
+module.exports = Writable;
+/* <replacement> */
+
+function WriteReq(chunk, encoding, cb) {
+  this.chunk = chunk;
+  this.encoding = encoding;
+  this.callback = cb;
+  this.next = null;
+} // It seems a linked list but it is not
+// there will be only 2 of these for each stream
+
+
+function CorkedRequest(state) {
+  var _this = this;
+
+  this.next = null;
+  this.entry = null;
+
+  this.finish = function () {
+    onCorkedFinish(_this, state);
+  };
+}
+/* </replacement> */
+
+/*<replacement>*/
+
+
+var Duplex;
+/*</replacement>*/
+
+Writable.WritableState = WritableState;
+/*<replacement>*/
+
+var internalUtil = {
+  deprecate: __webpack_require__(43)
+};
+/*</replacement>*/
+
+/*<replacement>*/
+
+var Stream = __webpack_require__(33);
+/*</replacement>*/
+
+
+var Buffer = Object(function webpackMissingModule() { var e = new Error("Cannot find module 'buffer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }());
+
+var OurUint8Array = __webpack_require__.g.Uint8Array || function () {};
+
+function _uint8ArrayToBuffer(chunk) {
+  return Buffer.from(chunk);
+}
+
+function _isUint8Array(obj) {
+  return Buffer.isBuffer(obj) || obj instanceof OurUint8Array;
+}
+
+var destroyImpl = __webpack_require__(37);
+
+var _require = __webpack_require__(38),
+    getHighWaterMark = _require.getHighWaterMark;
+
+var _require$codes = __webpack_require__(39).codes,
+    ERR_INVALID_ARG_TYPE = _require$codes.ERR_INVALID_ARG_TYPE,
+    ERR_METHOD_NOT_IMPLEMENTED = _require$codes.ERR_METHOD_NOT_IMPLEMENTED,
+    ERR_MULTIPLE_CALLBACK = _require$codes.ERR_MULTIPLE_CALLBACK,
+    ERR_STREAM_CANNOT_PIPE = _require$codes.ERR_STREAM_CANNOT_PIPE,
+    ERR_STREAM_DESTROYED = _require$codes.ERR_STREAM_DESTROYED,
+    ERR_STREAM_NULL_VALUES = _require$codes.ERR_STREAM_NULL_VALUES,
+    ERR_STREAM_WRITE_AFTER_END = _require$codes.ERR_STREAM_WRITE_AFTER_END,
+    ERR_UNKNOWN_ENCODING = _require$codes.ERR_UNKNOWN_ENCODING;
+
+var errorOrDestroy = destroyImpl.errorOrDestroy;
+
+__webpack_require__(40)(Writable, Stream);
+
+function nop() {}
+
+function WritableState(options, stream, isDuplex) {
+  Duplex = Duplex || __webpack_require__(41);
+  options = options || {}; // Duplex streams are both readable and writable, but share
+  // the same options object.
+  // However, some cases require setting options to different
+  // values for the readable and the writable sides of the duplex stream,
+  // e.g. options.readableObjectMode vs. options.writableObjectMode, etc.
+
+  if (typeof isDuplex !== 'boolean') isDuplex = stream instanceof Duplex; // object stream flag to indicate whether or not this stream
+  // contains buffers or objects.
+
+  this.objectMode = !!options.objectMode;
+  if (isDuplex) this.objectMode = this.objectMode || !!options.writableObjectMode; // the point at which write() starts returning false
+  // Note: 0 is a valid value, means that we always return false if
+  // the entire buffer is not flushed immediately on write()
+
+  this.highWaterMark = getHighWaterMark(this, options, 'writableHighWaterMark', isDuplex); // if _final has been called
+
+  this.finalCalled = false; // drain event flag.
+
+  this.needDrain = false; // at the start of calling end()
+
+  this.ending = false; // when end() has been called, and returned
+
+  this.ended = false; // when 'finish' is emitted
+
+  this.finished = false; // has it been destroyed
+
+  this.destroyed = false; // should we decode strings into buffers before passing to _write?
+  // this is here so that some node-core streams can optimize string
+  // handling at a lower level.
+
+  var noDecode = options.decodeStrings === false;
+  this.decodeStrings = !noDecode; // Crypto is kind of old and crusty.  Historically, its default string
+  // encoding is 'binary' so we have to make this configurable.
+  // Everything else in the universe uses 'utf8', though.
+
+  this.defaultEncoding = options.defaultEncoding || 'utf8'; // not an actual buffer we keep track of, but a measurement
+  // of how much we're waiting to get pushed to some underlying
+  // socket or file.
+
+  this.length = 0; // a flag to see when we're in the middle of a write.
+
+  this.writing = false; // when true all writes will be buffered until .uncork() call
+
+  this.corked = 0; // a flag to be able to tell if the onwrite cb is called immediately,
+  // or on a later tick.  We set this to true at first, because any
+  // actions that shouldn't happen until "later" should generally also
+  // not happen before the first write call.
+
+  this.sync = true; // a flag to know if we're processing previously buffered items, which
+  // may call the _write() callback in the same tick, so that we don't
+  // end up in an overlapped onwrite situation.
+
+  this.bufferProcessing = false; // the callback that's passed to _write(chunk,cb)
+
+  this.onwrite = function (er) {
+    onwrite(stream, er);
+  }; // the callback that the user supplies to write(chunk,encoding,cb)
+
+
+  this.writecb = null; // the amount that is being written when _write is called.
+
+  this.writelen = 0;
+  this.bufferedRequest = null;
+  this.lastBufferedRequest = null; // number of pending user-supplied write callbacks
+  // this must be 0 before 'finish' can be emitted
+
+  this.pendingcb = 0; // emit prefinish if the only thing we're waiting for is _write cbs
+  // This is relevant for synchronous Transform streams
+
+  this.prefinished = false; // True if the error was already emitted and should not be thrown again
+
+  this.errorEmitted = false; // Should close be emitted on destroy. Defaults to true.
+
+  this.emitClose = options.emitClose !== false; // Should .destroy() be called after 'finish' (and potentially 'end')
+
+  this.autoDestroy = !!options.autoDestroy; // count buffered requests
+
+  this.bufferedRequestCount = 0; // allocate the first CorkedRequest, there is always
+  // one allocated and free to use, and we maintain at most two
+
+  this.corkedRequestsFree = new CorkedRequest(this);
+}
+
+WritableState.prototype.getBuffer = function getBuffer() {
+  var current = this.bufferedRequest;
+  var out = [];
+
+  while (current) {
+    out.push(current);
+    current = current.next;
+  }
+
+  return out;
+};
+
+(function () {
+  try {
+    Object.defineProperty(WritableState.prototype, 'buffer', {
+      get: internalUtil.deprecate(function writableStateBufferGetter() {
+        return this.getBuffer();
+      }, '_writableState.buffer is deprecated. Use _writableState.getBuffer ' + 'instead.', 'DEP0003')
+    });
+  } catch (_) {}
+})(); // Test _writableState for inheritance to account for Duplex streams,
+// whose prototype chain only points to Readable.
+
+
+var realHasInstance;
+
+if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
+  realHasInstance = Function.prototype[Symbol.hasInstance];
+  Object.defineProperty(Writable, Symbol.hasInstance, {
+    value: function value(object) {
+      if (realHasInstance.call(this, object)) return true;
+      if (this !== Writable) return false;
+      return object && object._writableState instanceof WritableState;
+    }
+  });
+} else {
+  realHasInstance = function realHasInstance(object) {
+    return object instanceof this;
+  };
+}
+
+function Writable(options) {
+  Duplex = Duplex || __webpack_require__(41); // Writable ctor is applied to Duplexes, too.
+  // `realHasInstance` is necessary because using plain `instanceof`
+  // would return false, as no `_writableState` property is attached.
+  // Trying to use the custom `instanceof` for Writable here will also break the
+  // Node.js LazyTransform implementation, which has a non-trivial getter for
+  // `_writableState` that would lead to infinite recursion.
+  // Checking for a Stream.Duplex instance is faster here instead of inside
+  // the WritableState constructor, at least with V8 6.5
+
+  var isDuplex = this instanceof Duplex;
+  if (!isDuplex && !realHasInstance.call(Writable, this)) return new Writable(options);
+  this._writableState = new WritableState(options, this, isDuplex); // legacy.
+
+  this.writable = true;
+
+  if (options) {
+    if (typeof options.write === 'function') this._write = options.write;
+    if (typeof options.writev === 'function') this._writev = options.writev;
+    if (typeof options.destroy === 'function') this._destroy = options.destroy;
+    if (typeof options.final === 'function') this._final = options.final;
+  }
+
+  Stream.call(this);
+} // Otherwise people can pipe Writable streams, which is just wrong.
+
+
+Writable.prototype.pipe = function () {
+  errorOrDestroy(this, new ERR_STREAM_CANNOT_PIPE());
+};
+
+function writeAfterEnd(stream, cb) {
+  var er = new ERR_STREAM_WRITE_AFTER_END(); // TODO: defer error events consistently everywhere, not just the cb
+
+  errorOrDestroy(stream, er);
+  process.nextTick(cb, er);
+} // Checks that a user-supplied chunk is valid, especially for the particular
+// mode the stream is in. Currently this means that `null` is never accepted
+// and undefined/non-string values are only allowed in object mode.
+
+
+function validChunk(stream, state, chunk, cb) {
+  var er;
+
+  if (chunk === null) {
+    er = new ERR_STREAM_NULL_VALUES();
+  } else if (typeof chunk !== 'string' && !state.objectMode) {
+    er = new ERR_INVALID_ARG_TYPE('chunk', ['string', 'Buffer'], chunk);
+  }
+
+  if (er) {
+    errorOrDestroy(stream, er);
+    process.nextTick(cb, er);
+    return false;
+  }
+
+  return true;
+}
+
+Writable.prototype.write = function (chunk, encoding, cb) {
+  var state = this._writableState;
+  var ret = false;
+
+  var isBuf = !state.objectMode && _isUint8Array(chunk);
+
+  if (isBuf && !Buffer.isBuffer(chunk)) {
+    chunk = _uint8ArrayToBuffer(chunk);
+  }
+
+  if (typeof encoding === 'function') {
+    cb = encoding;
+    encoding = null;
+  }
+
+  if (isBuf) encoding = 'buffer';else if (!encoding) encoding = state.defaultEncoding;
+  if (typeof cb !== 'function') cb = nop;
+  if (state.ending) writeAfterEnd(this, cb);else if (isBuf || validChunk(this, state, chunk, cb)) {
+    state.pendingcb++;
+    ret = writeOrBuffer(this, state, isBuf, chunk, encoding, cb);
+  }
+  return ret;
+};
+
+Writable.prototype.cork = function () {
+  this._writableState.corked++;
+};
+
+Writable.prototype.uncork = function () {
+  var state = this._writableState;
+
+  if (state.corked) {
+    state.corked--;
+    if (!state.writing && !state.corked && !state.bufferProcessing && state.bufferedRequest) clearBuffer(this, state);
+  }
+};
+
+Writable.prototype.setDefaultEncoding = function setDefaultEncoding(encoding) {
+  // node::ParseEncoding() requires lower case.
+  if (typeof encoding === 'string') encoding = encoding.toLowerCase();
+  if (!(['hex', 'utf8', 'utf-8', 'ascii', 'binary', 'base64', 'ucs2', 'ucs-2', 'utf16le', 'utf-16le', 'raw'].indexOf((encoding + '').toLowerCase()) > -1)) throw new ERR_UNKNOWN_ENCODING(encoding);
+  this._writableState.defaultEncoding = encoding;
+  return this;
+};
+
+Object.defineProperty(Writable.prototype, 'writableBuffer', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState && this._writableState.getBuffer();
+  }
+});
+
+function decodeChunk(state, chunk, encoding) {
+  if (!state.objectMode && state.decodeStrings !== false && typeof chunk === 'string') {
+    chunk = Buffer.from(chunk, encoding);
+  }
+
+  return chunk;
+}
+
+Object.defineProperty(Writable.prototype, 'writableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState.highWaterMark;
+  }
+}); // if we're already writing something, then just put this
+// in the queue, and wait our turn.  Otherwise, call _write
+// If we return false, then we need a drain event, so set that flag.
+
+function writeOrBuffer(stream, state, isBuf, chunk, encoding, cb) {
+  if (!isBuf) {
+    var newChunk = decodeChunk(state, chunk, encoding);
+
+    if (chunk !== newChunk) {
+      isBuf = true;
+      encoding = 'buffer';
+      chunk = newChunk;
+    }
+  }
+
+  var len = state.objectMode ? 1 : chunk.length;
+  state.length += len;
+  var ret = state.length < state.highWaterMark; // we must ensure that previous needDrain will not be reset to false.
+
+  if (!ret) state.needDrain = true;
+
+  if (state.writing || state.corked) {
+    var last = state.lastBufferedRequest;
+    state.lastBufferedRequest = {
+      chunk: chunk,
+      encoding: encoding,
+      isBuf: isBuf,
+      callback: cb,
+      next: null
+    };
+
+    if (last) {
+      last.next = state.lastBufferedRequest;
+    } else {
+      state.bufferedRequest = state.lastBufferedRequest;
+    }
+
+    state.bufferedRequestCount += 1;
+  } else {
+    doWrite(stream, state, false, len, chunk, encoding, cb);
+  }
+
+  return ret;
+}
+
+function doWrite(stream, state, writev, len, chunk, encoding, cb) {
+  state.writelen = len;
+  state.writecb = cb;
+  state.writing = true;
+  state.sync = true;
+  if (state.destroyed) state.onwrite(new ERR_STREAM_DESTROYED('write'));else if (writev) stream._writev(chunk, state.onwrite);else stream._write(chunk, encoding, state.onwrite);
+  state.sync = false;
+}
+
+function onwriteError(stream, state, sync, er, cb) {
+  --state.pendingcb;
+
+  if (sync) {
+    // defer the callback if we are being called synchronously
+    // to avoid piling up things on the stack
+    process.nextTick(cb, er); // this can emit finish, and it will always happen
+    // after error
+
+    process.nextTick(finishMaybe, stream, state);
+    stream._writableState.errorEmitted = true;
+    errorOrDestroy(stream, er);
+  } else {
+    // the caller expect this to happen before if
+    // it is async
+    cb(er);
+    stream._writableState.errorEmitted = true;
+    errorOrDestroy(stream, er); // this can emit finish, but finish must
+    // always follow error
+
+    finishMaybe(stream, state);
+  }
+}
+
+function onwriteStateUpdate(state) {
+  state.writing = false;
+  state.writecb = null;
+  state.length -= state.writelen;
+  state.writelen = 0;
+}
+
+function onwrite(stream, er) {
+  var state = stream._writableState;
+  var sync = state.sync;
+  var cb = state.writecb;
+  if (typeof cb !== 'function') throw new ERR_MULTIPLE_CALLBACK();
+  onwriteStateUpdate(state);
+  if (er) onwriteError(stream, state, sync, er, cb);else {
+    // Check if we're actually ready to finish, but don't emit yet
+    var finished = needFinish(state) || stream.destroyed;
+
+    if (!finished && !state.corked && !state.bufferProcessing && state.bufferedRequest) {
+      clearBuffer(stream, state);
+    }
+
+    if (sync) {
+      process.nextTick(afterWrite, stream, state, finished, cb);
+    } else {
+      afterWrite(stream, state, finished, cb);
+    }
+  }
+}
+
+function afterWrite(stream, state, finished, cb) {
+  if (!finished) onwriteDrain(stream, state);
+  state.pendingcb--;
+  cb();
+  finishMaybe(stream, state);
+} // Must force callback to be called on nextTick, so that we don't
+// emit 'drain' before the write() consumer gets the 'false' return
+// value, and has a chance to attach a 'drain' listener.
+
+
+function onwriteDrain(stream, state) {
+  if (state.length === 0 && state.needDrain) {
+    state.needDrain = false;
+    stream.emit('drain');
+  }
+} // if there's something in the buffer waiting, then process it
+
+
+function clearBuffer(stream, state) {
+  state.bufferProcessing = true;
+  var entry = state.bufferedRequest;
+
+  if (stream._writev && entry && entry.next) {
+    // Fast case, write everything using _writev()
+    var l = state.bufferedRequestCount;
+    var buffer = new Array(l);
+    var holder = state.corkedRequestsFree;
+    holder.entry = entry;
+    var count = 0;
+    var allBuffers = true;
+
+    while (entry) {
+      buffer[count] = entry;
+      if (!entry.isBuf) allBuffers = false;
+      entry = entry.next;
+      count += 1;
+    }
+
+    buffer.allBuffers = allBuffers;
+    doWrite(stream, state, true, state.length, buffer, '', holder.finish); // doWrite is almost always async, defer these to save a bit of time
+    // as the hot path ends with doWrite
+
+    state.pendingcb++;
+    state.lastBufferedRequest = null;
+
+    if (holder.next) {
+      state.corkedRequestsFree = holder.next;
+      holder.next = null;
+    } else {
+      state.corkedRequestsFree = new CorkedRequest(state);
+    }
+
+    state.bufferedRequestCount = 0;
+  } else {
+    // Slow case, write chunks one-by-one
+    while (entry) {
+      var chunk = entry.chunk;
+      var encoding = entry.encoding;
+      var cb = entry.callback;
+      var len = state.objectMode ? 1 : chunk.length;
+      doWrite(stream, state, false, len, chunk, encoding, cb);
+      entry = entry.next;
+      state.bufferedRequestCount--; // if we didn't call the onwrite immediately, then
+      // it means that we need to wait until it does.
+      // also, that means that the chunk and cb are currently
+      // being processed, so move the buffer counter past them.
+
+      if (state.writing) {
+        break;
+      }
+    }
+
+    if (entry === null) state.lastBufferedRequest = null;
+  }
+
+  state.bufferedRequest = entry;
+  state.bufferProcessing = false;
+}
+
+Writable.prototype._write = function (chunk, encoding, cb) {
+  cb(new ERR_METHOD_NOT_IMPLEMENTED('_write()'));
+};
+
+Writable.prototype._writev = null;
+
+Writable.prototype.end = function (chunk, encoding, cb) {
+  var state = this._writableState;
+
+  if (typeof chunk === 'function') {
+    cb = chunk;
+    chunk = null;
+    encoding = null;
+  } else if (typeof encoding === 'function') {
+    cb = encoding;
+    encoding = null;
+  }
+
+  if (chunk !== null && chunk !== undefined) this.write(chunk, encoding); // .end() fully uncorks
+
+  if (state.corked) {
+    state.corked = 1;
+    this.uncork();
+  } // ignore unnecessary end() calls.
+
+
+  if (!state.ending) endWritable(this, state, cb);
+  return this;
+};
+
+Object.defineProperty(Writable.prototype, 'writableLength', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    return this._writableState.length;
+  }
+});
+
+function needFinish(state) {
+  return state.ending && state.length === 0 && state.bufferedRequest === null && !state.finished && !state.writing;
+}
+
+function callFinal(stream, state) {
+  stream._final(function (err) {
+    state.pendingcb--;
+
+    if (err) {
+      errorOrDestroy(stream, err);
+    }
+
+    state.prefinished = true;
+    stream.emit('prefinish');
+    finishMaybe(stream, state);
+  });
+}
+
+function prefinish(stream, state) {
+  if (!state.prefinished && !state.finalCalled) {
+    if (typeof stream._final === 'function' && !state.destroyed) {
+      state.pendingcb++;
+      state.finalCalled = true;
+      process.nextTick(callFinal, stream, state);
+    } else {
+      state.prefinished = true;
+      stream.emit('prefinish');
+    }
+  }
+}
+
+function finishMaybe(stream, state) {
+  var need = needFinish(state);
+
+  if (need) {
+    prefinish(stream, state);
+
+    if (state.pendingcb === 0) {
+      state.finished = true;
+      stream.emit('finish');
+
+      if (state.autoDestroy) {
+        // In case of duplex streams we need a way to detect
+        // if the readable side is ready for autoDestroy as well
+        var rState = stream._readableState;
+
+        if (!rState || rState.autoDestroy && rState.endEmitted) {
+          stream.destroy();
+        }
+      }
+    }
+  }
+
+  return need;
+}
+
+function endWritable(stream, state, cb) {
+  state.ending = true;
+  finishMaybe(stream, state);
+
+  if (cb) {
+    if (state.finished) process.nextTick(cb);else stream.once('finish', cb);
+  }
+
+  state.ended = true;
+  stream.writable = false;
+}
+
+function onCorkedFinish(corkReq, state, err) {
+  var entry = corkReq.entry;
+  corkReq.entry = null;
+
+  while (entry) {
+    var cb = entry.callback;
+    state.pendingcb--;
+    cb(err);
+    entry = entry.next;
+  } // reuse the free corkReq.
+
+
+  state.corkedRequestsFree.next = corkReq;
+}
+
+Object.defineProperty(Writable.prototype, 'destroyed', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function get() {
+    if (this._writableState === undefined) {
+      return false;
+    }
+
+    return this._writableState.destroyed;
+  },
+  set: function set(value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (!this._writableState) {
+      return;
+    } // backward compatibility, the user is explicitly
+    // managing destroyed
+
+
+    this._writableState.destroyed = value;
+  }
+});
+Writable.prototype.destroy = destroyImpl.destroy;
+Writable.prototype._undestroy = destroyImpl.undestroy;
+
+Writable.prototype._destroy = function (err, cb) {
+  cb(err);
+};
+
+/***/ }),
+/* 43 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+/**
+ * Module exports.
+ */
+
+module.exports = deprecate;
+
+/**
+ * Mark that a method should not be used.
+ * Returns a modified function which warns once by default.
+ *
+ * If `localStorage.noDeprecation = true` is set, then it is a no-op.
+ *
+ * If `localStorage.throwDeprecation = true` is set, then deprecated functions
+ * will throw an Error when invoked.
+ *
+ * If `localStorage.traceDeprecation = true` is set, then deprecated functions
+ * will invoke `console.trace()` instead of `console.error()`.
+ *
+ * @param {Function} fn - the function to deprecate
+ * @param {String} msg - the string to print to the console when `fn` is invoked
+ * @returns {Function} a new "deprecated" version of `fn`
+ * @api public
+ */
+
+function deprecate (fn, msg) {
+  if (config('noDeprecation')) {
+    return fn;
+  }
+
+  var warned = false;
+  function deprecated() {
+    if (!warned) {
+      if (config('throwDeprecation')) {
+        throw new Error(msg);
+      } else if (config('traceDeprecation')) {
+        console.trace(msg);
+      } else {
+        console.warn(msg);
+      }
+      warned = true;
+    }
+    return fn.apply(this, arguments);
+  }
+
+  return deprecated;
+}
+
+/**
+ * Checks `localStorage` for boolean values for the given `name`.
+ *
+ * @param {String} name
+ * @returns {Boolean}
+ * @api private
+ */
+
+function config (name) {
+  // accessing global.localStorage can trigger a DOMException in sandboxed iframes
+  try {
+    if (!__webpack_require__.g.localStorage) return false;
+  } catch (_) {
+    return false;
+  }
+  var val = __webpack_require__.g.localStorage[name];
+  if (null == val) return false;
+  return String(val).toLowerCase() === 'true';
+}
+
+
+/***/ }),
+/* 44 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+/*<replacement>*/
+
+var Buffer = __webpack_require__(45).Buffer;
+/*</replacement>*/
+
+var isEncoding = Buffer.isEncoding || function (encoding) {
+  encoding = '' + encoding;
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
+
+function _normalizeEncoding(enc) {
+  if (!enc) return 'utf8';
+  var retried;
+  while (true) {
+    switch (enc) {
+      case 'utf8':
+      case 'utf-8':
+        return 'utf8';
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return 'utf16le';
+      case 'latin1':
+      case 'binary':
+        return 'latin1';
+      case 'base64':
+      case 'ascii':
+      case 'hex':
+        return enc;
+      default:
+        if (retried) return; // undefined
+        enc = ('' + enc).toLowerCase();
+        retried = true;
+    }
+  }
+};
+
+// Do not cache `Buffer.isEncoding` when checking encoding names as some
+// modules monkey-patch it to support additional encodings
+function normalizeEncoding(enc) {
+  var nenc = _normalizeEncoding(enc);
+  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+  return nenc || enc;
+}
+
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters.
+exports.StringDecoder = StringDecoder;
+function StringDecoder(encoding) {
+  this.encoding = normalizeEncoding(encoding);
+  var nb;
+  switch (this.encoding) {
+    case 'utf16le':
+      this.text = utf16Text;
+      this.end = utf16End;
+      nb = 4;
+      break;
+    case 'utf8':
+      this.fillLast = utf8FillLast;
+      nb = 4;
+      break;
+    case 'base64':
+      this.text = base64Text;
+      this.end = base64End;
+      nb = 3;
+      break;
+    default:
+      this.write = simpleWrite;
+      this.end = simpleEnd;
+      return;
+  }
+  this.lastNeed = 0;
+  this.lastTotal = 0;
+  this.lastChar = Buffer.allocUnsafe(nb);
+}
+
+StringDecoder.prototype.write = function (buf) {
+  if (buf.length === 0) return '';
+  var r;
+  var i;
+  if (this.lastNeed) {
+    r = this.fillLast(buf);
+    if (r === undefined) return '';
+    i = this.lastNeed;
+    this.lastNeed = 0;
+  } else {
+    i = 0;
+  }
+  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+  return r || '';
+};
+
+StringDecoder.prototype.end = utf8End;
+
+// Returns only complete characters in a Buffer
+StringDecoder.prototype.text = utf8Text;
+
+// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+StringDecoder.prototype.fillLast = function (buf) {
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+  this.lastNeed -= buf.length;
+};
+
+// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+// continuation byte. If an invalid byte is detected, -2 is returned.
+function utf8CheckByte(byte) {
+  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+  return byte >> 6 === 0x02 ? -1 : -2;
+}
+
+// Checks at most 3 bytes at the end of a Buffer in order to detect an
+// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+// needed to complete the UTF-8 character (if applicable) are returned.
+function utf8CheckIncomplete(self, buf, i) {
+  var j = buf.length - 1;
+  if (j < i) return 0;
+  var nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 1;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 2;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) {
+      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+    }
+    return nb;
+  }
+  return 0;
+}
+
+// Validates as many continuation bytes for a multi-byte UTF-8 character as
+// needed or are available. If we see a non-continuation byte where we expect
+// one, we "replace" the validated continuation bytes we've seen so far with
+// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
+// behavior. The continuation byte check is included three times in the case
+// where all of the continuation bytes for a character exist in the same buffer.
+// It is also done this way as a slight performance increase instead of using a
+// loop.
+function utf8CheckExtraBytes(self, buf, p) {
+  if ((buf[0] & 0xC0) !== 0x80) {
+    self.lastNeed = 0;
+    return '\ufffd';
+  }
+  if (self.lastNeed > 1 && buf.length > 1) {
+    if ((buf[1] & 0xC0) !== 0x80) {
+      self.lastNeed = 1;
+      return '\ufffd';
+    }
+    if (self.lastNeed > 2 && buf.length > 2) {
+      if ((buf[2] & 0xC0) !== 0x80) {
+        self.lastNeed = 2;
+        return '\ufffd';
+      }
+    }
+  }
+}
+
+// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+function utf8FillLast(buf) {
+  var p = this.lastTotal - this.lastNeed;
+  var r = utf8CheckExtraBytes(this, buf, p);
+  if (r !== undefined) return r;
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, p, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, p, 0, buf.length);
+  this.lastNeed -= buf.length;
+}
+
+// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+// partial character, the character's bytes are buffered until the required
+// number of bytes are available.
+function utf8Text(buf, i) {
+  var total = utf8CheckIncomplete(this, buf, i);
+  if (!this.lastNeed) return buf.toString('utf8', i);
+  this.lastTotal = total;
+  var end = buf.length - (total - this.lastNeed);
+  buf.copy(this.lastChar, 0, end);
+  return buf.toString('utf8', i, end);
+}
+
+// For UTF-8, a replacement character is added when ending on a partial
+// character.
+function utf8End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + '\ufffd';
+  return r;
+}
+
+// UTF-16LE typically needs two bytes per character, but even if we have an even
+// number of bytes available, we need to check if we end on a leading/high
+// surrogate. In that case, we need to wait for the next two bytes in order to
+// decode the last character properly.
+function utf16Text(buf, i) {
+  if ((buf.length - i) % 2 === 0) {
+    var r = buf.toString('utf16le', i);
+    if (r) {
+      var c = r.charCodeAt(r.length - 1);
+      if (c >= 0xD800 && c <= 0xDBFF) {
+        this.lastNeed = 2;
+        this.lastTotal = 4;
+        this.lastChar[0] = buf[buf.length - 2];
+        this.lastChar[1] = buf[buf.length - 1];
+        return r.slice(0, -1);
+      }
+    }
+    return r;
+  }
+  this.lastNeed = 1;
+  this.lastTotal = 2;
+  this.lastChar[0] = buf[buf.length - 1];
+  return buf.toString('utf16le', i, buf.length - 1);
+}
+
+// For UTF-16LE we do not explicitly append special replacement characters if we
+// end on a partial character, we simply let v8 handle that.
+function utf16End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) {
+    var end = this.lastTotal - this.lastNeed;
+    return r + this.lastChar.toString('utf16le', 0, end);
+  }
+  return r;
+}
+
+function base64Text(buf, i) {
+  var n = (buf.length - i) % 3;
+  if (n === 0) return buf.toString('base64', i);
+  this.lastNeed = 3 - n;
+  this.lastTotal = 3;
+  if (n === 1) {
+    this.lastChar[0] = buf[buf.length - 1];
+  } else {
+    this.lastChar[0] = buf[buf.length - 2];
+    this.lastChar[1] = buf[buf.length - 1];
+  }
+  return buf.toString('base64', i, buf.length - n);
+}
+
+function base64End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+  return r;
+}
+
+// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+function simpleWrite(buf) {
+  return buf.toString(this.encoding);
+}
+
+function simpleEnd(buf) {
+  return buf && buf.length ? this.write(buf) : '';
+}
+
+/***/ }),
+/* 45 */
+/***/ ((module, exports, __webpack_require__) => {
+
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+/* eslint-disable node/no-deprecated-api */
+var buffer = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'buffer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()))
+var Buffer = buffer.Buffer
+
+// alternative to using Object.keys for old browsers
+function copyProps (src, dst) {
+  for (var key in src) {
+    dst[key] = src[key]
+  }
+}
+if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+  module.exports = buffer
+} else {
+  // Copy properties from require('buffer')
+  copyProps(buffer, exports)
+  exports.Buffer = SafeBuffer
+}
+
+function SafeBuffer (arg, encodingOrOffset, length) {
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.prototype = Object.create(Buffer.prototype)
+
+// Copy static methods from Buffer
+copyProps(Buffer, SafeBuffer)
+
+SafeBuffer.from = function (arg, encodingOrOffset, length) {
+  if (typeof arg === 'number') {
+    throw new TypeError('Argument must not be a number')
+  }
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.alloc = function (size, fill, encoding) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  var buf = Buffer(size)
+  if (fill !== undefined) {
+    if (typeof encoding === 'string') {
+      buf.fill(fill, encoding)
+    } else {
+      buf.fill(fill)
+    }
+  } else {
+    buf.fill(0)
+  }
+  return buf
+}
+
+SafeBuffer.allocUnsafe = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return Buffer(size)
+}
+
+SafeBuffer.allocUnsafeSlow = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return buffer.SlowBuffer(size)
+}
+
+
+/***/ }),
+/* 46 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var _Object$setPrototypeO;
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var finished = __webpack_require__(47);
+
+var kLastResolve = Symbol('lastResolve');
+var kLastReject = Symbol('lastReject');
+var kError = Symbol('error');
+var kEnded = Symbol('ended');
+var kLastPromise = Symbol('lastPromise');
+var kHandlePromise = Symbol('handlePromise');
+var kStream = Symbol('stream');
+
+function createIterResult(value, done) {
+  return {
+    value: value,
+    done: done
+  };
+}
+
+function readAndResolve(iter) {
+  var resolve = iter[kLastResolve];
+
+  if (resolve !== null) {
+    var data = iter[kStream].read(); // we defer if data is null
+    // we can be expecting either 'end' or
+    // 'error'
+
+    if (data !== null) {
+      iter[kLastPromise] = null;
+      iter[kLastResolve] = null;
+      iter[kLastReject] = null;
+      resolve(createIterResult(data, false));
+    }
+  }
+}
+
+function onReadable(iter) {
+  // we wait for the next tick, because it might
+  // emit an error with process.nextTick
+  process.nextTick(readAndResolve, iter);
+}
+
+function wrapForNext(lastPromise, iter) {
+  return function (resolve, reject) {
+    lastPromise.then(function () {
+      if (iter[kEnded]) {
+        resolve(createIterResult(undefined, true));
+        return;
+      }
+
+      iter[kHandlePromise](resolve, reject);
+    }, reject);
+  };
+}
+
+var AsyncIteratorPrototype = Object.getPrototypeOf(function () {});
+var ReadableStreamAsyncIteratorPrototype = Object.setPrototypeOf((_Object$setPrototypeO = {
+  get stream() {
+    return this[kStream];
+  },
+
+  next: function next() {
+    var _this = this;
+
+    // if we have detected an error in the meanwhile
+    // reject straight away
+    var error = this[kError];
+
+    if (error !== null) {
+      return Promise.reject(error);
+    }
+
+    if (this[kEnded]) {
+      return Promise.resolve(createIterResult(undefined, true));
+    }
+
+    if (this[kStream].destroyed) {
+      // We need to defer via nextTick because if .destroy(err) is
+      // called, the error will be emitted via nextTick, and
+      // we cannot guarantee that there is no error lingering around
+      // waiting to be emitted.
+      return new Promise(function (resolve, reject) {
+        process.nextTick(function () {
+          if (_this[kError]) {
+            reject(_this[kError]);
+          } else {
+            resolve(createIterResult(undefined, true));
+          }
+        });
+      });
+    } // if we have multiple next() calls
+    // we will wait for the previous Promise to finish
+    // this logic is optimized to support for await loops,
+    // where next() is only called once at a time
+
+
+    var lastPromise = this[kLastPromise];
+    var promise;
+
+    if (lastPromise) {
+      promise = new Promise(wrapForNext(lastPromise, this));
+    } else {
+      // fast path needed to support multiple this.push()
+      // without triggering the next() queue
+      var data = this[kStream].read();
+
+      if (data !== null) {
+        return Promise.resolve(createIterResult(data, false));
+      }
+
+      promise = new Promise(this[kHandlePromise]);
+    }
+
+    this[kLastPromise] = promise;
+    return promise;
+  }
+}, _defineProperty(_Object$setPrototypeO, Symbol.asyncIterator, function () {
+  return this;
+}), _defineProperty(_Object$setPrototypeO, "return", function _return() {
+  var _this2 = this;
+
+  // destroy(err, cb) is a private API
+  // we can guarantee we have that here, because we control the
+  // Readable class this is attached to
+  return new Promise(function (resolve, reject) {
+    _this2[kStream].destroy(null, function (err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(createIterResult(undefined, true));
+    });
+  });
+}), _Object$setPrototypeO), AsyncIteratorPrototype);
+
+var createReadableStreamAsyncIterator = function createReadableStreamAsyncIterator(stream) {
+  var _Object$create;
+
+  var iterator = Object.create(ReadableStreamAsyncIteratorPrototype, (_Object$create = {}, _defineProperty(_Object$create, kStream, {
+    value: stream,
+    writable: true
+  }), _defineProperty(_Object$create, kLastResolve, {
+    value: null,
+    writable: true
+  }), _defineProperty(_Object$create, kLastReject, {
+    value: null,
+    writable: true
+  }), _defineProperty(_Object$create, kError, {
+    value: null,
+    writable: true
+  }), _defineProperty(_Object$create, kEnded, {
+    value: stream._readableState.endEmitted,
+    writable: true
+  }), _defineProperty(_Object$create, kHandlePromise, {
+    value: function value(resolve, reject) {
+      var data = iterator[kStream].read();
+
+      if (data) {
+        iterator[kLastPromise] = null;
+        iterator[kLastResolve] = null;
+        iterator[kLastReject] = null;
+        resolve(createIterResult(data, false));
+      } else {
+        iterator[kLastResolve] = resolve;
+        iterator[kLastReject] = reject;
+      }
+    },
+    writable: true
+  }), _Object$create));
+  iterator[kLastPromise] = null;
+  finished(stream, function (err) {
+    if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+      var reject = iterator[kLastReject]; // reject if we are waiting for data in the Promise
+      // returned by next() and store the error
+
+      if (reject !== null) {
+        iterator[kLastPromise] = null;
+        iterator[kLastResolve] = null;
+        iterator[kLastReject] = null;
+        reject(err);
+      }
+
+      iterator[kError] = err;
+      return;
+    }
+
+    var resolve = iterator[kLastResolve];
+
+    if (resolve !== null) {
+      iterator[kLastPromise] = null;
+      iterator[kLastResolve] = null;
+      iterator[kLastReject] = null;
+      resolve(createIterResult(undefined, true));
+    }
+
+    iterator[kEnded] = true;
+  });
+  stream.on('readable', onReadable.bind(null, iterator));
+  return iterator;
+};
+
+module.exports = createReadableStreamAsyncIterator;
+
+/***/ }),
+/* 47 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Ported from https://github.com/mafintosh/end-of-stream with
+// permission from the author, Mathias Buus (@mafintosh).
+
+
+var ERR_STREAM_PREMATURE_CLOSE = __webpack_require__(39).codes.ERR_STREAM_PREMATURE_CLOSE;
+
+function once(callback) {
+  var called = false;
+  return function () {
+    if (called) return;
+    called = true;
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    callback.apply(this, args);
+  };
+}
+
+function noop() {}
+
+function isRequest(stream) {
+  return stream.setHeader && typeof stream.abort === 'function';
+}
+
+function eos(stream, opts, callback) {
+  if (typeof opts === 'function') return eos(stream, null, opts);
+  if (!opts) opts = {};
+  callback = once(callback || noop);
+  var readable = opts.readable || opts.readable !== false && stream.readable;
+  var writable = opts.writable || opts.writable !== false && stream.writable;
+
+  var onlegacyfinish = function onlegacyfinish() {
+    if (!stream.writable) onfinish();
+  };
+
+  var writableEnded = stream._writableState && stream._writableState.finished;
+
+  var onfinish = function onfinish() {
+    writable = false;
+    writableEnded = true;
+    if (!readable) callback.call(stream);
+  };
+
+  var readableEnded = stream._readableState && stream._readableState.endEmitted;
+
+  var onend = function onend() {
+    readable = false;
+    readableEnded = true;
+    if (!writable) callback.call(stream);
+  };
+
+  var onerror = function onerror(err) {
+    callback.call(stream, err);
+  };
+
+  var onclose = function onclose() {
+    var err;
+
+    if (readable && !readableEnded) {
+      if (!stream._readableState || !stream._readableState.ended) err = new ERR_STREAM_PREMATURE_CLOSE();
+      return callback.call(stream, err);
+    }
+
+    if (writable && !writableEnded) {
+      if (!stream._writableState || !stream._writableState.ended) err = new ERR_STREAM_PREMATURE_CLOSE();
+      return callback.call(stream, err);
+    }
+  };
+
+  var onrequest = function onrequest() {
+    stream.req.on('finish', onfinish);
+  };
+
+  if (isRequest(stream)) {
+    stream.on('complete', onfinish);
+    stream.on('abort', onclose);
+    if (stream.req) onrequest();else stream.on('request', onrequest);
+  } else if (writable && !stream._writableState) {
+    // legacy streams
+    stream.on('end', onlegacyfinish);
+    stream.on('close', onlegacyfinish);
+  }
+
+  stream.on('end', onend);
+  stream.on('finish', onfinish);
+  if (opts.error !== false) stream.on('error', onerror);
+  stream.on('close', onclose);
+  return function () {
+    stream.removeListener('complete', onfinish);
+    stream.removeListener('abort', onclose);
+    stream.removeListener('request', onrequest);
+    if (stream.req) stream.req.removeListener('finish', onfinish);
+    stream.removeListener('end', onlegacyfinish);
+    stream.removeListener('close', onlegacyfinish);
+    stream.removeListener('finish', onfinish);
+    stream.removeListener('end', onend);
+    stream.removeListener('error', onerror);
+    stream.removeListener('close', onclose);
+  };
+}
+
+module.exports = eos;
+
+/***/ }),
+/* 48 */
+/***/ ((module) => {
+
+module.exports = function () {
+  throw new Error('Readable.from is not available in the browser')
+};
+
+
+/***/ }),
+/* 49 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+// a transform stream is a readable/writable stream where you do
+// something with the data.  Sometimes it's called a "filter",
+// but that's not a great name for it, since that implies a thing where
+// some bits pass through, and others are simply ignored.  (That would
+// be a valid example of a transform, of course.)
+//
+// While the output is causally related to the input, it's not a
+// necessarily symmetric or synchronous transformation.  For example,
+// a zlib stream might take multiple plain-text writes(), and then
+// emit a single compressed chunk some time in the future.
+//
+// Here's how this works:
+//
+// The Transform stream has all the aspects of the readable and writable
+// stream classes.  When you write(chunk), that calls _write(chunk,cb)
+// internally, and returns false if there's a lot of pending writes
+// buffered up.  When you call read(), that calls _read(n) until
+// there's enough pending readable data buffered up.
+//
+// In a transform stream, the written data is placed in a buffer.  When
+// _read(n) is called, it transforms the queued up data, calling the
+// buffered _write cb's as it consumes chunks.  If consuming a single
+// written chunk would result in multiple output chunks, then the first
+// outputted bit calls the readcb, and subsequent chunks just go into
+// the read buffer, and will cause it to emit 'readable' if necessary.
+//
+// This way, back-pressure is actually determined by the reading side,
+// since _read has to be called to start processing a new chunk.  However,
+// a pathological inflate type of transform can cause excessive buffering
+// here.  For example, imagine a stream where every byte of input is
+// interpreted as an integer from 0-255, and then results in that many
+// bytes of output.  Writing the 4 bytes {ff,ff,ff,ff} would result in
+// 1kb of data being output.  In this case, you could write a very small
+// amount of input, and end up with a very large amount of output.  In
+// such a pathological inflating mechanism, there'd be no way to tell
+// the system to stop doing the transform.  A single 4MB write could
+// cause the system to run out of memory.
+//
+// However, even in such a pathological case, only a single written chunk
+// would be consumed, and then the rest would wait (un-transformed) until
+// the results of the previous transformed chunk were consumed.
+
+
+module.exports = Transform;
+
+var _require$codes = __webpack_require__(39).codes,
+    ERR_METHOD_NOT_IMPLEMENTED = _require$codes.ERR_METHOD_NOT_IMPLEMENTED,
+    ERR_MULTIPLE_CALLBACK = _require$codes.ERR_MULTIPLE_CALLBACK,
+    ERR_TRANSFORM_ALREADY_TRANSFORMING = _require$codes.ERR_TRANSFORM_ALREADY_TRANSFORMING,
+    ERR_TRANSFORM_WITH_LENGTH_0 = _require$codes.ERR_TRANSFORM_WITH_LENGTH_0;
+
+var Duplex = __webpack_require__(41);
+
+__webpack_require__(40)(Transform, Duplex);
+
+function afterTransform(er, data) {
+  var ts = this._transformState;
+  ts.transforming = false;
+  var cb = ts.writecb;
+
+  if (cb === null) {
+    return this.emit('error', new ERR_MULTIPLE_CALLBACK());
+  }
+
+  ts.writechunk = null;
+  ts.writecb = null;
+  if (data != null) // single equals check for both `null` and `undefined`
+    this.push(data);
+  cb(er);
+  var rs = this._readableState;
+  rs.reading = false;
+
+  if (rs.needReadable || rs.length < rs.highWaterMark) {
+    this._read(rs.highWaterMark);
+  }
+}
+
+function Transform(options) {
+  if (!(this instanceof Transform)) return new Transform(options);
+  Duplex.call(this, options);
+  this._transformState = {
+    afterTransform: afterTransform.bind(this),
+    needTransform: false,
+    transforming: false,
+    writecb: null,
+    writechunk: null,
+    writeencoding: null
+  }; // start out asking for a readable event once data is transformed.
+
+  this._readableState.needReadable = true; // we have implemented the _read method, and done the other things
+  // that Readable wants before the first _read call, so unset the
+  // sync guard flag.
+
+  this._readableState.sync = false;
+
+  if (options) {
+    if (typeof options.transform === 'function') this._transform = options.transform;
+    if (typeof options.flush === 'function') this._flush = options.flush;
+  } // When the writable side finishes, then flush out anything remaining.
+
+
+  this.on('prefinish', prefinish);
+}
+
+function prefinish() {
+  var _this = this;
+
+  if (typeof this._flush === 'function' && !this._readableState.destroyed) {
+    this._flush(function (er, data) {
+      done(_this, er, data);
+    });
+  } else {
+    done(this, null, null);
+  }
+}
+
+Transform.prototype.push = function (chunk, encoding) {
+  this._transformState.needTransform = false;
+  return Duplex.prototype.push.call(this, chunk, encoding);
+}; // This is the part where you do stuff!
+// override this function in implementation classes.
+// 'chunk' is an input chunk.
+//
+// Call `push(newChunk)` to pass along transformed output
+// to the readable side.  You may call 'push' zero or more times.
+//
+// Call `cb(err)` when you are done with this chunk.  If you pass
+// an error, then that'll put the hurt on the whole operation.  If you
+// never call cb(), then you'll never get another chunk.
+
+
+Transform.prototype._transform = function (chunk, encoding, cb) {
+  cb(new ERR_METHOD_NOT_IMPLEMENTED('_transform()'));
+};
+
+Transform.prototype._write = function (chunk, encoding, cb) {
+  var ts = this._transformState;
+  ts.writecb = cb;
+  ts.writechunk = chunk;
+  ts.writeencoding = encoding;
+
+  if (!ts.transforming) {
+    var rs = this._readableState;
+    if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
+  }
+}; // Doesn't matter what the args are here.
+// _transform does all the work.
+// That we got here means that the readable side wants more data.
+
+
+Transform.prototype._read = function (n) {
+  var ts = this._transformState;
+
+  if (ts.writechunk !== null && !ts.transforming) {
+    ts.transforming = true;
+
+    this._transform(ts.writechunk, ts.writeencoding, ts.afterTransform);
+  } else {
+    // mark that we need a transform, so that any data that comes in
+    // will get processed, now that we've asked for it.
+    ts.needTransform = true;
+  }
+};
+
+Transform.prototype._destroy = function (err, cb) {
+  Duplex.prototype._destroy.call(this, err, function (err2) {
+    cb(err2);
+  });
+};
+
+function done(stream, er, data) {
+  if (er) return stream.emit('error', er);
+  if (data != null) // single equals check for both `null` and `undefined`
+    stream.push(data); // TODO(BridgeAR): Write a test for these two error cases
+  // if there's nothing in the write buffer, then that means
+  // that nothing more will ever be provided
+
+  if (stream._writableState.length) throw new ERR_TRANSFORM_WITH_LENGTH_0();
+  if (stream._transformState.transforming) throw new ERR_TRANSFORM_ALREADY_TRANSFORMING();
+  return stream.push(null);
+}
+
+/***/ }),
+/* 50 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+// a passthrough stream.
+// basically just the most minimal sort of Transform stream.
+// Every written chunk gets output as-is.
+
+
+module.exports = PassThrough;
+
+var Transform = __webpack_require__(49);
+
+__webpack_require__(40)(PassThrough, Transform);
+
+function PassThrough(options) {
+  if (!(this instanceof PassThrough)) return new PassThrough(options);
+  Transform.call(this, options);
+}
+
+PassThrough.prototype._transform = function (chunk, encoding, cb) {
+  cb(null, chunk);
+};
+
+/***/ }),
+/* 51 */
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+// Ported from https://github.com/mafintosh/pump with
+// permission from the author, Mathias Buus (@mafintosh).
+
+
+var eos;
+
+function once(callback) {
+  var called = false;
+  return function () {
+    if (called) return;
+    called = true;
+    callback.apply(void 0, arguments);
+  };
+}
+
+var _require$codes = __webpack_require__(39).codes,
+    ERR_MISSING_ARGS = _require$codes.ERR_MISSING_ARGS,
+    ERR_STREAM_DESTROYED = _require$codes.ERR_STREAM_DESTROYED;
+
+function noop(err) {
+  // Rethrow the error if it exists to avoid swallowing it
+  if (err) throw err;
+}
+
+function isRequest(stream) {
+  return stream.setHeader && typeof stream.abort === 'function';
+}
+
+function destroyer(stream, reading, writing, callback) {
+  callback = once(callback);
+  var closed = false;
+  stream.on('close', function () {
+    closed = true;
+  });
+  if (eos === undefined) eos = __webpack_require__(47);
+  eos(stream, {
+    readable: reading,
+    writable: writing
+  }, function (err) {
+    if (err) return callback(err);
+    closed = true;
+    callback();
+  });
+  var destroyed = false;
+  return function (err) {
+    if (closed) return;
+    if (destroyed) return;
+    destroyed = true; // request.destroy just do .end - .abort is what we want
+
+    if (isRequest(stream)) return stream.abort();
+    if (typeof stream.destroy === 'function') return stream.destroy();
+    callback(err || new ERR_STREAM_DESTROYED('pipe'));
+  };
+}
+
+function call(fn) {
+  fn();
+}
+
+function pipe(from, to) {
+  return from.pipe(to);
+}
+
+function popCallback(streams) {
+  if (!streams.length) return noop;
+  if (typeof streams[streams.length - 1] !== 'function') return noop;
+  return streams.pop();
+}
+
+function pipeline() {
+  for (var _len = arguments.length, streams = new Array(_len), _key = 0; _key < _len; _key++) {
+    streams[_key] = arguments[_key];
+  }
+
+  var callback = popCallback(streams);
+  if (Array.isArray(streams[0])) streams = streams[0];
+
+  if (streams.length < 2) {
+    throw new ERR_MISSING_ARGS('streams');
+  }
+
+  var error;
+  var destroys = streams.map(function (stream, i) {
+    var reading = i < streams.length - 1;
+    var writing = i > 0;
+    return destroyer(stream, reading, writing, function (err) {
+      if (!error) error = err;
+      if (err) destroys.forEach(call);
+      if (reading) return;
+      destroys.forEach(call);
+      callback(error);
+    });
+  });
+  return streams.reduce(pipe);
+}
+
+module.exports = pipeline;
+
+/***/ })
+/******/ 	]);
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __webpack_require__(0);
+/******/ 	
+/******/ 	return __webpack_exports__;
+/******/ })()
+;
+});
