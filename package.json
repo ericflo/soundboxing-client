@@ -1,6 +1,6 @@
 {
   "name": "soundboxing-client",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "description": "Client library for accessing the Soundboxing API.",
   "main": "main.js",
   "scripts": {
@@ -29,7 +29,8 @@
   },
   "homepage": "https://github.com/ericflo/soundboxing-client#readme",
   "dependencies": {
-    "isomorphic-fetch": "^3.0.0",
+    "buffer": "^6.0.3",
+    "cross-fetch": "^3.1.4",
     "isomorphic-form-data": "^2.0.0",
     "node-fetch": "^3.0.0",
     "protobufjs": "^6.11.2",

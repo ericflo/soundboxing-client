@@ -13,6 +13,9 @@ module.exports = [
       library: 'soundboxing-client',
       libraryTarget: 'umd',
     },
+    optimization: {
+      minimize: true,
+    },
     plugins: [
       /*new Uglify()*/
     ],
